@@ -3,7 +3,7 @@ var TypingModel = Backbone.Model.extend({
 		"allSpanElements" : [],
 		"caretSpanElement" : null,
 		"currentSpanElement" : null,
-		"suggestionElenets" : [],
+		"suggestionElements" : [],
 		"inputText" : "",
 		"inputSelectionStart" : 0,
 		"inputSelectionEnd" : 0
@@ -17,14 +17,16 @@ TypingModel.prototype.initialize = function( options ) {
 
 TypingModel.prototype.__update = function() {
 	var allSpanElements = [];
+	var suggestionElements = [];
 	var inputText = null;
 	
 	// Generate a list of span elements (with fields: text, spacing, type, startCharIndex, endCharIndex)
 	var matchedTokens = this.state.getAttr( "matchedTokens" );
 	var currentTerm = this.state.getAttr( "currentTerm" );
 	var futureTokens = this.state.getAttr( "futureTokens" );
+	var suggestions = this.state.getAttr( "suggestions" )
 	allSpanElements = this.__generateSpansFromTokens( allSpanElements, matchedTokens, "matched" );
-	allSpanElements = this.__generateSpansFromCurrentTerm( allSpanElements, currentTerm );
+	allSpanElements = this.__generateSpansFromCurrentTerm( allSpanElements, currentTerm, suggestions );
 	allSpanElements = this.__generateSpansFromTokens( allSpanElements, futureTokens, "future" );
 	inputText = allSpanElements.map( function(d) { return d.text } ).join( "" );
 	
@@ -75,7 +77,6 @@ TypingModel.prototype.__update = function() {
 		var charIndex = ( allSpanElements.length === 0 ) ? 0 : allSpanElements[ allSpanElements.length - 1 ].endCharIndex;
 		var span = {
 			"text" : "",
-			"spacing" : "",
 			"type" : "extra",
 			"startCharIndex" : charIndex,
 			"endCharIndex" : charIndex,
@@ -85,10 +86,19 @@ TypingModel.prototype.__update = function() {
 		allSpanElements.push( span );
 		caretSpanElement = span;
 	}
+	
+	// Create suggestion Elements
+	for ( var i = 0; i < suggestions.length; i++ ) {
+		var element = {
+			"text" : suggestions[i]
+		};
+		suggestionElements.push( element );
+	}
 
 	this.setAttr( "allSpanElements", allSpanElements );
 	this.setAttr( "caretSpanElement", caretSpanElement );
 	this.setAttr( "currentSpanElement", currentSpanElement );
+	this.setAttr( "suggestionElements", suggestionElements );
 	this.setAttr( "inputText", inputText );
 	this.setAttr( "inputSelectionStart", selectionStartCharIndex );
 	this.setAttr( "inputSelectionEnd", selectionEndCharIndex );
@@ -101,7 +111,7 @@ TypingModel.prototype.__generateSpansFromTokens = function( allSpanElements, tok
 		var token = tokens[i];
 		if ( token.text.length > 0 ) {
 			var text = token.text;
-			var span = { "text" : text, "spacing" : text, "type" : type };
+			var span = { "text" : text, "type" : type };
 			span.startCharIndex = charIndex;
 			charIndex += text.length;
 			span.endCharIndex = charIndex;
@@ -109,7 +119,7 @@ TypingModel.prototype.__generateSpansFromTokens = function( allSpanElements, tok
 		}
 		if ( token.sep.length > 0 ) {
 			var text = token.sep;
-			var span = { "text" : text, "spacing" : text, "type" : type };
+			var span = { "text" : text, "type" : type };
 			span.startCharIndex = charIndex;
 			charIndex += text.length;
 			span.endCharIndex = charIndex;
@@ -119,19 +129,18 @@ TypingModel.prototype.__generateSpansFromTokens = function( allSpanElements, tok
 	return allSpanElements;
 };
 
-TypingModel.prototype.__generateSpansFromCurrentTerm = function( allSpanElements, currentTerm ) {
+TypingModel.prototype.__generateSpansFromCurrentTerm = function( allSpanElements, currentTerm, suggestions ) {
 	var charIndex = ( allSpanElements.length === 0 ) ? 0 : allSpanElements[ allSpanElements.length - 1 ].endCharIndex;
 	var text = currentTerm;
-	var spacing = currentTerm + _.range( Math.max( 10 - text.length, 5 ) ).map( function(d) { return "_" } ).join( "" );
-	var span = { "text" : text, "spacing" : spacing, "type" : "current" };
+	var span = { "text" : text, "type" : "current" };
 	span.startCharIndex = charIndex;
 	charIndex += text.length;
 	span.endCharIndex = charIndex;
 	allSpanElements.push( span );
 	
-	if ( text.length > 0 ) {
+	if ( currentTerm.length > 0 ) {
 		var text = " ";
-		var span = { "text" : text, "spacing" : text, "type" : "future" };
+		var span = { "text" : text, "type" : "spacing" };
 		span.startCharIndex = charIndex;
 		charIndex += text.length;
 		span.endCharIndex = charIndex;
