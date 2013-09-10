@@ -1,0 +1,64 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Translate UI</title>
+	<script type="text/javascript" src="js/d3.js"></script>
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/underscore.js"></script>
+	<script type="text/javascript" src="js/backbone.js"></script>
+	<script type="text/javascript" src="js/ElphabaModel.js"></script>
+	<script type="text/javascript" src="js/TypingState.js"></script>
+	<script type="text/javascript" src="js/TypingModel.js"></script>
+	<script type="text/javascript" src="js/TypingUI.js"></script>
+
+<style type="text/css">
+div.container {
+	display: inline-block;
+	vertical-align: top;
+	margin: 10px;
+	padding: 10px;
+	border: 1px solid #999;
+
+	font-family: Gill Sans;
+	font-size: 10pt;
+	color: #666;
+	box-shadow: 2px 2px 15px #ccc;
+	background: #eee;
+}
+</style>
+<script type="text/javascript">
+$(document).ready( function() {
+	typingState = new TypingState();
+	typingModel = new TypingModel({ "state" : typingState });
+	typingUI = new TypingUI({ "model" : typingModel });
+	
+	var userText = "Beim Letzteren kann es zu Verlusten beim Gedankengang , zu unzusammenhängenden Sätzen";
+	var futureText = "und zu einer Inkohärenz kommen , die sich in schweren Fällen als Wortsalat äußert .";
+	typingState.setUserText( userText );
+	typingState.setFutureText( futureText );
+	typingState.setSuggestions( [ "Saetzen", "Hello World", "suggested term", "another suggested term" ] );
+	d3.select( ".SetUserText" ).text( userText ).on( "keyup", function() { typingState.setUserText( d3.event.srcElement.value ) } );
+	d3.select( ".SetDebugLayout" ).on( "change", function() { typingUI.DEBUG = d3.select(".SetDebugLayout")[0][0].checked; typingUI.render() })
+});
+</script>
+</head>
+<body>
+	<div class="TypingUI container"></div><br/>
+	<div class="container" style="padding-right: 30px">
+		<p>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Source Text: </span>
+			<textarea class="SetSourceText" style="width: 400px; height: 80px"></textarea>
+		</p>
+		<p>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">User Text: </span>
+			<textarea class="SetUserText" style="width: 400px; height: 80px"></textarea>
+		</p>
+	</div><br/>
+	<div class="container" style="padding-right: 30px">
+		<p>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Debug Mode: </span>
+			<input type="checkbox" class="SetDebugLayout" style="width: 20px" /><span style="display: inline-block; width: 380px">Display non-overlapping HTML elements</span>
+		</p>
+	</div>
+</body>
+</html>
