@@ -25,7 +25,8 @@ TypingUI.prototype.init = function() {
 	this.view = {};
 	this.view.container = d3.select( this.el );
 	this.view.canvas = this.view.container.append( "div" );
-	this.view.keystrokes = this.view.canvas.append( "textarea" ).attr( "class", "KeystrokeCapture" );
+	this.view.capture = this.view.canvas.append( "textarea" ).attr( "class", "Capture" );
+	this.view.keystrokes = this.view.canvas.append( "textarea" ).attr( "class", "Keystrokes" );
 	this.view.dimensions = this.view.canvas.append( "div" ).attr( "class", "Dimensions" );
 	this.view.coordinates = this.view.canvas.append( "div" ).attr( "class", "Coordinates" );
 	this.view.overlay = this.view.canvas.append( "div" ).attr( "class", "Overlay" );
@@ -38,10 +39,14 @@ TypingUI.prototype.init = function() {
 		
 	this.view.canvas
 		.style( "position", "absolute" );
+	
+	this.view.capture
+		.style( "position", "absolute" )
+		.call( this.__setTextareaStyles.bind(this) )
+		.call( this.__setFontStyles.bind(this) )
 		
 	this.view.keystrokes
 		.style( "position", "absolute" )
-		.style( "opacity", 0 )
 		.call( this.__setTextareaStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 		.on( "focus", this.__onCaptureFocus.bind(this) )
@@ -51,13 +56,11 @@ TypingUI.prototype.init = function() {
 
 	this.view.dimensions
 		.style( "position", "absolute" )
-		.style( "opacity", 0 )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 
 	this.view.coordinates
 		.style( "position", "absolute" )
-		.style( "opacity", 0 )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 
@@ -95,11 +98,16 @@ TypingUI.prototype.render = function() {
 	
 	this.view.container
 		.style( "width", this.WIDTH + "px" )
-		.style( "height", ( this.DEBUG ? this.HEIGHT * 4 : this.HEIGHT ) + "px" );
-	
+		.style( "height", ( this.DEBUG ? this.HEIGHT * 5 : this.HEIGHT ) + "px" );
+
+	this.view.capture
+		.style( "top", ( this.DEBUG ? this.HEIGHT * 4 : 0 ) + "px" )
+		.style( "opacity", this.DEBUG ? 1 : 0 )
+		.call( this.__setCaptureContent.bind(this) )
+		
 	this.view.keystrokes
 		.style( "top", ( this.DEBUG ? this.HEIGHT * 3 : 0 ) + "px" )
-		.call( this.__setTextareaContent.bind(this) )
+		.style( "opacity", this.DEBUG ? 1 : 0 )
 
 	// Determine the width of some span elements and span segments
 	elems = this.view.dimensions.selectAll( "span.word" ).data( [ currentSpanElement ].concat( suggestionElements ) );
@@ -123,6 +131,7 @@ TypingUI.prototype.render = function() {
 		.call( this.__getSpacingDims.bind(this) )
 	this.view.dimensions
 		.style( "top", ( this.DEBUG ? this.HEIGHT * 1 : 0 ) + "px" )
+		.style( "opacity", this.DEBUG ? 1 : 0 )
 	
 	// Determine the coordinates of all span elements and span segments
 	elems = this.view.coordinates.selectAll( "span.word" ).data( allSpanElements );
@@ -145,6 +154,7 @@ TypingUI.prototype.render = function() {
 		.call( this.__getSpanCoords.bind(this) )
 	this.view.coordinates
 		.style( "top", ( this.DEBUG ? this.HEIGHT * 2 : 0 ) + "px" )
+		.style( "opacity", this.DEBUG ? 1 : 0 )
 	
 	// Render all span elements
 	elems = this.view.overlay.selectAll( "span" ).data( allSpanElements );
@@ -303,7 +313,7 @@ TypingUI.prototype.__setTextareaStyles = function( elem ) {
 		.attr( "wrap", "soft" )
 };
 
-TypingUI.prototype.__setTextareaContent = function( elem ) {
+TypingUI.prototype.__setCaptureContent = function( elem ) {
 	var allText = this.model.state.getAttr( "allText" );
 	var caretCharIndex = this.model.state.getAttr( "caretCharIndex" );
 	var inputSelectionStart = this.model.getAttr( "inputSelectionStart" );
@@ -342,25 +352,8 @@ TypingUI.prototype.__onCaptureKeyDown = function() {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
-	else if ( d3.event.keyCode === this.KEY.RIGHT_ARROW ) {
-		this.model.state.incrementCaretIndex();
-		if ( d3.event.shiftKey === true )
-			this.model.state.incrementSelection();
-		else
-			this.model.state.clearSelection();
-	}
-	else if ( d3.event.keyCode === this.KEY.LEFT_ARROW ) {
-		this.model.state.decrementCaretIndex();
-		if ( d3.event.shiftKey === true )
-			this.model.state.decrementSelection();
-		else
-			this.model.state.clearSelection();
-	}
-	else if ( d3.event.keyCode === this.KEY.BACKSPACE ) {
-		this.model.state.backspaceUserText()
-	}
 	else {
-//		this.__previousUserTextLength = this.view.keystrokes[0][0].value.length;
+		
 	}
 };
 
@@ -369,25 +362,9 @@ TypingUI.prototype.__onCaptureKeyUp = function() {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
-	else if ( d3.event.keyCode === this.KEY.RIGHT_ARROW ) {
-		d3.event.preventDefault();
-		d3.event.cancelBubble = true;
-	}
-	else if ( d3.event.keyCode === this.KEY.LEFT_ARROW ) {
-		d3.event.preventDefault();
-		d3.event.cancelBubble = true;
-	}
-	else if ( d3.event.keyCode === this.KEY.BACKSPACE ) {
-		d3.event.preventDefault();
-		d3.event.cancelBubble = true;
-	}
 	else {
-//		this.__currentUserTextLength = this.view.keystrokes[0][0].value.length;
-//		var caretCharIndex = this.model.state.getAttr( "caretCharIndex" );
-//		var changeTextLength = Math.max( 0, this.__currentUserTextLength - this.__previousUserTextLength );
-//		var changeText = this.view.keystrokes[0][0].value.substr( caretCharIndex, changeTextLength );
-//		var userText = this.model.state.getAttr( "userText" );
-//		this.model.state.setUserText( caretCharIndex, changeText );
+		console.log( this.view.keystrokes )
+		this.model.state.setUserText( this.view.keystrokes[0][0].value, this.view.keystrokes[0][0].selectionEnd );
 	}
 };
 

@@ -101,6 +101,10 @@ TypingState.prototype.setUserText = function( userText, caretCharIndex ) {
 	return this;
 };
 
+TypingState.prototype.getUserText = function() {
+	return this.getAttr( "userText" );
+};
+
 TypingState.prototype.insertUserText = function( charIndex, newText ) {
 	var userText = this.getAttr( "userText" );
 	var newCharIndex = charIndex + newText.length;
