@@ -41,6 +41,7 @@ TypingUI.prototype.init = function() {
 		
 	this.view.keystrokes
 		.style( "position", "absolute" )
+		.style( "opacity", 0 )
 		.call( this.__setTextareaStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 		.on( "focus", this.__onCaptureFocus.bind(this) )
@@ -50,17 +51,19 @@ TypingUI.prototype.init = function() {
 
 	this.view.dimensions
 		.style( "position", "absolute" )
+		.style( "opacity", 0 )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 
 	this.view.coordinates
 		.style( "position", "absolute" )
+		.style( "opacity", 0 )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 
 	this.view.overlay
 		.style( "position", "absolute" )
-		.style( "border", "1px solid #fff" )
+		.style( "border", "1px solid #ccc" )
 		.style( "background", "#fff" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
@@ -324,7 +327,7 @@ TypingUI.prototype.__onCaptureFocus = function() {
 };
 
 TypingUI.prototype.__onCaptureBlur = function() {
-	this.view.overlay.style( "border-color", "#fff" );
+	this.view.overlay.style( "border-color", "#ccc" );
 	this.view.caret.style( "opacity", 0 );
 };
 
