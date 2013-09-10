@@ -1,8 +1,8 @@
 TranslateUI 
-=========
+===========
 
-TypingUI: Initialize and update
--------------------------------
+TypingUI: Initialization
+------------------------
 
 Load javascript files (from subfolder "js"):
 
@@ -15,7 +15,7 @@ Load javascript files (from subfolder "js"):
 	<script type="text/javascript" src="js/TypingModel.js"></script>
 	<script type="text/javascript" src="js/TypingUI.js"></script>
 
-Initialize the visualization:
+On page load, create an instance of the visualization:
 
 	<script type="text/javascript">
 	$(document).ready( function() {
@@ -25,7 +25,11 @@ Initialize the visualization:
 	});
 	</script>
 
-Update the visualizatin:
+Insert into the the body of HTML document:
+
+	<div class="TypingUI"></div>
+
+To update the visualization, call one of the following three functions:
 
 	<script type="text/javascript">
 		var userText = "Beim Letzteren kann es zu Verlusten beim Gedankengang , zu unzusammenhängenden Sätzen";  // Capture from webpage and replace this string.
@@ -35,8 +39,4 @@ Update the visualizatin:
 		typingState.setFutureText( futureText );
 		typingState.setSuggestions( suggestions );
 	</script>
-
-Insert into the the body of HTML document:
-
-	<div class="TypingUI"></div>
 
