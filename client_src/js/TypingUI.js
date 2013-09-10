@@ -170,7 +170,6 @@ TypingUI.prototype.__setSpanTypeStyles = function( elem ) {
 	var setCurrentType = function( elem ) {
 		elem.style( "color", "#238B45" )
 			.style( "background", function(d) { return d.isSelected ? "#fe9" : "none" } )
-			.style( "border-bottom", "1px dotted #238B45" )
 			.style( "opacity", 1 )
 	};
 	var setFutureType = function( elem ) {
@@ -232,7 +231,7 @@ TypingUI.prototype.__setCaretCoords = function( elem ) {
 	elem.each( function(d) {
 		d3.select(this)
 			.style( "left", function(d) { return d.__left + "px" } )
-			.style( "top", function(d) { return (d.__top+1) + "px" } )
+			.style( "top", function(d) { return (d.__top+3) + "px" } )
 			.style( "width", "1px" )
 			.style( "height", height + "px" )
 	})
@@ -314,14 +313,32 @@ TypingUI.prototype.__onCaptureBlur = function() {
 };
 
 TypingUI.prototype.__onCaptureKeyDown = function() {
+	// Tab
 	if ( d3.event.keyCode === 9 ) {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
+	}
+	// Right Arrow
+	if ( d3.event.keyCode === 39 ) {
+		this.model.state.incrementCaretIndex();
+		if ( d3.event.shiftKey === true )
+			this.model.state.incrementSelection();
+		else
+			this.model.state.clearSelection();
+	}
+	// Left Arrow
+	if ( d3.event.keyCode === 37 ) {
+		this.model.state.decrementCaretIndex();
+		if ( d3.event.shiftKey === true )
+			this.model.state.decrementSelection();
+		else
+			this.model.state.clearSelection();
 	}
 //	this.render();
 };
 
 TypingUI.prototype.__onCaptureKeyUp = function() {
+	// Tab
 	if ( d3.event.keyCode === 9 ) {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;

@@ -18,9 +18,8 @@ TypingModel.prototype.initialize = function( options ) {
 TypingModel.prototype.__update = function() {
 	var allSpanElements = [];
 	var suggestionElements = [];
-	var inputText = null;
 	
-	// Generate a list of span elements (with fields: text, spacing, type, startCharIndex, endCharIndex)
+	// Generate a list of span elements (with fields: text, type, startCharIndex, endCharIndex)
 	var matchedTokens = this.state.getAttr( "matchedTokens" );
 	var currentTerm = this.state.getAttr( "currentTerm" );
 	var futureTokens = this.state.getAttr( "futureTokens" );
@@ -28,18 +27,21 @@ TypingModel.prototype.__update = function() {
 	allSpanElements = this.__generateSpansFromTokens( allSpanElements, matchedTokens, "matched" );
 	allSpanElements = this.__generateSpansFromCurrentTerm( allSpanElements, currentTerm, suggestions );
 	allSpanElements = this.__generateSpansFromTokens( allSpanElements, futureTokens, "future" );
-	inputText = allSpanElements.map( function(d) { return d.text } ).join( "" );
+	
+	var inputText = this.state.getAttr( "ui:inputText" );
 	
 	// Split span elements (if necessary) for selected text
 	var selectionStartCharIndex = this.state.getAttr( "ui:selectionStartCharIndex" );
 	var selectionEndCharIndex = this.state.getAttr( "ui:selectionEndCharIndex" );
-	if ( selectionStartCharIndex === selectionEndCharIndex ) {
-		var selectionIndex = selectionStartCharIndex;
+	var selectionMinCharIndex = Math.min( selectionStartCharIndex, selectionEndCharIndex );
+	var selectionMaxCharIndex = Math.max( selectionStartCharIndex, selectionEndCharIndex );
+	if ( selectionMinCharIndex === selectionMaxCharIndex ) {
+		var selectionIndex = selectionMinCharIndex;
 		allSpanElements = this.__splitSpansByCharIndex( allSpanElements, selectionIndex );
 	}
 	else {
-		allSpanElements = this.__splitSpansByCharIndex( allSpanElements, selectionStartCharIndex );
-		allSpanElements = this.__splitSpansByCharIndex( allSpanElements, selectionEndCharIndex );
+		allSpanElements = this.__splitSpansByCharIndex( allSpanElements, selectionMinCharIndex );
+		allSpanElements = this.__splitSpansByCharIndex( allSpanElements, selectionMaxCharIndex );
 	}
 	
 	// Split span elements (if necessary) for positioning the caret
@@ -58,7 +60,7 @@ TypingModel.prototype.__update = function() {
 	// Mark selected span elements
 	for ( var i = 0; i < allSpanElements.length; i++ ) {
 		var span = allSpanElements[i];
-		span.isSelected = ( selectionStartCharIndex <= span.startCharIndex && span.endCharIndex <= selectionEndCharIndex );
+		span.isSelected = ( selectionMinCharIndex <= span.startCharIndex && span.endCharIndex <= selectionMaxCharIndex );
 	}
 	
 	// Mark the token immediately following the caret (insert new token if necessary)
@@ -100,8 +102,8 @@ TypingModel.prototype.__update = function() {
 	this.setAttr( "currentSpanElement", currentSpanElement );
 	this.setAttr( "suggestionElements", suggestionElements );
 	this.setAttr( "inputText", inputText );
-	this.setAttr( "inputSelectionStart", selectionStartCharIndex );
-	this.setAttr( "inputSelectionEnd", selectionEndCharIndex );
+	this.setAttr( "inputSelectionStart", selectionMinCharIndex );
+	this.setAttr( "inputSelectionEnd", selectionMaxCharIndex );
 	this.flush();
 };
 
@@ -138,14 +140,12 @@ TypingModel.prototype.__generateSpansFromCurrentTerm = function( allSpanElements
 	span.endCharIndex = charIndex;
 	allSpanElements.push( span );
 	
-	if ( currentTerm.length > 0 ) {
-		var text = " ";
-		var span = { "text" : text, "type" : "spacing" };
-		span.startCharIndex = charIndex;
-		charIndex += text.length;
-		span.endCharIndex = charIndex;
-		allSpanElements.push( span );
-	}
+	var text = " ";
+	var span = { "text" : text, "type" : "future" };
+	span.startCharIndex = charIndex;
+	charIndex += text.length;
+	span.endCharIndex = charIndex;
+	allSpanElements.push( span );
 	
 	return allSpanElements;
 };
@@ -162,8 +162,6 @@ TypingModel.prototype.__splitSpansByCharIndex = function( initSpanElements, char
 			secondSpan.startCharIndex = charIndex;
 			firstSpan.text = span.text.substr( 0, split );
 			secondSpan.text = span.text.substr( split );
-			firstSpan.spacing = span.spacing.substr( 0, split );
-			secondSpan.spacing = span.spacing.substr( split );
 			allSpanElements.push( firstSpan );
 			allSpanElements.push( secondSpan );
 		}
