@@ -8,9 +8,9 @@ var TypingState = Backbone.Model.extend({
 		"suggestions" : [],
 		"futureText" : "",
 		"futureTokens" : [],	// Derived from futureText
-		"ui:caretCharIndex" : 0,
-		"ui:selectionStartCharIndex" : 0,
-		"ui:selectionEndCharIndex" : 0
+		"caretCharIndex" : 0,
+		"selectionStartCharIndex" : 0,
+		"selectionEndCharIndex" : 0
 	}
 });
 
@@ -23,45 +23,45 @@ TypingState.prototype.setCaretIndex = function( charIndex ) {
 	if ( charIndex > maxCharIndex ) { charIndex = maxCharIndex }
 	var minCharIndex = 0;
 	if ( charIndex < minCharIndex ) { charIndex = minCharIndex }
-	this.setAttr( "ui:caretCharIndex", charIndex );
+	this.setAttr( "caretCharIndex", charIndex );
 };
 
 TypingState.prototype.incrementCaretIndex = function() {
-	var charIndex = this.getAttr( "ui:caretCharIndex" ) + 1;
+	var charIndex = this.getAttr( "caretCharIndex" ) + 1;
 	var maxCharIndex = this.getAttr( "allText" ).length;
 	if ( charIndex > maxCharIndex ) { charIndex = maxCharIndex }
-	this.setAttr( "ui:caretCharIndex", charIndex );
+	this.setAttr( "caretCharIndex", charIndex );
 };
 
 TypingState.prototype.decrementCaretIndex = function() {
-	var charIndex = this.getAttr( "ui:caretCharIndex" ) - 1;
+	var charIndex = this.getAttr( "caretCharIndex" ) - 1;
 	var minCharIndex = 0;
 	if ( charIndex < minCharIndex ) { charIndex = minCharIndex }
-	this.setAttr( "ui:caretCharIndex", charIndex );
+	this.setAttr( "caretCharIndex", charIndex );
 };
 
 TypingState.prototype.setSelectedIndexes = function( startCharIndex, endCharIndex ) {
 	if ( startCharIndex === undefined ) { startCharIndex = 0 }
 	if ( endCharIndex === undefined ) { endCharIndex = startCharIndex }
-	this.setAttr( [ "ui:selectionStartCharIndex", "ui:selectionEndCharIndex" ], [ startCharIndex, endCharIndex ] );
+	this.setAttr( [ "selectionStartCharIndex", "selectionEndCharIndex" ], [ startCharIndex, endCharIndex ] );
 };
 
 TypingState.prototype.clearSelection = function() {
-	var charIndex = this.getAttr( "ui:caretCharIndex" );
+	var charIndex = this.getAttr( "caretCharIndex" );
 	this.setSelectedIndexes( charIndex, charIndex );
 };
 
 TypingState.prototype.incrementSelection = function() {
-	var startCharIndex = this.getAttr( "ui:selectionStartCharIndex" );
-	var endCharIndex = this.getAttr( "ui:selectionEndCharIndex" ) + 1;
+	var startCharIndex = this.getAttr( "selectionStartCharIndex" );
+	var endCharIndex = this.getAttr( "selectionEndCharIndex" ) + 1;
 	var maxCharIndex = this.getAttr( "allText" ).length;
 	if ( endCharIndex > maxCharIndex ) { endCharIndex = maxCharIndex }
 	this.setSelectedIndexes( startCharIndex, endCharIndex );
 };
 
 TypingState.prototype.decrementSelection = function() {
-	var startCharIndex = this.getAttr( "ui:selectionStartCharIndex" );
-	var endCharIndex = this.getAttr( "ui:selectionEndCharIndex" ) - 1;
+	var startCharIndex = this.getAttr( "selectionStartCharIndex" );
+	var endCharIndex = this.getAttr( "selectionEndCharIndex" ) - 1;
 	var minCharIndex = 0;
 	if ( endCharIndex < minCharIndex ) { endCharIndex = minCharIndex }
 	this.setSelectedIndexes( startCharIndex, endCharIndex );
@@ -71,7 +71,7 @@ TypingState.prototype.decrementSelection = function() {
  * Set user-entered text (intended for development use only).
  * @param {String} text User-entered text.
  **/
-TypingState.prototype.setUserText = function( userText ) {
+TypingState.prototype.setUserText = function( userText, caretCharIndex ) {
 	// This regular expression should always yield an odd number of "termsAndSeps" values
 	// The odd entries are terms (for a total of N+1 terms)
 	// The even entries are separators (for a total of N separators)
@@ -94,8 +94,24 @@ TypingState.prototype.setUserText = function( userText ) {
 	var futureText = this.getAttr( "futureText" );
 	var inputText = userText + " " + futureText;
 	
- 	this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText" ], [ userText, matchedText, matchedTokens, currentTerm, inputText ] );
+	if ( caretCharIndex === undefined )
+ 		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText" ], [ userText, matchedText, matchedTokens, currentTerm, inputText ] );
+	else
+		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText", "caretCharIndex" ], [ userText, matchedText, matchedTokens, currentTerm, inputText, caretCharIndex ] );
 	return this;
+};
+
+TypingState.prototype.insertUserText = function( charIndex, newText ) {
+	var userText = this.getAttr( "userText" );
+	var newCharIndex = charIndex + newText.length;
+	this.setUserText( userText.substr( 0, charIndex ) + newText + userText.substr( charIndex ), newCharIndex );
+};
+
+TypingState.prototype.backspaceUserText = function() {
+	var userText = this.getAttr( "userText" );
+	var charIndex = this.getAttr( "caretCharIndex" );
+	var newCharIndex = Math.max( 0, charIndex - 1 );
+	this.setUserText( userText.substr( 0, newCharIndex ) + userText.substr( charIndex ), newCharIndex );
 };
 
 /**

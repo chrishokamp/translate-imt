@@ -5,7 +5,6 @@ var TypingModel = Backbone.Model.extend({
 		"currentSpanElement" : null,
 		"spacingSpanElement" : null,
 		"suggestionElements" : [],
-		"inputText" : "",
 		"inputSelectionStart" : 0,
 		"inputSelectionEnd" : 0
 	}
@@ -32,11 +31,11 @@ TypingModel.prototype.__update = function() {
 	this.__generateSegments( allSpanElements );
 	
 	// Split segments (if necessary) for selected text or for positioning the caret
-	var selectionStartCharIndex = this.state.getAttr( "ui:selectionStartCharIndex" );
-	var selectionEndCharIndex = this.state.getAttr( "ui:selectionEndCharIndex" );
+	var selectionStartCharIndex = this.state.getAttr( "selectionStartCharIndex" );
+	var selectionEndCharIndex = this.state.getAttr( "selectionEndCharIndex" );
 	var selectionMinCharIndex = Math.min( selectionStartCharIndex, selectionEndCharIndex );
 	var selectionMaxCharIndex = Math.max( selectionStartCharIndex, selectionEndCharIndex );
-	var caretCharIndex = this.state.getAttr( "ui:caretCharIndex" );
+	var caretCharIndex = this.state.getAttr( "caretCharIndex" );
 	this.__splitSegments( allSpanElements, [ selectionMinCharIndex, selectionMaxCharIndex, caretCharIndex ] );
 
 	// Identify the first (and only) span element corresponding to the current term

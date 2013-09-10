@@ -302,6 +302,7 @@ TypingUI.prototype.__setTextareaStyles = function( elem ) {
 
 TypingUI.prototype.__setTextareaContent = function( elem ) {
 	var allText = this.model.state.getAttr( "allText" );
+	var caretCharIndex = this.model.state.getAttr( "caretCharIndex" );
 	var inputSelectionStart = this.model.getAttr( "inputSelectionStart" );
 	var inputSelectionEnd = this.model.getAttr( "inputSelectionEnd" );
 	elem[0][0].value = allText;
@@ -327,39 +328,64 @@ TypingUI.prototype.__onCaptureBlur = function() {
 	this.view.caret.style( "opacity", 0 );
 };
 
+TypingUI.prototype.KEY = {
+	TAB : 9,
+	RIGHT_ARROW : 39,
+	LEFT_ARROW : 37,
+	BACKSPACE : 8
+}
 TypingUI.prototype.__onCaptureKeyDown = function() {
-	// Tab
-	if ( d3.event.keyCode === 9 ) {
+	if ( d3.event.keyCode === this.KEY.TAB ) {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
-	// Right Arrow
-	if ( d3.event.keyCode === 39 ) {
+	else if ( d3.event.keyCode === this.KEY.RIGHT_ARROW ) {
 		this.model.state.incrementCaretIndex();
 		if ( d3.event.shiftKey === true )
 			this.model.state.incrementSelection();
 		else
 			this.model.state.clearSelection();
 	}
-	// Left Arrow
-	if ( d3.event.keyCode === 37 ) {
+	else if ( d3.event.keyCode === this.KEY.LEFT_ARROW ) {
 		this.model.state.decrementCaretIndex();
 		if ( d3.event.shiftKey === true )
 			this.model.state.decrementSelection();
 		else
 			this.model.state.clearSelection();
 	}
-//	this.render();
+	else if ( d3.event.keyCode === this.KEY.BACKSPACE ) {
+		this.model.state.backspaceUserText()
+	}
+	else {
+//		this.__previousUserTextLength = this.view.keystrokes[0][0].value.length;
+	}
 };
 
 TypingUI.prototype.__onCaptureKeyUp = function() {
-	// Tab
-	if ( d3.event.keyCode === 9 ) {
+	if ( d3.event.keyCode === this.KEY.TAB ) {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
-//		this.__autocomplete();
 	}
-//	this.render();
+	else if ( d3.event.keyCode === this.KEY.RIGHT_ARROW ) {
+		d3.event.preventDefault();
+		d3.event.cancelBubble = true;
+	}
+	else if ( d3.event.keyCode === this.KEY.LEFT_ARROW ) {
+		d3.event.preventDefault();
+		d3.event.cancelBubble = true;
+	}
+	else if ( d3.event.keyCode === this.KEY.BACKSPACE ) {
+		d3.event.preventDefault();
+		d3.event.cancelBubble = true;
+	}
+	else {
+//		this.__currentUserTextLength = this.view.keystrokes[0][0].value.length;
+//		var caretCharIndex = this.model.state.getAttr( "caretCharIndex" );
+//		var changeTextLength = Math.max( 0, this.__currentUserTextLength - this.__previousUserTextLength );
+//		var changeText = this.view.keystrokes[0][0].value.substr( caretCharIndex, changeTextLength );
+//		var userText = this.model.state.getAttr( "userText" );
+//		this.model.state.setUserText( caretCharIndex, changeText );
+	}
 };
 
 TypingUI.prototype.__onOverlayClick = function() {
