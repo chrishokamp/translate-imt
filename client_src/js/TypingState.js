@@ -1,5 +1,6 @@
 var TypingState = Backbone.Model.extend({
 	"defaults" : {
+		"allText" : "",
 		"userText" : "",
 		"matchedText" : "",		// Derived from userText
 		"matchedTokens" : [],	// Derived from userText
@@ -8,7 +9,6 @@ var TypingState = Backbone.Model.extend({
 		"futureText" : "",
 		"futureTokens" : [],	// Derived from futureText
 		"ui:caretCharIndex" : 0,
-		"ui:inputText" : "",
 		"ui:selectionStartCharIndex" : 0,
 		"ui:selectionEndCharIndex" : 0
 	}
@@ -19,7 +19,7 @@ TypingState.prototype.initialize = function( options ) {
 };
 
 TypingState.prototype.setCaretIndex = function( charIndex ) {
-	var maxCharIndex = this.getAttr( "ui:inputText" ).length;
+	var maxCharIndex = this.getAttr( "allText" ).length;
 	if ( charIndex > maxCharIndex ) { charIndex = maxCharIndex }
 	var minCharIndex = 0;
 	if ( charIndex < minCharIndex ) { charIndex = minCharIndex }
@@ -28,7 +28,7 @@ TypingState.prototype.setCaretIndex = function( charIndex ) {
 
 TypingState.prototype.incrementCaretIndex = function() {
 	var charIndex = this.getAttr( "ui:caretCharIndex" ) + 1;
-	var maxCharIndex = this.getAttr( "ui:inputText" ).length;
+	var maxCharIndex = this.getAttr( "allText" ).length;
 	if ( charIndex > maxCharIndex ) { charIndex = maxCharIndex }
 	this.setAttr( "ui:caretCharIndex", charIndex );
 };
@@ -54,7 +54,7 @@ TypingState.prototype.clearSelection = function() {
 TypingState.prototype.incrementSelection = function() {
 	var startCharIndex = this.getAttr( "ui:selectionStartCharIndex" );
 	var endCharIndex = this.getAttr( "ui:selectionEndCharIndex" ) + 1;
-	var maxCharIndex = this.getAttr( "ui:inputText" ).length;
+	var maxCharIndex = this.getAttr( "allText" ).length;
 	if ( endCharIndex > maxCharIndex ) { endCharIndex = maxCharIndex }
 	this.setSelectedIndexes( startCharIndex, endCharIndex );
 };
@@ -94,7 +94,7 @@ TypingState.prototype.setUserText = function( userText ) {
 	var futureText = this.getAttr( "futureText" );
 	var inputText = userText + " " + futureText;
 	
- 	this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "ui:inputText" ], [ userText, matchedText, matchedTokens, currentTerm, inputText ] );
+ 	this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText" ], [ userText, matchedText, matchedTokens, currentTerm, inputText ] );
 	return this;
 };
 
@@ -147,7 +147,7 @@ TypingState.prototype.setFutureText = function( futureText ) {
 	var userText = this.getAttr( "userText" );
 	var inputText = userText + " " + futureText;
 	
-	this.setAttr( [ "futureText", "futureTokens", "ui:inputText" ], [ futureText, futureTokens, inputText ] );
+	this.setAttr( [ "futureText", "futureTokens", "allText" ], [ futureText, futureTokens, inputText ] );
 	return this;
 };
 

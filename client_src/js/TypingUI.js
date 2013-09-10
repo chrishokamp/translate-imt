@@ -18,7 +18,7 @@ TypingUI.prototype.WIDTH = 800;
 TypingUI.prototype.HEIGHT = 240;
 TypingUI.prototype.FONT_FAMILY = "Gill Sans";
 TypingUI.prototype.FONT_SIZE = 16;
-TypingUI.prototype.DEBUG = false;
+TypingUI.prototype.DEBUG = true;
 TypingUI.prototype.BLINK_CYCLE = 500;
 
 TypingUI.prototype.init = function() {
@@ -27,56 +27,56 @@ TypingUI.prototype.init = function() {
 	this.view.canvas = this.view.container.append( "div" );
 	this.view.keystrokes = this.view.canvas.append( "textarea" ).attr( "class", "KeystrokeCapture" );
 	this.view.dimensions = this.view.canvas.append( "div" ).attr( "class", "Dimensions" );
-	this.view.spacing = this.view.canvas.append( "div" ).attr( "class", "Spacing" );
+	this.view.coordinates = this.view.canvas.append( "div" ).attr( "class", "Coordinates" );
 	this.view.overlay = this.view.canvas.append( "div" ).attr( "class", "Overlay" );
 	this.view.suggestionBox = this.view.canvas.append( "div" ).attr( "class", "SuggestionBox" );
 	this.view.suggestions = this.view.canvas.append( "div" ).attr( "class", "Suggestions" );
 	this.view.caret = this.view.canvas.append( "div" ).attr( "class", "Caret" );
 
 	this.view.container
-		.style( "position", "relative" );
+		.style( "position", "static" );
 		
 	this.view.canvas
 		.style( "position", "absolute" );
 		
 	this.view.keystrokes
+		.style( "position", "absolute" )
 		.call( this.__setTextareaStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 		.on( "focus", this.__onCaptureFocus.bind(this) )
 		.on( "blur", this.__onCaptureBlur.bind(this) )
 		.on( "keydown", this.__onCaptureKeyDown.bind(this) )
 		.on( "keyup", this.__onCaptureKeyUp.bind(this) )
-		.style( "position", "absolute" );
 
 	this.view.dimensions
+		.style( "position", "absolute" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
-		.style( "position", "absolute" );
 
-	this.view.spacing
+	this.view.coordinates
+		.style( "position", "absolute" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
-		.style( "position", "absolute" );
 
 	this.view.overlay
+		.style( "position", "absolute" )
+		.style( "border", "1px solid #fff" )
+		.style( "background", "#fff" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 		.on( "click", this.__onOverlayClick.bind(this) )
-		.style( "border", "1px solid #fff" )
-		.style( "background", "#fff" )
-		.style( "position", "absolute" );
-	
+		
 	this.view.suggestionBox
-		.style( "position", "absolute" );
+		.style( "position", "absolute" )
 		
 	this.view.suggestions
+		.style( "position", "absolute" )
 		.call( this.__setFontStyles.bind(this) )
-		.style( "position", "absolute" );
 
 	this.view.caret
+		.style( "position", "absolute" )
 		.style( "opacity", 0 )
 		.style( "pointer-events", "none" )
-		.style( "position", "absolute" );
 	window.setInterval( function(f){f()}, this.BLINK_CYCLE, function() {
 		this.view.caret.selectAll( "span" ).style( "opacity", this.view.showCaret === true ? 1 : 0 )
 		this.view.showCaret = ! ( this.view.showCaret === true );
@@ -86,7 +86,7 @@ TypingUI.prototype.init = function() {
 TypingUI.prototype.render = function() {
 	var allSpanElements = this.model.getAttr( "allSpanElements" );
 	var currentSpanElement = this.model.getAttr( "currentSpanElement" );
-	var caretSpanElement = this.model.getAttr( "caretSpanElement" );
+	var caretSpanSegment = this.model.getAttr( "caretSpanSegment" );
 	var suggestionElements = this.model.getAttr( "suggestionElements" );
 	var elems;
 	
@@ -95,69 +95,92 @@ TypingUI.prototype.render = function() {
 		.style( "height", ( this.DEBUG ? this.HEIGHT * 4 : this.HEIGHT ) + "px" );
 	
 	this.view.keystrokes
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 0 : 0 ) + "px" )
+		.style( "top", ( this.DEBUG ? this.HEIGHT * 3 : 0 ) + "px" )
 		.call( this.__setTextareaContent.bind(this) )
 
-	elems = this.view.dimensions.selectAll( "span" ).data( [ currentSpanElement ].concat( suggestionElements ) );
-	elems.enter().append( "span" );
-	elems.exit().remove()
+	// Determine the width of some span elements and span segments
+	elems = this.view.dimensions.selectAll( "span.word" ).data( [ currentSpanElement ].concat( suggestionElements ) );
+	elems.enter().append( "span" ).attr( "class", "word" );
+	elems.exit().remove();
+	elems = this.view.dimensions.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
+	elems.enter().append( "span" ).attr( "class", "segment" );
+	elems.exit().remove();
+
+	this.view.dimensions.selectAll( "span.segment" )
+		.text( function(d) { return d.text } )
+		.style( "position", "static" )
+		.style( "vertical-align", "top" )
+		.call( this.__setSpanTypeStyles.bind(this) )
+		.call( this.__getSpanCoords.bind(this) )
+	this.view.dimensions.selectAll( "span.word" )
+		.style( "position", "static" )
+		.style( "vertical-align", "top" )
+		.call( this.__setSpanTypeStyles.bind(this) )
+		.call( this.__getSpanCoords.bind(this) )
+		.call( this.__getSpacingDims.bind(this) )
 	this.view.dimensions
 		.style( "top", ( this.DEBUG ? this.HEIGHT * 1 : 0 ) + "px" )
-		.selectAll( "span" )
-			.style( "display", "inline-block" )
-			.style( "position", "absolute" )
-			.text( function(d) { return d.text } )
-			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__getCurrentDims.bind(this) )
 	
-	elems = this.view.spacing.selectAll( "span" ).data( allSpanElements );
-	elems.enter().append( "span" );
-	elems.exit().remove()
-	this.view.spacing
+	// Determine the coordinates of all span elements and span segments
+	elems = this.view.coordinates.selectAll( "span.word" ).data( allSpanElements );
+	elems.enter().append( "span" ).attr( "class", "word" );
+	elems.exit().remove();
+	elems = this.view.coordinates.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
+	elems.enter().append( "span" ).attr( "class", "segment" );
+	elems.exit().remove();
+
+	this.view.coordinates.selectAll( "span.segment" )
+		.text( function(d) { return d.text } )
+		.style( "position", "static" )
+		.style( "vertical-align", "top" )
+		.call( this.__setSpanTypeStyles.bind(this) )
+		.call( this.__getSpanCoords.bind(this) )
+	this.view.coordinates.selectAll( "span.word" )
+		.style( "position", "static" )
+		.style( "vertical-align", "top" )
+		.call( this.__setSpanTypeStyles.bind(this) )
+		.call( this.__getSpanCoords.bind(this) )
+	this.view.coordinates
 		.style( "top", ( this.DEBUG ? this.HEIGHT * 2 : 0 ) + "px" )
-		.selectAll( "span" )
-			.style( "position", "relative" )
-			.style( "vertical-align", "top" )
-			.text( function(d) { return d.text } )
-			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__getSpanCoords.bind(this) )
 	
+	// Render all span elements
 	elems = this.view.overlay.selectAll( "span" ).data( allSpanElements );
 	elems.enter().append( "span" );
 	elems.exit().remove();
-	this.view.overlay
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 3 : 0 ) + "px" )
-		.selectAll( "span" )
-			.style( "display", "inline-block" )
-			.style( "position", "absolute" )
-			.text( function(d) { return d.text } )
-			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__setSpanCoords.bind(this) )
 	
+	this.view.overlay.selectAll( "span" )
+		.style( "position", "absolute" )
+		.style( "display", "inline-block" )
+		.text( function(d) { return d.text } )
+		.call( this.__setSpanTypeStyles.bind(this) )
+		.call( this.__setSpanCoords.bind(this) )
+	this.view.overlay
+		.style( "top", 0 )
+	
+	// Suggestion box (REVISE)
 	this.view.suggestionBox
 		.call( this.__setSuggestionBoxStylesAndCoords.bind(this) );
 
+	// Entries in the suggestion box (REVISE)
 	elems = this.view.suggestions.selectAll( "span" ).data( suggestionElements );
 	elems.enter().append( "span" )
 	elems.exit().remove();
 	this.view.suggestions
 		.selectAll( "span" )
-			.style( "display", "inline-block" )
 			.style( "position", "absolute" )
+			.style( "display", "inline-block" )
 			.text( function(d) { return d.text } )
 			.call( this.__setSuggestionStylesAndCoords.bind(this) )
 	
-	elems = this.view.caret.selectAll( "span" ).data( [ caretSpanElement ] );
+	// Render caret on screen
+	elems = this.view.caret.selectAll( "span" ).data( [ caretSpanSegment ] );
 	elems.enter().append( "span" )
 		.style( "display", "inline-block" )
 		.style( "width", "1px" )
+		.style( "height", this.FONT_SIZE + "px" )
 		.style( "background", "#000" )
 	this.view.caret
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 3 : 0 ) + "px" )
-		.selectAll( "span" )
-			.style( "display", "inline-block" )
-			.style( "position", "absolute" )
-			.call( this.__setCaretCoords.bind(this) )
+		.call( this.__setCaretCoords.bind(this) );
 };
 
 TypingUI.prototype.__setSpanTypeStyles = function( elem ) {
@@ -187,22 +210,22 @@ TypingUI.prototype.__setSpanTypeStyles = function( elem ) {
 
 	elem.filter( function(d) { return d.type === "matched" } ).call( setMatchedType.bind(this) );
 	elem.filter( function(d) { return d.type === "current" } ).call( setCurrentType.bind(this) );
-	elem.filter( function(d) { return d.type === "future" } ).call( setFutureType.bind(this) );
+	elem.filter( function(d) { return d.type === "future" || d.type === "spacing" } ).call( setFutureType.bind(this) );
 	elem.filter( function(d) { return d.type === "extra" } ).call( setExtraType.bind(this) );
 };
 
-TypingUI.prototype.__getCurrentDims = function( elem ) {
-	var currentSpanElement = this.model.get( "currentSpanElement" );
+TypingUI.prototype.__getSpacingDims = function( elem ) {
 	var maxWidth = 0;
-	elem.each( function(d) { maxWidth = Math.max( maxWidth, d3.select(this)[0][0].offsetWidth ) });
-	currentSpanElement.__width = maxWidth;
+	elem.each( function(d) { maxWidth = Math.max( maxWidth, d3.select(this)[0][0].offsetWidth ) } );
+	elem.each( function(d) { d.__spacing = maxWidth } );
 };
 
 TypingUI.prototype.__getSpanCoords = function( elem ) {
+	var currentSpanElement = this.model.getAttr( "currentSpanElement" );
 	elem.each( function(d) {
 		var self = d3.select(this)[0][0];
-		if ( d.type === "current" ) {
-			d3.select(this).style( "display", "inline-block" ).style( "width", d.__width );
+		if ( d.type === "spacing" ) {
+			d3.select(this).style( "display", "inline-block" ).style( "width", ( currentSpanElement.__spacing - currentSpanElement.__width ) + "px" );
 			d.__left = self.offsetLeft;
 			d.__top = self.offsetTop;
 		}
@@ -217,24 +240,16 @@ TypingUI.prototype.__getSpanCoords = function( elem ) {
 
 TypingUI.prototype.__setSpanCoords = function( elem ) {
 	var height = this.FONT_SIZE;
-	elem.each( function(d) {
-		d3.select(this)
-			.style( "left", function(d) { return d.__left + "px" } )
-			.style( "top", function(d) { return d.__top + "px" } )
-			.style( "width", function(d) { return d.__width + "px" } )
-			.style( "height", height + "px" )
-	})
+	elem.style( "left", function(d) { return d.__left + "px" } )
+		.style( "top", function(d) { return d.__top + "px" } )
+		.style( "width", function(d) { return d.__width + "px" } )
+		.style( "height", height + "px" )
 };
 
 TypingUI.prototype.__setCaretCoords = function( elem ) {
-	var height = this.FONT_SIZE;
-	elem.each( function(d) {
-		d3.select(this)
-			.style( "left", function(d) { return d.__left + "px" } )
-			.style( "top", function(d) { return (d.__top+3) + "px" } )
-			.style( "width", "1px" )
-			.style( "height", height + "px" )
-	})
+	var segment = this.model.get( "caretSpanSegment" );
+	elem.style( "left", segment.__left + "px" )
+		.style( "top", (segment.__top+3) + "px" )
 };
 
 
@@ -242,8 +257,8 @@ TypingUI.prototype.__setSuggestionBoxStylesAndCoords = function( elem ) {
 	var currentSpanElement = this.model.getAttr( "currentSpanElement" );
 	var suggestionElements = this.model.getAttr( "suggestionElements" );
 	elem.style( "left", currentSpanElement.__left + "px" )
-		.style( "top", ( ( this.DEBUG ? this.HEIGHT * 3 : 0 ) + currentSpanElement.__top + this.FONT_SIZE + 4 ) + "px" )
-		.style( "width", currentSpanElement.__width + "px" )
+		.style( "top", ( currentSpanElement.__top + this.FONT_SIZE + 4 ) + "px" )
+		.style( "width", currentSpanElement.__spacing + "px" )
 		.style( "height", (this.FONT_SIZE+6) * suggestionElements.length + "px" )
 		.style( "background", "#fff" )
 		.style( "border", "1px solid #238B45" )
@@ -253,8 +268,8 @@ TypingUI.prototype.__setSuggestionBoxStylesAndCoords = function( elem ) {
 TypingUI.prototype.__setSuggestionStylesAndCoords = function( elem ) {
 	var currentSpanElement = this.model.getAttr( "currentSpanElement" );
 	elem.style( "left", currentSpanElement.__left + "px" )
-		.style( "top", function(d,i) { return ( ( this.DEBUG ? this.HEIGHT * 3 : 0 ) + currentSpanElement.__top + this.FONT_SIZE + 4 + i * (this.FONT_SIZE+6) + 2 ) + "px" }.bind(this) )
-		.style( "width", currentSpanElement.__width + "px" )
+		.style( "top", function(d,i) { return ( currentSpanElement.__top + this.FONT_SIZE + 4 + i * (this.FONT_SIZE+6) + 2 ) + "px" }.bind(this) )
+		.style( "width", currentSpanElement.__spacing + "px" )
 		.style( "height", (this.FONT_SIZE+6) + "px" )
 		.style( "color", "#999" )
 		.style( "border-top", function(d,i) { return (i===0) ? "none" : "1px solid #ccc" } )
@@ -286,10 +301,10 @@ TypingUI.prototype.__setTextareaStyles = function( elem ) {
 };
 
 TypingUI.prototype.__setTextareaContent = function( elem ) {
-	var inputText = this.model.getAttr( "inputText" );
+	var allText = this.model.state.getAttr( "allText" );
 	var inputSelectionStart = this.model.getAttr( "inputSelectionStart" );
 	var inputSelectionEnd = this.model.getAttr( "inputSelectionEnd" );
-	elem[0][0].value = inputText;
+	elem[0][0].value = allText;
 	if ( elem[0][0].selectionStart !== inputSelectionStart )
 		elem[0][0].selectionStart = inputSelectionStart;
 	if ( elem[0][0].selectionEnd !== inputSelectionEnd )
