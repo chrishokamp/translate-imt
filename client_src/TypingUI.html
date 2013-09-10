@@ -39,9 +39,10 @@ $(document).ready( function() {
 	d3.select( ".SetUserText" ).text( userText ).on( "keyup", function() { typingState.setUserText( d3.event.srcElement.value ) } );
 	d3.select( ".SetSuggestions" ).on( "keyup", function() { typingState.setSuggestions( d3.event.srcElement.value ) } );
 	d3.select( ".SetFutureText" ).text( futureText ).on( "keyup", function() { typingState.setFutureText( d3.event.srcElement.value ) } );
-	d3.select( ".SetCaretIndex" ).on( "change", function() { typingState.setCaretIndex( d3.event.srcElement.value ) } );
-	d3.select( ".SetSelectedStartIndex" ).on( "change", function() { typingState.setSelectedIndexes( d3.select(".SetSelectedStartIndex")[0][0].value, d3.select(".SetSelectedEndIndex")[0][0].value ) } );
-	d3.select( ".SetSelectedEndIndex" ).on( "change", function() { typingState.setSelectedIndexes( d3.select(".SetSelectedStartIndex")[0][0].value, d3.select(".SetSelectedEndIndex")[0][0].value ) } );
+	d3.select( ".SetCaretIndex" ).on( "change", function() { typingState.setCaretIndex( parseInt(d3.event.srcElement.value) ) } );
+	d3.select( ".SetSelectedStartIndex" ).on( "change", function() { typingState.setSelectedIndexes( parseInt(d3.select(".SetSelectedStartIndex")[0][0].value), parseInt(d3.select(".SetSelectedEndIndex")[0][0].value) ) } );
+	d3.select( ".SetSelectedEndIndex" ).on( "change", function() { typingState.setSelectedIndexes( parseInt(d3.select(".SetSelectedStartIndex")[0][0].value), parseInt(d3.select(".SetSelectedEndIndex")[0][0].value) ) } );
+	d3.select( ".SetDebugLayout" ).on( "change", function() { typingUI.DEBUG = d3.select(".SetDebugLayout")[0][0].checked; typingUI.render() })
 	typingModel.on( "modified", showSpanElements );
 	showSpanElements();
 });
@@ -64,20 +65,26 @@ $(document).ready( function() {
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Caret: </span>
-			<input type="range" class="SetCaretIndex" style="width: 400px" value="0" min="0" max="100"/>
+			<input type="range" class="SetCaretIndex" style="width: 400px" value="0" min="0" max="250"/>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Selection Start: </span>
-			<input type="range" class="SetSelectedStartIndex" style="width: 400px" value="0" min="0" max="100"/><br/>
+			<input type="range" class="SetSelectedStartIndex" style="width: 400px" value="0" min="0" max="250"/><br/>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Selection End: </span>
-			<input type="range" class="SetSelectedEndIndex" style="width: 400px" value="0" min="0" max="100"/>
+			<input type="range" class="SetSelectedEndIndex" style="width: 400px" value="0" min="0" max="250"/>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Span Elements: </span>
 			<textarea class="GetSpanElements" style="width: 400px; height: 120px; background: #eee" readonly></textarea>
 		</p>
 	</div><br/>
+	<div class="container" style="padding-right: 30px">
+		<p>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Debug Mode: </span>
+			<input type="checkbox" class="SetDebugLayout" style="width: 20px" /><span style="display: inline-block; width: 380px">Display non-overlapping HTML elements</span>
+		</p>
+	</div>
 </body>
 </html>

@@ -3,7 +3,10 @@ var TypingModel = Backbone.Model.extend({
 		"allSpanElements" : [],
 		"caretSpanElement" : null,
 		"currentSpanElement" : null,
-		"suggestionElements" : []
+		"suggestionElenets" : [],
+		"inputText" : "",
+		"inputSelectionStart" : 0,
+		"inputSelectionEnd" : 0
 	}
 });
 
@@ -14,6 +17,7 @@ TypingModel.prototype.initialize = function( options ) {
 
 TypingModel.prototype.__update = function() {
 	var allSpanElements = [];
+	var inputText = null;
 	
 	// Generate a list of span elements (with fields: text, spacing, type, startCharIndex, endCharIndex)
 	var matchedTokens = this.state.getAttr( "matchedTokens" );
@@ -22,6 +26,7 @@ TypingModel.prototype.__update = function() {
 	allSpanElements = this.__generateSpansFromTokens( allSpanElements, matchedTokens, "matched" );
 	allSpanElements = this.__generateSpansFromCurrentTerm( allSpanElements, currentTerm );
 	allSpanElements = this.__generateSpansFromTokens( allSpanElements, futureTokens, "future" );
+	inputText = allSpanElements.map( function(d) { return d.text } ).join( "" );
 	
 	// Split span elements (if necessary) for selected text
 	var selectionStartCharIndex = this.state.getAttr( "ui:selectionStartCharIndex" );
@@ -84,6 +89,9 @@ TypingModel.prototype.__update = function() {
 	this.setAttr( "allSpanElements", allSpanElements );
 	this.setAttr( "caretSpanElement", caretSpanElement );
 	this.setAttr( "currentSpanElement", currentSpanElement );
+	this.setAttr( "inputText", inputText );
+	this.setAttr( "inputSelectionStart", selectionStartCharIndex );
+	this.setAttr( "inputSelectionEnd", selectionEndCharIndex );
 	this.flush();
 };
 
@@ -114,17 +122,21 @@ TypingModel.prototype.__generateSpansFromTokens = function( allSpanElements, tok
 TypingModel.prototype.__generateSpansFromCurrentTerm = function( allSpanElements, currentTerm ) {
 	var charIndex = ( allSpanElements.length === 0 ) ? 0 : allSpanElements[ allSpanElements.length - 1 ].endCharIndex;
 	var text = currentTerm;
-	var span = { "text" : text, "spacing" : text, "type" : "current" };
+	var spacing = currentTerm + _.range( Math.max( 10 - text.length, 5 ) ).map( function(d) { return "_" } ).join( "" );
+	var span = { "text" : text, "spacing" : spacing, "type" : "current" };
 	span.startCharIndex = charIndex;
 	charIndex += text.length;
 	span.endCharIndex = charIndex;
 	allSpanElements.push( span );
 	
-	var spacing = _.range( Math.max( 10 - text.length, 5 ) ).map( function(d) { return "_" } ).join( "" );
-	var span = { "text" : spacing, "spacing" : spacing, "type" : "current" };
-	span.startCharIndex = charIndex;
-	span.endCharIndex = charIndex;
-	allSpanElements.push( span );
+	if ( text.length > 0 ) {
+		var text = " ";
+		var span = { "text" : text, "spacing" : text, "type" : "future" };
+		span.startCharIndex = charIndex;
+		charIndex += text.length;
+		span.endCharIndex = charIndex;
+		allSpanElements.push( span );
+	}
 	
 	return allSpanElements;
 };
