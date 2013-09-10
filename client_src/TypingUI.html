@@ -6,10 +6,10 @@
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/underscore.js"></script>
 	<script type="text/javascript" src="js/backbone.js"></script>
-	<script type="text/javascript" src="js/ElphabaModified.js"></script>
-	
+	<script type="text/javascript" src="js/ElphabaModel.js"></script>
 	<script type="text/javascript" src="js/TypingState.js"></script>
 	<script type="text/javascript" src="js/TypingModel.js"></script>
+	<script type="text/javascript" src="js/TypingUI.js"></script>
 
 <style type="text/css">
 div.container {
@@ -30,6 +30,7 @@ div.container {
 $(document).ready( function() {
 	typingState = new TypingState();
 	typingModel = new TypingModel({ "state" : typingState });
+	typingUI = new TypingUI({ "model" : typingModel });
 	
 	var showSpanElements = function() { d3.select( ".GetSpanElements" ).text( typingModel.getAttr( "allSpanElements" ).map( function(d) { return "[" + d.text + "] " } ).join( " " ) ) };
 	var userText = "Beim Letzteren kann es zu Verlusten beim Gedankengang , zu unzusammenhängenden Sätzen";
