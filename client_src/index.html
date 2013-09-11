@@ -16,12 +16,62 @@
 		typingState = new TypingState();
 		typingModel = new TypingModel({ "state" : typingState });
 		typingUI = new TypingUI({ "model" : typingModel });
+		
+		typingState.on( "token", updateTargetText );
 		d3.select( "#tgt-input" ).on( "keyup", function() { typingState.setUserText( d3.event.srcElement.value ) } );
 		initEventHandlers();
 	});
 	
 	// URL of the PTM service
 	var _serverURL = 'http://joan.stanford.edu:8017/t';
+	
+	var updateTargetText = function() {
+		// Get source text
+		var source = $('#src-input').val();
+		
+		// Get user-entered target prefix
+	    var tgtPrefix = typingState.getUserText();
+
+		// Translation message
+		var msg = {
+			src : "AR",
+			tgt : "EN",
+			n : 3,
+			text : source,
+			tgtPrefix : tgtPrefix,
+		};
+
+		// Make ajax request
+		var ajaxTime = Date.now();
+		$.ajax({
+			url: _serverURL,
+			dataType: "json",
+			data: {tReq : JSON.stringify(msg), },
+			//      xhrFields: {
+			//        withCredentials: true
+			//      },
+			success: function(data){
+				//response is a callback
+				var totalTime = (Date.now()-ajaxTime) / 1000;
+				console.log(data);
+				$('#output').empty();
+				for (var i = 0; i < data.tgtList.length; i++) {
+					$('#output').append('<p>' + data.tgtList[i] + '</p>');
+				}
+				$('#output').append('<span style="font-size:small;color:red">request: ' + totalTime.toFixed(2).toString() + 's</span>');
+
+				// Load top MT into the Typing UI
+				var mtText = data.tgtList[0];
+				var userText = typingState.getUserText();
+				var futureText = mtText.substr( userText.length );
+				typingState.setFutureText( futureText );
+			},
+			error: function(jqXHR, textStatus, errorThrown){
+				console.log("Translation failed");
+				console.log(errorThrown);
+			},
+		});
+	};
 	
 	var initEventHandlers = function() {
 		  $('#src-input').change(function(e) {
@@ -50,69 +100,18 @@
 		          $('#output').append('<p>' + data.tgtList[i] + '</p>');
 		        }
 		        $('#output').append('<span style="font-size:small;color:red">request: ' + totalTime.toFixed(2).toString() + 's</span>');
+
+				// Load top MT into the Typing UI
+				var mtText = data.tgtList[0];
+				var userText = typingState.getUserText();
+				var futureText = mtText.substr( userText.length );
+				typingState.setFutureText( futureText );
 		      },
 		      error: function(jqXHR, textStatus, errorThrown){
 		        console.log("Translation failed");
 		        console.log(errorThrown);
 		      },
 		    });
-		  });
-
-		  $('#form-tgt-input').keydown(function(e) {
-		//    e.preventDefault();
-		    if (e.which == 32) {
-
-		    // Fetch the form input
-		    var source = $('#src-input').val();
-		    // console.log(source);
-
-		    // Fetch the target
-		    var tgtPrefix = $('#tgt-input').val();
-		    // console.log(tgtPrefix);
-
-		    // Translation message
-		    var msg = {
-		      src : "AR",
-		      tgt : "EN",
-		      n : 3,
-		      text : source,
-		      tgtPrefix : tgtPrefix,
-		    };
-
-		    // Make ajax request
-		      var ajaxTime = Date.now();
-		      $.ajax({
-		        url: _serverURL,
-		        dataType: "json",
-		        data: {tReq : JSON.stringify(msg), },
-		//      xhrFields: {
-		//        withCredentials: true
-		//      },
-		        success: function(data){
-		          //response is a callback
-		          var totalTime = (Date.now()-ajaxTime) / 1000;
-		          console.log(data);
-		          $('#output').empty();
-		          for (var i = 0; i < data.tgtList.length; i++) {
-		            $('#output').append('<p>' + data.tgtList[i] + '</p>');
-		          }
-		          $('#output').append('<span style="font-size:small;color:red">request: ' + totalTime.toFixed(2).toString() + 's</span>');
-
-		          // Load top MT into the Typing UI
-		          var mtText = data.tgtList[0];
-		          var userText = typingState.getAttr( "userText" );
-		          var futureText = mtText.substr( userText.length );
-		          typingState.setFutureText( futureText );
-		        },
-		        error: function(jqXHR, textStatus, errorThrown){
-		          console.log("Translation failed");
-		          console.log(errorThrown);
-		        },
-		    });
-		    }
-		    return true;
-		    // For form submission
-		    // return false; 
 		  });
 	}
 	</script>
@@ -134,7 +133,7 @@ Target (updates retrieved on space key):
 <br>
 <div id="textbox">
 <form action="" name="form-tgt-input" id="form-tgt-input">
-<textarea cols="60" rows="10" id="tgt-input"></textarea>
+<textarea cols="60" rows="10" id="tgt-input" disabled style="background: #eee"></textarea>
 </form>
 </div>
 
