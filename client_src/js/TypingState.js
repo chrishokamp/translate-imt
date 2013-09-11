@@ -71,7 +71,7 @@ TypingState.prototype.decrementSelection = function() {
  * Set user-entered text (intended for development use only).
  * @param {String} text User-entered text.
  **/
-TypingState.prototype.setUserText = function( userText, caretCharIndex ) {
+TypingState.prototype.setUserText = function( userText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex ) {
 	// This regular expression should always yield an odd number of "termsAndSeps" values
 	// The odd entries are terms (for a total of N+1 terms)
 	// The even entries are separators (for a total of N separators)
@@ -94,28 +94,23 @@ TypingState.prototype.setUserText = function( userText, caretCharIndex ) {
 	var futureText = this.getAttr( "futureText" );
 	var inputText = userText + " " + futureText;
 	
-	if ( caretCharIndex === undefined )
- 		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText" ], [ userText, matchedText, matchedTokens, currentTerm, inputText ] );
-	else
-		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText", "caretCharIndex" ], [ userText, matchedText, matchedTokens, currentTerm, inputText, caretCharIndex ] );
+	if ( caretCharIndex === undefined && selectionStartCharIndex === undefined && selectionEndCharIndex === undefined ) {
+ 		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText" ],
+		[ userText, matchedText, matchedTokens, currentTerm, inputText ] );
+	}
+	else if ( selectionStartCharIndex === undefined && selectionEndCharIndex === undefined ) {
+		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText", "caretCharIndex" ],
+		[ userText, matchedText, matchedTokens, currentTerm, inputText, caretCharIndex ] );
+	}
+	else {
+		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText", "caretCharIndex", "selectionStartCharIndex", "selectionEndCharIndex" ],
+		[ userText, matchedText, matchedTokens, currentTerm, inputText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex ] );
+	}
 	return this;
 };
 
 TypingState.prototype.getUserText = function() {
 	return this.getAttr( "userText" );
-};
-
-TypingState.prototype.insertUserText = function( charIndex, newText ) {
-	var userText = this.getAttr( "userText" );
-	var newCharIndex = charIndex + newText.length;
-	this.setUserText( userText.substr( 0, charIndex ) + newText + userText.substr( charIndex ), newCharIndex );
-};
-
-TypingState.prototype.backspaceUserText = function() {
-	var userText = this.getAttr( "userText" );
-	var charIndex = this.getAttr( "caretCharIndex" );
-	var newCharIndex = Math.max( 0, charIndex - 1 );
-	this.setUserText( userText.substr( 0, newCharIndex ) + userText.substr( charIndex ), newCharIndex );
 };
 
 /**
