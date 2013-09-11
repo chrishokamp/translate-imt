@@ -20,7 +20,7 @@ TypingState.prototype.initialize = function( options ) {
 
 TypingState.prototype.setCaretIndex = function( charIndex ) {
 	var maxCharIndex = this.getAttr( "allText" ).length;
-	if ( charIndex > maxCharIndex ) { charIndex = maxCharIndex }
+	if ( charIndex >= maxCharIndex ) { charIndex = maxCharIndex }
 	var minCharIndex = 0;
 	if ( charIndex < minCharIndex ) { charIndex = minCharIndex }
 	this.setAttr( "caretCharIndex", charIndex );
@@ -29,7 +29,7 @@ TypingState.prototype.setCaretIndex = function( charIndex ) {
 TypingState.prototype.incrementCaretIndex = function() {
 	var charIndex = this.getAttr( "caretCharIndex" ) + 1;
 	var maxCharIndex = this.getAttr( "allText" ).length;
-	if ( charIndex > maxCharIndex ) { charIndex = maxCharIndex }
+	if ( charIndex >= maxCharIndex ) { charIndex = maxCharIndex }
 	this.setAttr( "caretCharIndex", charIndex );
 };
 
@@ -44,27 +44,6 @@ TypingState.prototype.setSelectedIndexes = function( startCharIndex, endCharInde
 	if ( startCharIndex === undefined ) { startCharIndex = 0 }
 	if ( endCharIndex === undefined ) { endCharIndex = startCharIndex }
 	this.setAttr( [ "selectionStartCharIndex", "selectionEndCharIndex" ], [ startCharIndex, endCharIndex ] );
-};
-
-TypingState.prototype.clearSelection = function() {
-	var charIndex = this.getAttr( "caretCharIndex" );
-	this.setSelectedIndexes( charIndex, charIndex );
-};
-
-TypingState.prototype.incrementSelection = function() {
-	var startCharIndex = this.getAttr( "selectionStartCharIndex" );
-	var endCharIndex = this.getAttr( "selectionEndCharIndex" ) + 1;
-	var maxCharIndex = this.getAttr( "allText" ).length;
-	if ( endCharIndex > maxCharIndex ) { endCharIndex = maxCharIndex }
-	this.setSelectedIndexes( startCharIndex, endCharIndex );
-};
-
-TypingState.prototype.decrementSelection = function() {
-	var startCharIndex = this.getAttr( "selectionStartCharIndex" );
-	var endCharIndex = this.getAttr( "selectionEndCharIndex" ) - 1;
-	var minCharIndex = 0;
-	if ( endCharIndex < minCharIndex ) { endCharIndex = minCharIndex }
-	this.setSelectedIndexes( startCharIndex, endCharIndex );
 };
 
 /**
