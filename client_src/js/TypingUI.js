@@ -385,20 +385,16 @@ TypingUI.prototype.__onCaptureKeyPress = function() {
 
 TypingUI.prototype.__onCaptureKeyUp = function() {
 	if ( d3.event.keyCode === this.KEY.WHITESPACE ) {
-		this.model.state.trigger( "token" );
+		this.model.state.refreshFutureText();
 	}
 	if ( d3.event.keyCode === this.KEY.TAB ) {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
 	else {
-		var caretCharIndex = null;
 		var selectionStartCharIndex = this.view.keystrokes[0][0].selectionStart;
 		var selectionEndCharIndex = this.view.keystrokes[0][0].selectionEnd;
-		if ( this.view.keystrokes[0][0].selectionDirection === "forward" )
-			caretCharIndex = selectionEndCharIndex;
-		else
-			caretCharIndex = selectionStartCharIndex;
+		var caretCharIndex = ( this.view.keystrokes[0][0].selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
 		this.model.state.setUserText( this.view.keystrokes[0][0].value, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex );
 	}
 };

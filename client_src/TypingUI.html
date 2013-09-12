@@ -39,8 +39,15 @@ $(document).ready( function() {
 //	typingState.setFutureText( futureText );
 //	typingState.setSuggestions( [ "Saetzen", "Hello World", "suggested term", "another suggested term" ] );
 	d3.select( ".SetUserText" ).on( "keyup", function() { typingState.setUserText( d3.event.srcElement.value ) } );
-	d3.select( ".SetSuggestions" ).on( "keyup", function() { typingState.setSuggestions( d3.event.srcElement.value.split( /\n/g ) ) } );
 	d3.select( ".SetFutureText" ).on( "keyup", function() { typingState.setFutureText( d3.event.srcElement.value ) } );
+	d3.select( ".SetAllText" ).on( "keyup", function() {
+		var selectionStartCharIndex = d3.event.srcElement.selectionStart;
+		var selectionEndCharIndex = d3.event.srcElement.selectionEnd;
+		var caretCharIndex = ( d3.event.srcElement.selectionDirection === "backward" ) ? selectionStartCharIndex : selectionEndCharIndex;
+		typingState.setUserText( d3.select(".SetUserText")[0][0].value );
+		typingState.setFutureText( d3.select(".SetFutureText")[0][0].value );
+		typingState.setAllText( d3.event.srcElement.value, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex );
+	});
 	d3.select( ".SetCaretIndex" ).on( "change", function() { typingState.setCaretIndex( parseInt(d3.event.srcElement.value) ) } );
 	d3.select( ".SetSelectedStartIndex" ).on( "change", function() { typingState.setSelectedIndexes( parseInt(d3.select(".SetSelectedStartIndex")[0][0].value), parseInt(d3.select(".SetSelectedEndIndex")[0][0].value) ) } );
 	d3.select( ".SetSelectedEndIndex" ).on( "change", function() { typingState.setSelectedIndexes( parseInt(d3.select(".SetSelectedStartIndex")[0][0].value), parseInt(d3.select(".SetSelectedEndIndex")[0][0].value) ) } );
@@ -58,15 +65,12 @@ $(document).ready( function() {
 			<textarea class="SetUserText" style="width: 400px; height: 80px"></textarea>
 		</p>
 		<p>
-			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Suggestions: </span>
-			<textarea class="SetSuggestions" style="width: 400px; height: 80px">Saetzen
-Hello World
-suggested term
-another suggested term</textarea>
-		</p>
-		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Future Text: </span>
 			<textarea class="SetFutureText" style="width: 400px; height: 80px"></textarea>
+		</p>
+		<p>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">All Text: </span>
+			<textarea class="SetAllText" style="width: 400px; height: 80px"></textarea>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Caret: </span>

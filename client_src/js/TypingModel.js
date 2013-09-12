@@ -21,12 +21,12 @@ TypingModel.prototype.__update = function() {
 	
 	// Generate a list of span elements (with fields: text, type, startCharIndex, endCharIndex)
 	// Within each span element are a list of segments (with fields: text, startCharIndex, endCharIndex)
-	var matchedTokens = this.state.getAttr( "matchedTokens" );
-	var currentTerm = this.state.getAttr( "currentTerm" );
+	var userTokens = this.state.getAttr( "userTokens" );
+	var userActive = this.state.getAttr( "userActive" );
 	var futureTokens = this.state.getAttr( "futureTokens" );
 	var suggestions = this.state.getAttr( "suggestions" )
-	allSpanElements = this.__appendSpansFromTokens( allSpanElements, matchedTokens, "matched" );
-	allSpanElements = this.__appendSpansFromCurrentTerm( allSpanElements, currentTerm, suggestions );
+	allSpanElements = this.__appendSpansFromTokens( allSpanElements, userTokens, "matched" );
+	allSpanElements = this.__appendSpansFromCurrentTerm( allSpanElements, userActive, suggestions );
 	allSpanElements = this.__appendSpansFromTokens( allSpanElements, futureTokens, "future" );
 	this.__generateSegments( allSpanElements );
 	
@@ -142,9 +142,9 @@ TypingModel.prototype.__appendSpansFromTokens = function( allSpanElements, token
 	return allSpanElements;
 };
 
-TypingModel.prototype.__appendSpansFromCurrentTerm = function( allSpanElements, currentTerm, suggestions ) {
+TypingModel.prototype.__appendSpansFromCurrentTerm = function( allSpanElements, userActive, suggestions ) {
 	var charIndex = ( allSpanElements.length === 0 ) ? 0 : allSpanElements[ allSpanElements.length - 1 ].endCharIndex;
-	var text = currentTerm;
+	var text = userActive;
 	var span = { "text" : text, "type" : "current" };
 	span.startCharIndex = charIndex;
 	charIndex += text.length;
