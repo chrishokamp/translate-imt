@@ -11,30 +11,24 @@ var TypingState = Backbone.Model.extend({
 });
 
 /**
- * User-entered text (i.e., prefix) and caret index (i.e., within user-entered text)
- * should already be set prior to sending a MT server request
+ * Update machine translation.
+ * @param {string} userText Sentence prefix used in generating the machine translation.
+ * @param {string} mtText Machine translation excluding the sentence prefix.
  **/
-TypingState.prototype.updateMtText = function( userText, mtText ) {
+TypingState.prototype.updateTranslation = function( userText, mtText ) {
 	this.__resetAllTokens( userText, mtText );
 };
 
 /**
- * Split allText into userText and mtText
- * and satisfy constraint ( caretCharIndex <= userText.length )
+ * Trigger an event to update translation.
  **/
-TypingState.prototype.updateAllText = function( allText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex ) {
-	if ( this.__isExpired( allText, caretCharIndex ) )
-		this.__expireAllTokens( allText, caretCharIndex );
-	else
-		this.__updateAllTokens( allText, caretCharIndex );
-	this.setAttr( "selectionStartCharIndex", selectionStartCharIndex );
-	this.setAttr( "selectionEndCharIndex", selectionEndCharIndex );
-};
-
 TypingState.prototype.triggerUpdate = function() {
 	this.trigger( "token" );
 };
 
+/**
+ * Get user-entered text (i.e., sentencee prefix) for generating the machine translation.
+ **/
 TypingState.prototype.getUserText = function() {
 	var allTokens = this.getAttr( "allTokens" );
 	var userTokens = _.filter( allTokens, function(d) { return d.isUser } );
@@ -44,6 +38,21 @@ TypingState.prototype.getUserText = function() {
 
 /** @private **/
 TypingState.prototype.WHITESPACE = /([ ]+)/g;
+
+/**
+ * Determine whether to update machine translation.
+ * If so, mark all tokens as 'expired' and split all text into userText (sentence prefix) and mtText (to be updated).
+ * Caret location is guaranteed to be within userText. If not, update the token texts and the active token accordingly.
+ * @private
+ **/
+TypingState.prototype.__updateAllText = function( allText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex ) {
+	if ( this.__isExpired( allText, caretCharIndex ) )
+		this.__expireAllTokens( allText, caretCharIndex );
+	else
+		this.__updateAllTokens( allText, caretCharIndex );
+	this.setAttr( "selectionStartCharIndex", selectionStartCharIndex );
+	this.setAttr( "selectionEndCharIndex", selectionEndCharIndex );
+};
 
 /** @private **/
 TypingState.prototype.__resetAllTokens = function( userText, mtText ) {
