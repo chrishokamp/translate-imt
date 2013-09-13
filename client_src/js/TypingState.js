@@ -1,179 +1,291 @@
 var TypingState = Backbone.Model.extend({
 	"defaults" : {
 		"allText" : "",
+		"allTokens" : "",
 		"userText" : "",
-		"userTokens" : [], 		// Derived from userText
-		"userActive" : "",		// Derived from userText
-		"futureText" : "",
-		"futureTokens" : [],	// Derived from futureText
-		"futureActive" : "",	// Derived from futureText
-		"suggestions" : [],
+		"mtText" : "",
 		"caretCharIndex" : 0,
 		"selectionStartCharIndex" : 0,
 		"selectionEndCharIndex" : 0
 	}
 });
 
-TypingState.prototype.setCaretIndex = function( charIndex ) {
-	var maxCharIndex = this.getAttr( "allText" ).length;
-	if ( charIndex >= maxCharIndex ) { charIndex = maxCharIndex }
-	var minCharIndex = 0;
-	if ( charIndex < minCharIndex ) { charIndex = minCharIndex }
-	this.setAttr( "caretCharIndex", charIndex );
-	this.flush();
-	return this;
-};
-
-TypingState.prototype.incrementCaretIndex = function() {
-	var charIndex = this.getAttr( "caretCharIndex" );
-	return this.setCaretIndex( charIndex + 1 );
-};
-
-TypingState.prototype.decrementCaretIndex = function() {
-	var charIndex = this.getAttr( "caretCharIndex" );
-	return this.setCaretIndex( charIndex - 1 );
-};
-
-TypingState.prototype.setSelectedIndexes = function( startCharIndex, endCharIndex ) {
-	if ( startCharIndex === undefined ) { startCharIndex = 0 }
-	if ( endCharIndex === undefined ) { endCharIndex = startCharIndex }
-	this.setAttr( [ "selectionStartCharIndex", "selectionEndCharIndex" ], [ startCharIndex, endCharIndex ] );
-	this.flush();
-	return this;
+/**
+ * User-entered text (i.e., prefix) and caret index (i.e., within user-entered text)
+ * should already be set prior to sending a MT server request
+ **/
+TypingState.prototype.updateMtText = function( userText, mtText ) {
+	this.__resetAllTokens( userText, mtText );
 };
 
 /**
- * Set user-entered text (intended for development use only).
- * @param {String} text User-entered text.
+ * Split allText into userText and mtText
+ * and satisfy constraint ( caretCharIndex <= userText.length )
  **/
-TypingState.prototype.setUserText = function( userText ) {
-	this.setAttr( "userText", userText );
-	this.__processUserText();
-	this.__compileAllText();
-	this.flush();
-	return this;
+TypingState.prototype.updateAllText = function( allText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex ) {
+	if ( this.__isExpired( allText, caretCharIndex ) )
+		this.__expireAllTokens( allText, caretCharIndex );
+	else
+		this.__updateAllTokens( allText, caretCharIndex );
+	this.setAttr( "selectionStartCharIndex", selectionStartCharIndex );
+	this.setAttr( "selectionEndCharIndex", selectionEndCharIndex );
 };
 
-/**
- * Set machine-translated text (excluding user text).
-* @param {String} text Machine translation.
- **/
-TypingState.prototype.setFutureText = function( futureText ) {
-	this.setAttr( "futureText", futureText );
-	this.__processFutureText();
-	this.__compileAllText();
-	this.flush();
-	return this;
-};
-
-TypingState.prototype.setAllText = function( allText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex ) {
-	this.setAttr( "allText", allText );
-	this.setAttr( "caretCharIndex", caretCharIndex );
-	this.setAttr( [ "selectionStartCharIndex", "selectionEndCharIndex" ], [ selectionStartCharIndex, selectionEndCharIndex ] );
-	this.__processAllText();
-	this.__processUserText();
-	this.__processFutureText();
-	this.flush();
-	return this;
-};
-
-/**
- * Set autocomplete suggestions for the current term.
- * @param {String[]} suggestions A list of suggested terms.
- **/
-TypingState.prototype.setSuggestions = function( suggestions ) {
-	this.setAttr( "suggestions", suggestions );
-	return this;
-};
-
-TypingState.prototype.getUserText = function() {
-	return this.getAttr( "userText" );
-};
-
-TypingState.prototype.refreshFutureText = function() {
+TypingState.prototype.triggerUpdate = function() {
 	this.trigger( "token" );
 };
 
-/**
- * Split userText into a list of userTokens and a string representing the userActive.
- * @param {string} userText User-entered translation.
- **/
-TypingState.prototype.__processUserText = function() {
-	var userText = this.getAttr( "userText" );
+TypingState.prototype.getUserText = function() {
+	var allTokens = this.getAttr( "allTokens" );
+	var userTokens = _.filter( allTokens, function(d) { return d.isUser } );
+	var userText = userTokens.map( function(d) { return d.user + d.sep } ).join( "" );
+	return userText;
+};
+
+/** @private **/
+TypingState.prototype.WHITESPACE = /([ ]+)/g;
+
+/** @private **/
+TypingState.prototype.__resetAllTokens = function( userText, mtText ) {
+	var allTokens = [];
+	var allText = "";
+	var caretCharInex = this.getAttr( "caretCharIndex" );
 	
-	// This regular expression always yields an odd number of "termsAndSeps" values
+	var charIndex = 0;
+	var hasActive = false;
+
+	// This regular expression always yields an odd number of "userTermsAndSeps" values
 	// The odd entries are terms (for a total of N+1 terms)
 	// The even entries are separators (for a total of N separators)
-	var termsAndSeps = userText.split( /([ ]+)/g );
+	var userTermsAndSeps = userText.split( this.WHITESPACE );
+	var userLength = ( userTermsAndSeps.length - 1 ) / 2;
+	var mtTermsAndSeps = mtText.split( this.WHITESPACE );
+	var mtLength = ( mtTermsAndSeps.length - 1 ) / 2;
 	
-	// The first N terms and separators are referred to as "userTokens"
-	var userLength = ( termsAndSeps.length - 1 ) / 2;
-	var userTokens = new Array( userLength );
 	for ( var i = 0; i < userLength; i++ ) {
-		var term = termsAndSeps[ i * 2 ];
-		var sep = termsAndSeps[ i * 2 + 1 ];
-		var token = { "text" : term, "sep" : sep };
-		userTokens[ i ] = token;
+		var token = {};
+		var term = userTermsAndSeps[ i * 2 ];
+		var sep = userTermsAndSeps[ i * 2 + 1 ];
+		token.startCharIndex = charIndex;
+		charIndex += term.length;
+		token.endCharIndex = charIndex;
+		charIndex += sep.length;
+		allText += term + sep;
+		
+		token.user = term;
+		token.mt = term;
+		token.sep = sep;
+		
+		var isActive = ( caretCharIndex < charIndex ) && ! hasActive;
+		var hasActive = hasActive || isActive;
+		token.isActive = isActive;
+		token.isUser = true;
+		token.isMt = false;
+		token.isMtExpired = false;
+		token.isMtCandidate = false;
+		allTokens.push( token );
 	}
-	this.setAttr( "userTokens", userTokens );
+	
+	var token = {};
+	var term = userTermsAndSeps[ userLength * 2 ];
+	var sep = " ";
+	token.startCharIndex = charIndex;
+	charIndex += term.length;
+	token.endCharIndex = charIndex;
+	charIndex += sep.length;
+	allText += term + sep;
+	
+	token.user = term;
+	token.mt = mtTermsAndSeps[ 0 ];
+	token.sep = sep;
 
-	// The final term is referred to as "userActive"
-	var userActive = termsAndSeps[ termsAndSeps.length - 1 ];
-	this.setAttr( "userActive", userActive );
+	var isActive = ( caretCharIndex < charIndex ) && ! hasActive;
+	var hasActive = hasActive || isActive;
+	token.isActive = isActive;
+	token.isUser = true;
+	token.isMt = false;
+	token.isMtExpired = false;
+	token.isMtCandidate = false;
+	allTokens.push( token );
+	
+	for ( var i = 0; i < mtLength; i++ ) {
+		var token = {};
+		var term = mtTermsAndSeps[ (i+1) * 2 ];
+		var sep = " ";
+		token.startCharIndex = charIndex;
+		charIndex += term.length;
+		token.endCharIndex = charIndex;
+		charIndex += sep.length;
+		allText += term + sep;
+		
+		token.user = "";
+		token.mt = term;
+		token.sep = sep;
+
+		var isActive = ( caretCharIndex < charIndex ) && ! hasActive;
+		var hasActive = hasActive || isActive;
+		token.isActive = isActive;
+		token.isUser = false;
+		token.isMt = true;
+		token.isMtExpired = false;
+		token.isMtCandidate = hasActive;
+		allTokens.push( token );
+	}
+	
+	this.setAttr( "allTokens", allTokens );
+	this.setAttr( "allText", allText );
+	this.setAttr( "userText", userText );
+	this.setAttr( "mtText", mtText );
 };
 
-TypingState.prototype.__processFutureText = function() {
-	var futureText = this.getAttr( "futureText" );
+/** @private **/
+TypingState.prototype.__updateAllTokens = function( allText, caretCharIndex ) {
+	var allTokens = this.getAttr( "allTokens" );
 	
-	// This regular expression always yields an odd number of "termsAndSeps" values
+	// This regular expression always yields an odd number of "userTermsAndSeps" values
 	// The odd entries are terms (for a total of N+1 terms)
 	// The even entries are separators (for a total of N separators)
-	var termsAndSeps = futureText.split( /([ ]+)/g );
+	// However, by ending on a whitespace, the last entry of allText is always empty and thus should be ignored
+	var allTermsAndSeps = ( allText + " " ).split( this.WHITESPACE );
+	var allLength = ( allTermsAndSeps.length - 1 ) / 2;
+	chia.assert.equal( allLength, allTokens.length, "Number of tokens must remain constant between updates." );
 	
-	// The final N terms and separators are referred to as "futureTokens"
-	var futureLength = ( termsAndSeps.length - 1 ) / 2;
-	var futureTokens = new Array( futureLength );
-	for ( var i = 1; i <= futureLength; i++ ) {
-		var term = termsAndSeps[ i * 2 ];
-		var sep = ( i === futureLength ) ? "" : termsAndSeps[ i * 2 + 1 ];
-		var token = { "text" : term, "sep" : sep };
-		futureTokens[ i-1 ] = token;
+	var charIndex = 0;
+	var hasActive = false;
+	allText = "";
+	for ( var i = 0; i < allLength; i++ ) {
+		var token = allTokens[ i ];
+		var term = allTermsAndSeps[ i * 2 ];
+		var sep = allTermsAndSeps[ i * 2 + 1 ];
+		token.startCharIndex = charIndex;
+		charIndex += term.length;
+		token.endCharIndex = charIndex;
+		charIndex += sep.length;
+		allText += term + sep;
+		
+		if ( token.isUser )
+			token.user = term;
+		else
+			token.mt = term;
+		
+		var isActive = ( caretCharIndex < charIndex ) && ! hasActive;
+		var hasActive = hasActive || isActive;
+		token.isActive = isActive;
+		token.isMtCandidate = hasActive;
 	}
-	this.setAttr( "futureTokens", futureTokens );
-
-	// The first term is referred to as "futureActive"
-	var futureActive = termsAndSeps[ 0 ];
-	this.setAttr( "futureActive", futureActive );
-};
-
-/**
- * Generate allText from userText and futureText.
- **/
-TypingState.prototype.__compileAllText = function() {
-	var userText = this.getAttr( "userText" );
-	var futureText = this.getAttr( "futureText" );
-	var allText = userText + futureText;
+	
+	this.setAttr( "allTokens", allTokens );
 	this.setAttr( "allText", allText );
+	this.setAttr( "caretCharIndex", caretCharIndex );
 };
 
-/**
- * Generate userText and futureText from allText, based on the previous value of futureText.
- **/
-TypingState.prototype.__processAllText = function() {
-	var allText = this.getAttr( "allText" );
-	var allLength = allText.length;
-	var futureText = this.getAttr( "futureText" );
-	var futureLength = futureText.length;
-	var caretCharIndex = this.getAttr( "caretCharIndex" );
-	for ( var split = 0; split < allLength - caretCharIndex && split < futureLength; split++ ) {
-		var allChar = allText.charCodeAt( allLength - split - 1 );
-		var futureChar = futureText.charCodeAt( futureLength - split - 1 );
-		if ( allChar !== futureChar )
-			break;
+/** @private **/
+TypingState.prototype.__expireAllTokens = function( allText, caretCharIndex ) {
+	var allTokens = [];
+	
+	// This regular expression always yields an odd number of "userTermsAndSeps" values
+	// The odd entries are terms (for a total of N terms)
+	// The even entries are separators (for a total of N-1 separators)
+	// However, by ending on a whitespace, the last entry of allText is always empty and thus should be ignored
+	var allTermsAndSeps = ( allText + " " ).split( this.WHITESPACE );
+	var allLength = ( allTermsAndSeps.length + 1 ) / 2;
+	
+	var charIndex = 0;
+	var hasActive = false;
+	allText = "";
+	for ( var i = 0; i < allLength; i++ ) {
+		var token = {};
+		var term = allTermsAndSeps[ i * 2 ];
+		var sep = allTermsAndSeps[ i * 2 + 1 ];
+		token.startCharIndex = charIndex;
+		charIndex += term.length;
+		token.endCharIndex = charIndex;
+		charIndex += sep.length;
+		allText += term + sep;
+		
+		token.user = "";
+		token.mt = "";
+		token.sep = sep;
+		
+		var isActive = ( caretCharIndex < charIndex ) && ! hasActive;
+		var hasActive = hasActive || isActive;
+		token.isActive = isActive;
+		token.isUser = hasActive;
+		token.isMt = ! hasActive;
+		token.isMtExpired = true;
+		token.isMtCandidate = false;
+		
+		if ( token.isUser )
+			token.user = term;
+		else
+			token.mt = term;
+		
+		allTokens.push( token );
 	}
-	var userText = allText.substr( 0, allLength - split );
-	var futureText = futureText.substr( futureLength - split );
-	console.log( this.get( "futureText" ), "-->", futureText );
-	this.setAttr( "userText", userText );
-	this.setAttr( "futureText", futureText );
+	
+	this.setAttr( "allTokens", allTokens );
+	this.setAttr( "allText", allText );
+	this.setAttr( "caretCharIndex", caretCharIndex );
+};
+
+/** @private **/
+TypingState.prototype.__isExpired = function( newText, caretCharIndex ) {
+	var allText = this.getAttr( "allText" );
+	if ( allText === newText ) {
+		return false;
+	}
+	else {
+		var results = this.__getAddedRemovedText( allText, newText );
+		var removedText = results.removedText;
+		var addedText = results.addedText;
+		// Expire if changed text includes a whitespace
+		if ( this.WHITESPACE.test( removedText ) || this.WHITESPACE.test( addedText ) ) {
+			return true;
+		}
+		// Expire if the character immediately in front of the caret is a whitespace
+		if ( caretCharIndex === 0 || this.WHITESPACE.test( allText.substr( caretCharIndex - 1, 1 ) ) ) {
+			return true;
+		}
+		// Expire if caret moves out of changed region
+		var addedStartCharIndex = results.addedStartCharIndex;
+		var addedEndCharIndex = results.addedEndCharIndex;
+		if ( ! ( addedStartCharIndex <= caretCharIndex  &&  caretCharIndex <= addedEndCharIndex ) )
+			return true;
+		}
+		// Otherwise, allow the user to continue editing
+		return false;
+	}
+};
+
+/** @private **/
+TypingState.prototype.__getAddedRemovedText = function( prevText, newText ) {
+	var removedStartCharIndex = 0;
+	var removedEndCharIndex = prevText.length;
+	var addedStartCharIndex = 0;
+	var addedEndCharIndex = newText.length;
+	
+	var iMax = Math.min( prevText.length, newText.length );
+	for ( var i = 0; i < iMax; i++ ) {
+		if ( prevText.charCodeAt(i) !== newText.charCodeAt(i) ) {
+			removedStartCharIndex = i;
+			addedStartCharIndex = i;
+			break;
+		}
+	}
+	for ( var i = 0; i < iMax; i++ ) {
+		if ( prevText.charCodeAt(prevText.length-i-1) !== newText.charCodeAt(newText.length-i-1) ) {
+			removedStartCharIndex = prevText.length - i;
+			addedEndCharIndex = newText.length - i;
+			break;
+		}
+	}
+	results = {
+		"removedStartCharIndex" : removedStartCharIndex,
+		"removedEndCharIndex" : removedEndCharIndex,
+		"addedStartCharIndex" : addedStartCharIndex,
+		"addedEndCharIndex" : addedEndCharIndex,
+		"removedText" : prevText.substring( removedStartCharIndex, removedEndCharIndex ),
+		"addedText" : newText.substring( addedStartCharIndex, addedEndCharIndex )
+	};
+	return results;
 };
