@@ -63,12 +63,12 @@
 	
 	var initEventHandlers = function() {
 		  $('#src-input').change(function(e) {
-		    var source = $('#src-input').val();
+		    var sourceText = $('#src-input').val();
 		    var msg = {
 		      src : "EN",
 		      tgt : "DE",
 		      n : 3,
-		      text : source,
+		      text : sourceText,
 		      tgtPrefix : "",
 		    };
 		    var ajaxTime = Date.now();
@@ -90,10 +90,10 @@
 		        $('#output').append('<span style="font-size:small;color:red">request: ' + totalTime.toFixed(2).toString() + 's</span>');
 
 				// Load top MT into the Typing UI
-				var mtText = data.tgtList[0];
-				var userText = typingState.getUserText();
-				var futureText = mtText.substr( userText.length );
-				typingState.setFutureText( futureText );
+				var allText = data.tgtList[0];
+				var mtText = allText.substr( targetPrefix.length );
+				console.log( "results", "", mtText );
+				typingState.updateTranslation( "", mtText );
 		      },
 		      error: function(jqXHR, textStatus, errorThrown){
 		        console.log("Translation failed");
