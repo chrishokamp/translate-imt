@@ -63,6 +63,7 @@
 	
 	var initEventHandlers = function() {
 		  $('#src-input').change(function(e) {
+                    console.log( "src-input changed" );
 		    var sourceText = $('#src-input').val();
 		    var msg = {
 		      src : "EN",
