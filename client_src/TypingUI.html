@@ -6,6 +6,7 @@
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/underscore.js"></script>
 	<script type="text/javascript" src="js/backbone.js"></script>
+	<script type="text/javascript" src="js/chai.js"></script>
 	<script type="text/javascript" src="js/ElphabaModel.js"></script>
 	<script type="text/javascript" src="js/TypingState.js"></script>
 	<script type="text/javascript" src="js/TypingModel.js"></script>
@@ -32,26 +33,32 @@ $(document).ready( function() {
 	typingModel = new TypingModel({ "state" : typingState });
 	typingUI = new TypingUI({ "model" : typingModel });
 	
-	var showSpanElements = function() { d3.select( ".GetSpanElements" ).text( typingModel.getAttr( "allSpanElements" ).map( function(d) { return "[" + d.segments.map( function(d) { return d.text } ).join( "/" ) + "] " } ).join( " " ) ) };
-//	var userText = "Beim Letzteren kann es zu Verlusten beim Gedankengang , zu unzusammenhängenden Sätzen";
-//	var futureText = "und zu einer Inkohärenz kommen , die sich in schweren Fällen als Wortsalat äußert .";
-//	typingState.setUserText( userText );
-//	typingState.setFutureText( futureText );
-//	typingState.setSuggestions( [ "Saetzen", "Hello World", "suggested term", "another suggested term" ] );
-	d3.select( ".SetUserText" ).on( "keyup", function() { typingState.setUserText( d3.event.srcElement.value ) } );
-	d3.select( ".SetFutureText" ).on( "keyup", function() { typingState.setFutureText( d3.event.srcElement.value ) } );
-	d3.select( ".SetAllText" ).on( "keyup", function() {
-		var selectionStartCharIndex = d3.event.srcElement.selectionStart;
-		var selectionEndCharIndex = d3.event.srcElement.selectionEnd;
-		var caretCharIndex = ( d3.event.srcElement.selectionDirection === "backward" ) ? selectionStartCharIndex : selectionEndCharIndex;
-		typingState.setUserText( d3.select(".SetUserText")[0][0].value );
-		typingState.setFutureText( d3.select(".SetFutureText")[0][0].value );
-		typingState.setAllText( d3.event.srcElement.value, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex );
+	var s = "A beautiful, innovative collection in which Francisco Costa layered references to urb";
+	var t = "urban tribes, ’80s art, handcraft and even, seemingly, radical chicks of the 1920s.";
+	typingState.setAttr( "caretCharIndex", s.length );
+	typingState.setAttr( "selectionStartCharIndex", s.length );
+	typingState.setAttr( "selectionEndCharIndex", s.length );
+	typingState.updateTranslation( s, t );
+	
+	d3.select( ".UpdateTranslation" ).on( "click", function() {
+		var userText = d3.select( ".SetUserText" )[0][0].value;
+		var mtText = d3.select( ".SetMtText" )[0][0].value;
+		typingState.updateTranslation( userText, mtText );
 	});
-	d3.select( ".SetCaretIndex" ).on( "change", function() { typingState.setCaretIndex( parseInt(d3.event.srcElement.value) ) } );
-	d3.select( ".SetSelectedStartIndex" ).on( "change", function() { typingState.setSelectedIndexes( parseInt(d3.select(".SetSelectedStartIndex")[0][0].value), parseInt(d3.select(".SetSelectedEndIndex")[0][0].value) ) } );
-	d3.select( ".SetSelectedEndIndex" ).on( "change", function() { typingState.setSelectedIndexes( parseInt(d3.select(".SetSelectedStartIndex")[0][0].value), parseInt(d3.select(".SetSelectedEndIndex")[0][0].value) ) } );
-	d3.select( ".SetDebugLayout" ).on( "change", function() { typingUI.DEBUG = d3.select(".SetDebugLayout")[0][0].checked; typingUI.render() })
+	d3.select( ".UpdateAllText" ).on( "click", function() {
+		var allText = d3.select( ".SetAllText" )[0][0].value;
+		var caretCharIndex = parseInt( d3.select( ".SetCaretIndex" )[0][0].value );
+		var selectionStartCharIndex = parseInt( d3.select( ".SetSelectedStartIndex" )[0][0].value );
+		var selectionEndCharIndex = parseInt( d3.select( ".SetSelectedEndIndex" )[0][0].value );
+	});
+	d3.select( ".SetDebugLayout" ).on( "change", function() {
+		typingUI.DEBUG = d3.select(".SetDebugLayout")[0][0].checked;
+		typingUI.render();
+	});
+
+	var showSpanElements = function() {
+		d3.select( ".GetSpanElements" ).text( typingModel.getAttr( "allSpanElements" ).map( function(d) { return "[" + d.segments.map( function(d) { return d.text } ).join( "/" ) + "] " } ).join( " " ) )
+	};
 	typingModel.on( "modified", showSpanElements );
 	showSpanElements();
 });
@@ -62,11 +69,15 @@ $(document).ready( function() {
 	<div class="container" style="padding-right: 30px">
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">User Text: </span>
-			<textarea class="SetUserText" style="width: 400px; height: 80px"></textarea>
+			<textarea class="SetUserText" style="width: 400px; height: 80px">A beautiful, innovative collection in which Francisco Costa layered references to urb</textarea>
 		</p>
 		<p>
-			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Future Text: </span>
-			<textarea class="SetFutureText" style="width: 400px; height: 80px"></textarea>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">MT Text: </span>
+			<textarea class="SetMtText" style="width: 400px; height: 80px">urban tribes, ’80s art, handcraft and even, seemingly, radical chicks of the 1920s. It added up to a modern expression of fashion.</textarea>
+		</p>
+		<p>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
+			<input type="button" class="UpdateTranslation" value="Update Translation"/>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">All Text: </span>
@@ -83,6 +94,10 @@ $(document).ready( function() {
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Selection End: </span>
 			<input type="range" class="SetSelectedEndIndex" style="width: 400px" value="0" min="0" max="250"/>
+		</p>
+		<p>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
+			<input type="button" class="UpdateAllText" value="Update All Text"/>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Span Elements: </span>

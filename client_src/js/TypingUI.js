@@ -18,14 +18,13 @@ TypingUI.prototype.WIDTH = 800;
 TypingUI.prototype.HEIGHT = 200;
 TypingUI.prototype.FONT_FAMILY = "Gill Sans";
 TypingUI.prototype.FONT_SIZE = 14;
-TypingUI.prototype.DEBUG = false;
 TypingUI.prototype.BLINK_CYCLE = 500;
+TypingUI.prototype.DEBUG = false;
 
 TypingUI.prototype.init = function() {
 	this.view = {};
 	this.view.container = d3.select( this.el );
 	this.view.canvas = this.view.container.append( "div" );
-	this.view.capture = this.view.canvas.append( "textarea" ).attr( "class", "Capture" );
 	this.view.keystrokes = this.view.canvas.append( "textarea" ).attr( "class", "Keystrokes" );
 	this.view.dimensions = this.view.canvas.append( "div" ).attr( "class", "Dimensions" );
 	this.view.coordinates = this.view.canvas.append( "div" ).attr( "class", "Coordinates" );
@@ -40,11 +39,6 @@ TypingUI.prototype.init = function() {
 	this.view.canvas
 		.style( "position", "absolute" );
 	
-	this.view.capture
-		.style( "position", "absolute" )
-		.call( this.__setTextareaStyles.bind(this) )
-		.call( this.__setFontStyles.bind(this) )
-		
 	this.view.keystrokes
 		.style( "position", "absolute" )
 		.call( this.__setTextareaStyles.bind(this) )
@@ -57,17 +51,19 @@ TypingUI.prototype.init = function() {
 
 	this.view.dimensions
 		.style( "position", "absolute" )
+		.style( "pointer-events", "none" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 
 	this.view.coordinates
 		.style( "position", "absolute" )
+		.style( "pointer-events", "none" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 
 	this.view.overlay
 		.style( "position", "absolute" )
-		.style( "border", "1px solid #ccc" )
+		.style( "border", "1px solid #eee" )
 		.style( "background", "#fff" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
@@ -82,8 +78,8 @@ TypingUI.prototype.init = function() {
 
 	this.view.caret
 		.style( "position", "absolute" )
-		.style( "opacity", 0 )
 		.style( "pointer-events", "none" )
+		.style( "opacity", 0 )
 	window.setInterval( function(f){f()}, this.BLINK_CYCLE, function() {
 		this.view.caret.selectAll( "span" ).style( "opacity", this.view.showCaret === true ? 1 : 0 )
 		this.view.showCaret = ! ( this.view.showCaret === true );
@@ -94,27 +90,29 @@ TypingUI.prototype.init = function() {
 
 TypingUI.prototype.render = function() {
 	var allSpanElements = this.model.getAttr( "allSpanElements" );
-	var currentSpanElement = this.model.getAttr( "currentSpanElement" );
+	var activeSpanElement = this.model.getAttr( "activeSpanElement" );
+	var activeSuggestionElements = this.model.getAttr( "activeSuggestionElements" );
 	var caretSpanSegment = this.model.getAttr( "caretSpanSegment" );
-	var suggestionElements = this.model.getAttr( "suggestionElements" );
 	var elems;
 	
 	this.view.container
 		.style( "width", this.WIDTH + "px" )
-		.style( "height", ( this.DEBUG ? this.HEIGHT * 5 : this.HEIGHT ) + "px" );
+		.style( "height", ( this.DEBUG ? this.HEIGHT * 4 : this.HEIGHT ) + "px" );
 
-	this.view.capture
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 4 : 0 ) + "px" )
-		.style( "opacity", this.DEBUG ? 1 : 0 )
-//		.call( this.__setCaptureContent.bind(this) )
-		
 	this.view.keystrokes
 		.style( "top", ( this.DEBUG ? this.HEIGHT * 3 : 0 ) + "px" )
 		.style( "opacity", this.DEBUG ? 1 : 0 )
+		.call( this.__setKeystrokesContent.bind(this) );
 
-	// Determine the width of some span elements and span segments
-	if ( currentSpanElement !== undefined ) {
-		elems = this.view.dimensions.selectAll( "span.word" ).data( [ currentSpanElement ].concat( suggestionElements ) );
+	// Determine the width of active span elements
+	if ( allSpanElements !== undefined ) {
+		for ( var i = 0; i < allSpanElements.length; i++ ) {
+			var span = allSpanElements[i];
+			delete span.__width;
+		}
+	}
+	if ( activeSpanElement !== undefined ) {
+		elems = this.view.dimensions.selectAll( "span.word" ).data( [ activeSpanElement ].concat( activeSuggestionElements ) );
 		elems.enter().append( "span" ).attr( "class", "word" );
 		elems.exit().remove();
 		elems = this.view.dimensions.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
@@ -126,80 +124,81 @@ TypingUI.prototype.render = function() {
 			.style( "position", "static" )
 			.style( "vertical-align", "top" )
 			.style( "white-space", "pre-wrap" )
-			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__getSpanCoords.bind(this) )
+			.call( this.__setSpanTypeStyles.bind(this) );
 		this.view.dimensions.selectAll( "span.word" )
 			.style( "position", "static" )
 			.style( "vertical-align", "top" )
 			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__getSpanCoords.bind(this) )
-			.call( this.__getSpacingDims.bind(this) )
-		this.view.dimensions
-			.style( "top", ( this.DEBUG ? this.HEIGHT * 1 : 0 ) + "px" )
-			.style( "opacity", this.DEBUG ? 1 : 0 )
+			.call( this.__getSpanWidths.bind(this) );
 	}
+	this.view.dimensions
+		.style( "top", ( this.DEBUG ? this.HEIGHT * 1 : 0 ) + "px" )
+		.style( "opacity", this.DEBUG ? 1 : 0 );
 	
-	// Determine the coordinates of all span elements and span segments
-	elems = this.view.coordinates.selectAll( "span.word" ).data( allSpanElements );
-	elems.enter().append( "span" ).attr( "class", "word" );
-	elems.exit().remove();
-	elems = this.view.coordinates.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
-	elems.enter().append( "span" ).attr( "class", "segment" );
-	elems.exit().remove();
+	// Determine the coordinates of all span elements
+	if ( allSpanElements !== undefined ) {
+		elems = this.view.coordinates.selectAll( "span.word" ).data( allSpanElements );
+		elems.enter().append( "span" ).attr( "class", "word" );
+		elems.exit().remove();
+		elems = this.view.coordinates.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
+		elems.enter().append( "span" ).attr( "class", "segment" );
+		elems.exit().remove();
 
-	this.view.coordinates.selectAll( "span.segment" )
-		.text( function(d) { return d.text } )
-		.style( "position", "static" )
-		.style( "vertical-align", "top" )
-		.style( "white-space", "pre-wrap" )
-		.call( this.__setSpanTypeStyles.bind(this) )
-		.call( this.__getSpanCoords.bind(this) )
-	this.view.coordinates.selectAll( "span.word" )
-		.style( "position", "static" )
-		.style( "vertical-align", "top" )
-		.call( this.__setSpanTypeStyles.bind(this) )
-		.call( this.__getSpanCoords.bind(this) )
+		this.view.coordinates.selectAll( "span.segment" )
+			.text( function(d) { return d.text } )
+			.style( "position", "static" )
+			.style( "vertical-align", "top" )
+			.style( "white-space", "pre-wrap" )
+			.call( this.__setSpanTypeStyles.bind(this) )
+			.call( this.__getSpanCoords.bind(this) );
+		this.view.coordinates.selectAll( "span.word" )
+			.style( "position", "static" )
+			.style( "vertical-align", "top" )
+			.call( this.__setSpanTypeStyles.bind(this) )
+			.call( this.__getSpanCoords.bind(this) );
+	}
 	this.view.coordinates
 		.style( "top", ( this.DEBUG ? this.HEIGHT * 2 : 0 ) + "px" )
-		.style( "opacity", this.DEBUG ? 1 : 0 )
+		.style( "opacity", this.DEBUG ? 1 : 0 );
 	
 	// Render all span elements
-	elems = this.view.overlay.selectAll( "span.word" ).data( allSpanElements );
-	elems.enter().append( "span" ).attr( "class", "word" );
-	elems.exit().remove();
-	elems = this.view.overlay.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
-	elems.enter().append( "span" ).attr( "class", "segment" );
-	elems.exit().remove();
-	
-	this.view.overlay.selectAll( "span.segment" )
-		.text( function(d) { return d.text } )
-		.style( "position", "absolute" )
-		.style( "display", "inline-block" )
-		.style( "white-space", "pre-wrap" )
-		.call( this.__setSegmentStyles.bind(this) )
-		.call( this.__setSpanCoords.bind(this) )
-	this.view.overlay.selectAll( "span.word" )
-		.call( this.__setSpanTypeStyles.bind(this) )
-	this.view.overlay
-		.style( "top", 0 )
-	
-	// Suggestion box (REVISE)
-	if ( currentSpanElement !== undefined ) {
-		this.view.suggestionBox
-			.call( this.__setSuggestionBoxStylesAndCoords.bind(this) );
-
-		// Entries in the suggestion box (REVISE)
-		elems = this.view.suggestions.selectAll( "span" ).data( suggestionElements );
-		elems.enter().append( "span" )
+	if ( allSpanElements !== undefined ) {
+		elems = this.view.overlay.selectAll( "span.word" ).data( allSpanElements );
+		elems.enter().append( "span" ).attr( "class", "word" );
 		elems.exit().remove();
-		this.view.suggestions
-			.selectAll( "span" )
-				.style( "position", "absolute" )
-				.style( "display", "inline-block" )
-				.text( function(d) { return d.text } )
-				.call( this.__setSuggestionStylesAndCoords.bind(this) )
-	}
+		elems = this.view.overlay.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
+		elems.enter().append( "span" ).attr( "class", "segment" );
+		elems.exit().remove();
 
+		this.view.overlay.selectAll( "span.segment" )
+			.text( function(d) { return d.text } )
+			.style( "position", "static" )
+			.style( "vertical-align", "top" )
+			.style( "white-space", "pre-wrap" )
+			.call( this.__setSegmentStyles.bind(this) )
+			.call( this.__setSpanCoords.bind(this) );
+		this.view.overlay.selectAll( "span.word" )
+			.style( "position", "absolute" )
+			.style( "display", "inline-block" )
+			.call( this.__setSpanTypeStyles.bind(this) )
+			.call( this.__setSpanCoords.bind(this) );
+	}
+	this.view.overlay
+		.style( "top", 0 );
+	
+	// Render suggestions
+	if ( activeSpanElement !== undefined && activeSuggestionElements !== undefined ) {
+		this.view.suggestionBox.call( this.__setSuggestionBoxStylesAndCoords.bind(this) );
+		elems = this.view.suggestions.selectAll( "span" ).data( activeSuggestionElements )
+		elems.enter().append( "span" );
+		elems.exit().remove();
+		
+		this.view.suggestions.selectAll( "span" )
+			.style( "position", "absolute" )
+			.text( function(d) { return d.text } )
+			.call( this.__setSuggestionStylesAndCoords.bind(this) );
+	}
+	
 	if ( caretSpanSegment !== undefined ) {
 		// Render caret on screen
 		elems = this.view.caret.selectAll( "span" ).data( [ caretSpanSegment ] );
@@ -218,44 +217,52 @@ TypingUI.prototype.__setSegmentStyles = function( elem ) {
 };
 
 TypingUI.prototype.__setSpanTypeStyles = function( elem ) {
-	var setMatchedType = function( elem ) {
-		elem.style( "color", "#000" )
-			.style( "border", "none" )
-			.style( "opacity", 1 )
-	};
-	var setCurrentType = function( elem ) {
+	var activeSuggestionElements = this.model.getAttr( "activeSuggestionElements" );
+	var setActiveStyles = function( elem ) {
 		elem.style( "color", "#238B45" )
-			.style( "opacity", 1 )
+			.style( "border-bottom", activeSuggestionElements.length === 0 ? "1px dotted #238B45" : "none" )
 	};
-	var setFutureType = function( elem ) {
-		elem.style( "color", "#999999" )
+	var setUserStyles = function( elem ) {
+		elem.style( "color", "#333" )
 			.style( "border", "none" )
-			.style( "opacity", 1 )
 	};
-	var setExtraType = function( elem ) {
-		elem.style( "color", "#fff" )
+	var setCandidateStyles = function( elem ) {
+		elem.style( "color", "#66C2A4" )
 			.style( "border", "none" )
-			.style( "opacity", 0 )
+	};
+	var setExpiredStyles = function( elem ) {
+		elem.style( "color", "#ccc" )
+			.style( "border", "none" )
+	};
+	var setMtStyles = function( elem ) {
+		elem.style( "color", "#999" )
+			.style( "border", "none" )
 	};
 
-	elem.filter( function(d) { return d.type === "matched" } ).call( setMatchedType.bind(this) );
-	elem.filter( function(d) { return d.type === "current" } ).call( setCurrentType.bind(this) );
-	elem.filter( function(d) { return d.type === "future" || d.type === "spacing" } ).call( setFutureType.bind(this) );
-	elem.filter( function(d) { return d.type === "extra" } ).call( setExtraType.bind(this) );
+	elem.filter( function(d) { return d.isActive } ).call( setActiveStyles.bind(this) );
+	elem.filter( function(d) { return !d.isActive && d.isUser } ).call( setUserStyles.bind(this) );
+	elem.filter( function(d) { return !d.isActive && !d.isUser && d.isMtCandidate } ).call( setCandidateStyles.bind(this) );
+	elem.filter( function(d) { return !d.isActive && !d.isUser && d.isMtExpired } ).call( setExpiredStyles.bind(this) );
+	elem.filter( function(d) { return !d.isActive && !d.isUser && !(d.isMtCandidate||d.isMtExpired) } ).call( setMtStyles.bind(this) );
 };
 
-TypingUI.prototype.__getSpacingDims = function( elem ) {
-	var maxWidth = 0;
-	elem.each( function(d) { maxWidth = Math.max( maxWidth, d3.select(this)[0][0].offsetWidth ) } );
-	elem.each( function(d) { d.__spacing = maxWidth } );
+TypingUI.prototype.__getSpanWidths = function( elem ) {
+	var widths = [];
+	elem.each( function(d) {
+		var self = d3.select(this)[0][0];
+		widths.push( self.offsetWidth );
+	});
+	elem.each( function(d) {
+		d.__width = Math.max.apply( Math, widths );
+	});
 };
 
 TypingUI.prototype.__getSpanCoords = function( elem ) {
-	var currentSpanElement = this.model.getAttr( "currentSpanElement" );
+	var activeSpanElement = this.model.getAttr( "activeSpanElement" );
 	elem.each( function(d) {
 		var self = d3.select(this)[0][0];
-		if ( d.type === "spacing" ) {
-			d3.select(this).style( "display", "inline-block" ).style( "width", ( currentSpanElement.__spacing - currentSpanElement.__width ) + "px" );
+		if ( d.hasOwnProperty( "__width" ) ) {
+			d3.select(this).style( "display", "inline-block" ).style( "width", d.__width + "px" );
 			d.__left = self.offsetLeft;
 			d.__top = self.offsetTop;
 		}
@@ -282,24 +289,24 @@ TypingUI.prototype.__setCaretCoords = function( elem ) {
 		.style( "top", (segment.__top+3) + "px" )
 };
 
-
 TypingUI.prototype.__setSuggestionBoxStylesAndCoords = function( elem ) {
-	var currentSpanElement = this.model.getAttr( "currentSpanElement" );
-	var suggestionElements = this.model.getAttr( "suggestionElements" );
-	elem.style( "left", currentSpanElement.__left + "px" )
-		.style( "top", ( currentSpanElement.__top + this.FONT_SIZE + 4 ) + "px" )
-		.style( "width", currentSpanElement.__spacing + "px" )
-		.style( "height", (this.FONT_SIZE+6) * suggestionElements.length + "px" )
+	var activeSpanElement = this.model.getAttr( "activeSpanElement" );
+	var activeSuggestionElements = this.model.getAttr( "activeSuggestionElements" );
+	elem.style( "left", activeSpanElement.__left + "px" )
+		.style( "top", ( activeSpanElement.__top + this.FONT_SIZE + 4 ) + "px" )
+		.style( "width", activeSpanElement.__width + "px" )
+		.style( "height", (this.FONT_SIZE+6) * activeSuggestionElements.length + "px" )
 		.style( "background", "#fff" )
 		.style( "border", "1px solid #238B45" )
 		.style( "box-shadow", "1px 1px 4px #005824" )
+		.style( "opacity", activeSuggestionElements.length === 0 ? 0 : 1 )
 };
 
 TypingUI.prototype.__setSuggestionStylesAndCoords = function( elem ) {
-	var currentSpanElement = this.model.getAttr( "currentSpanElement" );
-	elem.style( "left", currentSpanElement.__left + "px" )
-		.style( "top", function(d,i) { return ( currentSpanElement.__top + this.FONT_SIZE + 4 + i * (this.FONT_SIZE+6) + 2 ) + "px" }.bind(this) )
-		.style( "width", currentSpanElement.__spacing + "px" )
+	var activeSpanElement = this.model.getAttr( "activeSpanElement" );
+	elem.style( "left", activeSpanElement.__left + "px" )
+		.style( "top", function(d,i) { return ( activeSpanElement.__top + this.FONT_SIZE + 4 + i * (this.FONT_SIZE+6) + 2 ) + "px" }.bind(this) )
+		.style( "width", activeSpanElement.__width + "px" )
 		.style( "height", (this.FONT_SIZE+6) + "px" )
 		.style( "color", "#999" )
 		.style( "border-top", function(d,i) { return (i===0) ? "none" : "1px solid #ccc" } )
@@ -330,16 +337,21 @@ TypingUI.prototype.__setTextareaStyles = function( elem ) {
 		.attr( "wrap", "soft" )
 };
 
-TypingUI.prototype.__setCaptureContent = function( elem ) {
+TypingUI.prototype.__setKeystrokesContent = function( elem ) {
+	var self = elem[0][0];
 	var allText = this.model.state.getAttr( "allText" );
-	var caretCharIndex = this.model.state.getAttr( "caretCharIndex" );
+	var caretCharIndex = this.model.getAttr( "caretCharIndex" );
 	var inputSelectionStart = this.model.getAttr( "inputSelectionStart" );
 	var inputSelectionEnd = this.model.getAttr( "inputSelectionEnd" );
-	elem[0][0].value = allText;
-	if ( elem[0][0].selectionStart !== inputSelectionStart )
-		elem[0][0].selectionStart = inputSelectionStart;
-	if ( elem[0][0].selectionEnd !== inputSelectionEnd )
-		elem[0][0].selectionEnd = inputSelectionEnd;
+	self.value = allText;
+	self.selectionStart = inputSelectionStart;
+	self.selectionEnd = inputSelectionEnd;
+	if ( inputSelectionStart === inputSelectionEnd )
+		self.selectionDirection = "none";
+	else if ( caretCharIndex === inputSelectionStart )
+		self.selectionDirection = "backward";
+	else
+		self.selectionDirection = "forward";
 };
 
 TypingUI.prototype.__setFontStyles = function( elem ) {
@@ -359,6 +371,7 @@ TypingUI.prototype.__onCaptureBlur = function() {
 };
 
 TypingUI.prototype.KEY = {
+	TICK : 192,
 	TAB : 9,
 	WHITESPACE : 32,
 	RIGHT_ARROW : 39,
@@ -371,6 +384,10 @@ TypingUI.prototype.__onCaptureKeyDown = function() {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
+	else if ( d3.event.keyCode === this.KEY.TICK ) {
+		d3.event.preventDefault();
+		d3.event.cancelBubble = true;
+	}
 	else {
 		
 	}
@@ -379,69 +396,39 @@ TypingUI.prototype.__onCaptureKeyDown = function() {
 TypingUI.prototype.__onCaptureKeyPress = function() {
 	if ( d3.event.keyCode === this.KEY.TAB ) {
 	}
+	else if ( d3.event.keyCode === this.KEY.TICK ) {
+		d3.event.preventDefault();
+		d3.event.cancelBubble = true;
+	}
 	else {
 	}
 };
 
 TypingUI.prototype.__onCaptureKeyUp = function() {
-	if ( d3.event.keyCode === this.KEY.WHITESPACE ) {
-		this.model.state.refreshFutureText();
-	}
 	if ( d3.event.keyCode === this.KEY.TAB ) {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
+	else if ( d3.event.keyCode === this.KEY.TICK ) {
+		d3.event.preventDefault();
+		d3.event.cancelBubble = true;
+		var self = this.view.keystrokes[0][0];
+		var allText = self.value;
+		var selectionStartCharIndex = self.selectionStart;
+		var selectionEndCharIndex = self.selectionEnd;
+		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
+		this.model.state.updateAllText( allText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex, true );
+	}
 	else {
-		var selectionStartCharIndex = this.view.keystrokes[0][0].selectionStart;
-		var selectionEndCharIndex = this.view.keystrokes[0][0].selectionEnd;
-		var caretCharIndex = ( this.view.keystrokes[0][0].selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
-		this.model.state.setUserText( this.view.keystrokes[0][0].value, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex );
+		var self = this.view.keystrokes[0][0];
+		var allText = self.value;
+		var selectionStartCharIndex = self.selectionStart;
+		var selectionEndCharIndex = self.selectionEnd;
+		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
+		this.model.state.updateAllText( allText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex );
 	}
 };
 
 TypingUI.prototype.__onOverlayClick = function() {
 	this.view.keystrokes[0][0].focus();
 };
-
-/*
-TypingUI.prototype.__getUserText = function() {
-	return this.__keyboard[0][0].value;
-};
-TypingUI.prototype.__setUserText = function( text ) {
-	this.__keyboard[0][0].value = text;
-};
-TypingUI.prototype.__getAutocompleteText = function() {
-	return d3.select( "input.autocomplete" )[0][0].value;
-};
-TypingUI.prototype.__setAutocompleteText = function( text ) {
-	d3.select( "input.autocomplete" )[0][0].value = text;
-};
-TypingUI.prototype.__getSuggestionText = function() {
-	return d3.select( "input.suggestion" )[0][0].value;
-};
-TypingUI.prototype.__setSuggestionText = function( text ) {
-	d3.select( "input.suggestion" )[0][0].value = text;
-};
-TypingUI.prototype.__popSuggestionText = function() {
-	var tokens = this.__getSuggestionText().split( /[ ]+/g );
-	if ( tokens.length > 0 ) {
-		var firstWord = tokens.splice( 0, 1 )[ 0 ];
-		this.__setSuggestionText( tokens.join( " " ) );
-		return firstWord;
-	}
-	else {
-		return "";
-	}
-};
-TypingUI.prototype.__getUserSelectionStart = function() {
-	return this.__keyboard[0][0].selectionStart;
-};
-TypingUI.prototype.__getUserSelectionEnd = function() {
-	return this.__keyboard[0][0].selectionEnd;
-};
-TypingUI.prototype.__setUserSelection = function( startIndex, endIndex ) {
-	endIndex || ( endIndex = startIndex );
-	this.__keyboard[0][0].selectionStart = startIndex;
-	this.__keyboard[0][0].selectionEnd = endIndex;
-};
-*/
