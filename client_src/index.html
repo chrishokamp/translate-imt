@@ -24,7 +24,7 @@ var updateTypingUI = function() {
 		typingState.updateTranslate( targetPrefix, targetSuffix )
 	};
 	server.translate( handler, sourceText, targetPrefix );
-}
+};
 var initEventHandlers = function() {
 	d3.select( "#src-input" ).on( "change", function() {
 		updateTypingUI();

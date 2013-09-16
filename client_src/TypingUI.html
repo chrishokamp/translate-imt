@@ -11,6 +11,7 @@
 	<script type="text/javascript" src="js/TypingState.js"></script>
 	<script type="text/javascript" src="js/TypingModel.js"></script>
 	<script type="text/javascript" src="js/TypingUI.js"></script>
+	<script type="text/javascript" src="js/TranslateServer.js"></script>
 
 <style type="text/css">
 div.container {
@@ -28,17 +29,38 @@ div.container {
 }
 </style>
 <script type="text/javascript">
+var sourceText = "After the 1993 hit movie Free Willy, activists and fans campaigned to release the movie's star, a captive killer whale named Keiko, and launched a story Hollywood couldn’t invent.";
+
+var updateTypingUI = function() {
+	var targetPrefix = typingState.getUserText();
+	var handler = function( targetTranslation ) {
+		var targetSuffix = targetTranslation.substr( targetPrefix.length );
+		typingState.updateTranslation( targetPrefix, targetSuffix );
+		d3.select( ".SetUserText" ).text( targetPrefix );
+		d3.select( ".SetMtText" ).text( targetSuffix );
+		d3.select( ".SetAllText" ).text( targetTranslation );
+	};
+	server.translate( handler, sourceText, targetPrefix );
+};
 $(document).ready( function() {
 	typingState = new TypingState();
 	typingModel = new TypingModel({ "state" : typingState });
 	typingUI = new TypingUI({ "model" : typingModel });
+	server = new TranslateServer();
+	server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
 	
-	var s = "A beautiful, innovative collection in which Francisco Costa layered references to urb";
-	var t = "urban tribes, ’80s art, handcraft and even, seemingly, radical chicks of the 1920s.";
+	var s = "Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Frei";
+	var t = "Freilassung der Star des Films Willy, und startete eine Geschichte Hollywood könnte.";
+	var st = "Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Freilassung der Star des Films Willy, und startete eine Geschichte Hollywood könnte.";
 	typingState.setAttr( "caretCharIndex", s.length );
 	typingState.setAttr( "selectionStartCharIndex", s.length );
 	typingState.setAttr( "selectionEndCharIndex", s.length );
 	typingState.updateTranslation( s, t );
+	typingState.on( "token", updateTypingUI );
+	
+	d3.select( ".SetUserText" ).text( s );
+	d3.select( ".SetMtText" ).text( t );
+	d3.select( ".SetAllText" ).text( st );
 	
 	d3.select( ".UpdateTranslation" ).on( "click", function() {
 		var userText = d3.select( ".SetUserText" )[0][0].value;
@@ -52,7 +74,7 @@ $(document).ready( function() {
 		var selectionEndCharIndex = parseInt( d3.select( ".SetSelectedEndIndex" )[0][0].value );
 	});
 	d3.select( ".SetDebugLayout" ).on( "change", function() {
-		typingUI.DEBUG = d3.select(".SetDebugLayout")[0][0].checked;
+		typingUI.DEBUG = d3.select( ".SetDebugLayout" )[0][0].checked;
 		typingUI.render();
 	});
 
