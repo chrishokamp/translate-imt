@@ -62,7 +62,7 @@ TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, opt
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
 		var responseTime = new Date();
-		var duration = ( responseTime.UTC() - requestTime.UTC() ) / 1000;
+		var duration = ( responseTime - requestTime ) / 1000;
 		var timing = {
 					"requestTime" : this.formatter( requestTime ),
 					"responseTime" : this.formatter( responseTime ),

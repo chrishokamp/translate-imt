@@ -24,6 +24,7 @@ EventLogger.prototype.log = function( message ) {
 <script type="text/javascript">
 $(document).ready( function() {
 	server = new TranslateServer();
+	server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
 	logger = new EventLogger( "TranslateServer" );
 	var translateHandler = function( targetTranslation, requestData, responseData ) {
 		logger.log( "translation = " + targetTranslation );
