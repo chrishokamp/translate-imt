@@ -1,6 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
+    <title>Translate UI</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<script type="text/javascript" src="js/d3.js"></script>
 	<script type="text/javascript" src="js/jquery.js"></script>
@@ -11,98 +12,33 @@
 	<script type="text/javascript" src="js/TypingState.js"></script>
 	<script type="text/javascript" src="js/TypingModel.js"></script>
 	<script type="text/javascript" src="js/TypingUI.js"></script>
+	<script type="text/javascript" src="js/TranslateServer.js"></script>
 
-	<script type="text/javascript">
-	$(document).ready( function() {
-		typingState = new TypingState();
-		typingModel = new TypingModel({ "state" : typingState });
-		typingUI = new TypingUI({ "model" : typingModel });
-		typingState.on( "token", updateTargetText );
-		initEventHandlers();
-	});
-	
-	// URL of the PTM service
-	var _serverURL = 'http://joan.stanford.edu:8017/t';
-	
-	var updateTargetText = function() {
-		var sourceText = $('#src-input').val();
-	    var targetPrefix = typingState.getUserText();
-		var msg = {
-			src : "EN",
-			tgt : "DE",
-			n : 3,
-			text : sourceText,
-			tgtPrefix : targetPrefix,
-		};
-		var ajaxTime = Date.now();
-		$.ajax({
-			url: _serverURL,
-			dataType: "json",
-			data: { tReq : JSON.stringify(msg) },
-			success: function( data ) {
-				var totalTime = ( Date.now() - ajaxTime ) / 1000;
-				console.log(data);
-				$('#output').empty();
-				for ( var i = 0; i < data.tgtList.length; i++ ) {
-					$('#output').append('<p>' + data.tgtList[i] + '</p>');
-				}
-				$('#output').append('<span style="font-size:small;color:red">request: ' + totalTime.toFixed(2).toString() + 's</span>');
-
-				// Load top MT into the Typing UI
-				var allText = data.tgtList[0];
-				var mtText = allText.substr( targetPrefix.length );
-				console.log( "results", targetPrefix, mtText );
-				typingState.updateTranslation( targetPrefix, mtText );
-			},
-			error: function(jqXHR, textStatus, errorThrown){
-				console.log("Translation failed");
-				console.log(errorThrown);
-			},
-		});
+<script type="text/javascript">
+var typingState, typingModel, typingUI;
+var updateTypingUI = function() {
+	var sourceText = $('#src-input').val();
+	var targetPrefix = typingState.getUserText();
+	var handler = function( targetTranslation ) {
+		var targetSuffix = targetTranslation.substr( targetPrefix.length );
+		typingState.updateTranslate( targetPrefix, targetSuffix )
 	};
-	
-	var initEventHandlers = function() {
-		  $('#src-input').change(function(e) {
-                    console.log( "src-input changed" );
-		    var sourceText = $('#src-input').val();
-		    var msg = {
-		      src : "EN",
-		      tgt : "DE",
-		      n : 3,
-		      text : sourceText,
-		      tgtPrefix : "",
-		    };
-		    var ajaxTime = Date.now();
-		    $.ajax({
-		      url: _serverURL,
-		      dataType: "json",
-		      data: {tReq : JSON.stringify(msg), },
-		      success: function(data){
-		        //response is a callback
-		        var totalTime = (Date.now()-ajaxTime) / 1000;
-		        console.log(data);
-		        $('#output').empty();
-		        for (var i = 0; i < data.tgtList.length; i++) {
-		          $('#output').append('<p>' + data.tgtList[i] + '</p>');
-		        }
-		        $('#output').append('<span style="font-size:small;color:red">request: ' + totalTime.toFixed(2).toString() + 's</span>');
-
-				// Load top MT into the Typing UI
-				var allText = data.tgtList[0];
-				var mtText = allText.substr( targetPrefix.length );
-				console.log( "results", "", mtText );
-				typingState.updateTranslation( "", mtText );
-		      },
-		      error: function(jqXHR, textStatus, errorThrown){
-		        console.log("Translation failed");
-		        console.log(errorThrown);
-		      },
-		    });
-		  });
-	}
-	</script>
-
-    <title>Phrasal Debug Interface</title>
+	server.translate( handler, sourceText, targetPrefix );
+}
+var initEventHandlers = function() {
+	d3.select( "#src-input" ).on( "change", function() {
+		updateTypingUI();
+	});
+};
+$(document).ready( function() {
+	typingState = new TypingState();
+	typingModel = new TypingModel({ "state" : typingState });
+	typingUI = new TypingUI({ "model" : typingModel });
+	server = new TranslateServer();
+	typingState.on( "token", updateTypingUI );
+	initEventHandlers();
+});
+</script>
 </head>
 
 <body>
