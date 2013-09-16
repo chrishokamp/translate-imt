@@ -1,8 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-    <title>TranslateServer</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>TranslateServer</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<script type="text/javascript" src="js/d3.js"></script>
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/TranslateServer.js"></script>
@@ -29,7 +29,7 @@ $(document).ready( function() {
 		logger.log( "translation = " + targetTranslation );
 		logger.log( "request = " + JSON.stringify( requestData ) );
 		logger.log( "response = " + JSON.stringify( responseData ) );
-                d3.select( ".SetTargetTranslation" ).text( targetTranslation );
+		d3.select( ".SetTargetTranslation" ).text( targetTranslation );
 	};
 	d3.select( ".TranslateRequest" ).on( "click", function() {
 		var sourceText = d3.select( ".GetSourceText" )[0][0].value;
@@ -65,10 +65,10 @@ div.container {
 		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Target Prefix: </span>
 		<textarea class="GetTargetPrefix" style="width: 400px; height: 80px"></textarea>
 	</p>
-        <p>
-                <span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Target Prefix: </span>
-                <textarea class="SetTargetTranslation" style="width: 400px; height: 80px; background: #eee" disabled></textarea>
-        </p>
+	<p>
+		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Target Prefix: </span>
+		<textarea class="SetTargetTranslation" style="width: 400px; height: 80px; background: #eee" disabled></textarea>
+	</p>
 	<p>
 		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
 		<input type="button" class="TranslateRequest" value="Submit HTTP Request"></input>
