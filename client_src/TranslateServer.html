@@ -29,12 +29,12 @@ $(document).ready( function() {
 		logger.log( "translation = " + targetTranslation );
 		logger.log( "request = " + JSON.stringify( requestData ) );
 		logger.log( "response = " + JSON.stringify( responseData ) );
+                d3.select( ".SetTargetTranslation" ).text( targetTranslation );
 	};
 	d3.select( ".TranslateRequest" ).on( "click", function() {
 		var sourceText = d3.select( ".GetSourceText" )[0][0].value;
 		var targetPrefix = d3.select( ".GetTargetPrefix" )[0][0].value;
-		var options = {};
-		server.translate( sourceText, targetPrefix, options, translateHandler );
+		server.translate( translateHandler, sourceText, targetPrefix );
 	});
 });
 </script>
@@ -56,7 +56,7 @@ div.container {
 </head>
 
 <body>
-<div class="TranslateRequest container" style="width: 640px">
+<div class="container" style="width: 640px">
 	<p>
 		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Source Text: </span>
 		<textarea class="GetSourceText" style="width: 400px; height: 80px"></textarea>
@@ -65,11 +65,15 @@ div.container {
 		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Target Prefix: </span>
 		<textarea class="GetTargetPrefix" style="width: 400px; height: 80px"></textarea>
 	</p>
+        <p>
+                <span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Target Prefix: </span>
+                <textarea class="SetTargetTranslation" style="width: 400px; height: 80px; background: #eee" disabled></textarea>
+        </p>
 	<p>
 		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
 		<input type="button" class="TranslateRequest" value="Submit HTTP Request"></input>
 	</p>
 </div><br/>
-<div class="EventLogger container" style="width: 640px; height: 200px; overflow-y: scroll"></div><br/>
+<div class="EventLogger container" style="width: 640px; height: 480px; overflow-y: scroll"></div><br/>
 </body>
 </html>

@@ -1,15 +1,32 @@
 var TranslateServer = function() {};
 
 TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
+TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
 
 /**
  * Make a translate request.
+ * @param {function} f Call back function on either a successful or failed request. The arguments for f are: targetTranslation, requestData, responseData.  On failed requests, targetTranslation is null.
  * @param {string} sourceText Sentence in source language.
  * @param {string} targetPrefix Partially translated sentence in target language.
  * @param {{string:object}} options Additional options for the request (src, tgt, n).
- * @param {function} f Call back function on either a successful or failed request. The arguments for f are: targetTranslation, requestData, responseData.  On failed requests, targetTranslation is null.
  **/
-TranslateServer.prototype.translate = function( sourceText, targetPrefix, options, f ) {
+TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, options ) {
+    if ( f === undefined ) {
+	return;
+    }
+    if ( sourceText === undefined || sourceText.length === 0 ) {
+	if ( f !== undefined ) {
+	    f( "", null, null );
+	    return;
+	}
+    }
+    if ( targetPrefix === undefined ) {
+	targetPrefix = "";
+    }
+    if ( options === undefined ) {
+	options = {};
+    }
+
 	var tReqData = {
 		"src" : "EN",
 		"tgt" : "DE",
@@ -24,24 +41,36 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, option
 		"tReq" : JSON.stringify( tReqData )
 	};
 
-	var requestTime = Date.now();
+	var requestTime = new Date();
 	var successHandler = function( responseData, responseObject, responseMessage ) {
-		var responseTime = Date.now();
+		var responseTime = new Date();
 		var duration = ( responseTime - requestTime ) / 1000;
+		var timing = {
+		    "requestTime" : this.formatter( requestTime ),
+		    "responseTime" : this.formatter( responseTime ),
+		    "duration" : duration
+		};
+		responseData.timing = timing;
 		console.log( "[TranslateServer] [success] " + duration.toFixed(2) + " seconds", requestData, responseData, responseObject, responseMessage );
-		var targetTranslation = data.tgtList[0];
+		var targetTranslation = responseData.tgtList[0];
 		if ( f !== undefined ) {
 			f( targetTranslation, requestData, responseData );
 		}
-	};
+	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
-		var responseTime = Date.now();
-		var duration = ( responseTime - requestTime ) / 1000;
-		console.log( "[TranslateServer] [error] " + duration.toFixed(2) + " seconds", requestData, responseData, responseObject, responseMessage );
+		var responseTime = new Date();
+		var duration = ( responseTime.UTC() - requestTime.UTC() ) / 1000;
+		var timing = {
+                    "requestTime" : this.formatter( requestTime ),
+                    "responseTime" : this.formatter( responseTime ),
+                    "duration" : duration
+                };
+		responseData.timing = timing;
+ 		console.log( "[TranslateServer] [error] " + duration.toFixed(2) + " seconds", requestData, responseData, responseObject, responseMessage );
 		if ( f !== undefined ) {
 			f( null, requestData, responseData );
 		}
-	};
+	}.bind(this);
 	var requestMessage = {
 		"url" : this.SERVER_URL,
 		"dataType" : "json",
