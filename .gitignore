@@ -1,0 +1,22 @@
+# ignore emacs backups
+*~
+
+# ignore compiled files
+projects/*/classes/**
+
+# ignore javadoc
+javadoc/**
+
+# temporary files
+*.swp
+*.swo
+
+# C++ binaries
+*.o
+*.so
+
+#ignore OS X Finder dirs
+.DS_Store
+
+# ignore eclipse settings files
+projects/*/.settings/**
