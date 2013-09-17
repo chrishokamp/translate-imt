@@ -13,38 +13,27 @@
 
     <script type="text/javascript">
       // Global variables
-      _serverURL = "http://127.0.0.1:8017/t";
+      _serverURL = "http://joan.stanford.edu:8017/t";
       _srcLang = "EN";
       _tgtLang = "DE";
     </script>
+    <script type="text/javascript" src="js/SourceBox.js"></script>
     <script type="text/javascript" src="js/ptm.js"></script>
-    
-    <title>Phrasal Debug Interface</title>
-</head>
 
+    <title>PTM Prototype Interface</title>
+</head>
 <body>
 
-<div id="source">
-Source (enter text, then tab to target box):
-<br>
-<textarea cols="60" rows="10" id="src-input"></textarea>
+<div id="wrapper" style="padding:1em;width=600px;max-width:600px">  
+
+  <div id="source"></div>
+
+  <br>
+
+  <div class="TypingUI"></div><br/>
+
+  <div id="output"></div>
 </div>
-
-<br>
-
-Target (updates retrieved on space key):
-<br>
-<div id="textbox">
-<form action="" name="form-tgt-input" id="form-tgt-input">
-<textarea cols="60" rows="10" id="tgt-input" disabled style="background: #eee"></textarea>
-</form>
-</div>
-
-<br>
-
-<div class="TypingUI"></div><br/>
-
-<div id="output"></div>
 
 </body>
 </html>

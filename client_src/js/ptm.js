@@ -1,14 +1,21 @@
 // Deployment options
 // console.log = function() {};
 
+// Setup the global namespace
+var PTM = {};
+
 $(document).ready( function() {
-	typingState = new TypingState();
+  PTM.sourceBox = new SourceBox("data/en-source.js", updateTranslation);
+  PTM.sourceBox.render("source");
+  
+  // TODO(spenceg) Move to PTM namespace
+  // TODO(spenceg) How to update when the source text changes?
+  typingState = new TypingState();
 	typingModel = new TypingModel({ "state" : typingState });
 	typingUI = new TypingUI({ "model" : typingModel });
 		
 	typingState.on( "token", updateTranslation );
 	d3.select( "#tgt-input" ).on( "keyup", function() { typingState.setUserText( d3.event.srcElement.value ) } );
-	initEventHandlers();
 });
 
 
@@ -48,7 +55,7 @@ var sendTranslationMessage = function(msg, callback) {
 
 var updateTranslation = function() {
 	// Get source text
-	var source = $('#src-input').val();
+	var source = PTM.sourceBox.getSourceText();
 		
 	// Get user-entered target prefix
 	var tgtPrefix = typingState.getUserText();
@@ -64,10 +71,3 @@ var updateTranslation = function() {
 
   sendTranslationMessage(msg, updateUI);
 };
-
-
-var initEventHandlers = function() {
-	$('#src-input').change(function(e) {
-    updateTranslation();
-	});
-}
