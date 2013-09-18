@@ -1,15 +1,188 @@
 var TypingState = Backbone.Model.extend({
 	"defaults" : {
-		"allText" : "",
 		"allTokens" : "",
-		"userText" : "",
+		"allText" : "",
 		"mtText" : "",
-		"originalText" : "",
+		"userText" : "",
 		"caretCharIndex" : 0,
 		"selectionStartCharIndex" : 0,
-		"selectionEndCharIndex" : 0
+		"selectionEndCharIndex" : 0,
+		"selectionDirection" : "none"
 	}
 });
+
+/**
+ * Reset the content of the Typing UI.
+ * @param {string} [mtText] Content of the Typing UI.
+ * @param {string} [userText] Prefix to be marked as user-entered text.
+ * @param {integer} [caretCharIndex] Location of the caret.
+ * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
+ **/
+TypingState.prototype.setText = function( mtText, userText, caretCharIndex, selectionCharIndex ) {
+	// Default values for arguments
+	if ( ! mtText ) { mtText = "" }
+	if ( ! userText ) { userText = "" }
+	if ( ! caretCharIndex ) { caretCharIndex = this.getAttr( caretCharIndex ) }
+	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
+	
+	// Generate a list of tokens
+	var allTokens = this.__tokenize( mtText );
+	this.__markMtText( allTokens, mtText );
+	this.__markUserText( allTokens, userText );
+	var caretCharIndex = this.__markActiveToken( allTokens, caretCharIndex );
+	var allText = this.__compile( allTokens );
+	
+	// Set state attributes
+	this.setAttr( "allTokens", allTokens );
+	this.setAttr( "mtText", mtText );
+	this.setAttr( "userText", userText );
+	this.__setCharIndexes( caretCharIndex, selectionCharIndex );
+	this.flush();
+	return this;
+};
+
+/**
+ * Incrementally update the content of the Typing UI.
+ * Detect changes and mark corresponding tokens as expired or changed.
+ * @param {string} allText Content of the Typing UI.
+ * @param {integer} [caretCharIndex] Location of the caret.
+ * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
+ * @param {boolean} [forceExpire] Force
+ **/
+TypingState.prototype.updateText = function( newText, caretCharIndex, selectionCharIndex, forceExpire ) {
+	// Default values for arguments
+	if ( ! newText ) { newText = "" }
+	if ( ! caretCharIndex ) { caretCharIndex = this.getAttr( caretCharIndex ) }
+	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
+	if ( ! forceExpire ) { forceExpire = false }
+	
+	// Determine changes in tokens
+	var allTokens = this.getAttr( "allTokens" );
+	var newTokens = this.__tokenize( newText );
+	if ( forceExpire || allTokens.length !== newTokens.length ) {
+		var mtText = this.getAttr( "mtText" );
+		this.__markMtExpired( newTokens, newText );
+		this.__markCharIndex( newTokens );
+		this.__markUserAccepted( newTokens, newText, caretCharIndex );
+		this.__markActiveToken( newTokens, caretCharIndex );
+		allTokens = newTokens;
+	}
+	else {
+		this.__markUesrChanged( allTokens, newTokens );
+		this.__markCharIndex( allTokens );
+		this.__markActiveToken( allTokens, caretCharIndex );
+	}
+	
+	// Set state attributes
+	this.setAttr( "allTokens", allTokens );
+	this.__setCharIndexes( caretCharIndex, selectionCharIndex );
+	this.flush();
+	return this;
+};
+
+TypingState.prototype.__tokenize = function( allText ) {
+	var termsAndSeps = allText.split( this.WHITESPACE );
+	var length = ( termsAndSeps.length + 1 ) / 2;
+	var allTokens = new Array( length );
+	for ( var n = 0; n < length; n++ ) {
+		var term = termsAndSeps[ n * 2 ];
+		var sep = ( n < length - 1 ) ? termsAndSeps[ n * 2 + 1 ] : "";
+		var token = { "term" : term, "sep" : sep };
+		allTokens[ n ] = token;
+	}
+	return allTokens;
+};
+
+TypingState.prototype.__markMtText = function( allTokens, mtText ) {
+	var termsAndSeps = mtText.split( this.WHITESPACE );
+	var length = ( termsAndSeps.length + 1 ) / 2;
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		var term = ( n < length ) ? termsAndSeps[ n * 2 ] : "";
+		var isMt = ( n < length );
+		token.mt = term;
+		token.isMt = isMt;
+		token.isExpired = false;
+	}
+};
+
+TypingState.prototype.__markUserText = function( allTokens, userText ) {
+	var termsAndSeps = userText.split( this.WHITESPACE );
+	var length = ( termsAndSeps.length + 1 ) / 2;
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		var term = ( n < length ) ? termsAndSeps[ n * 2 ] : "";
+		var isUser = ( n < length );
+		token.user = term;
+		token.isUser = isUser;
+		token.isChanged = false;
+	}
+};
+
+TypingState.prototype.__markActiveToken = function( allTokens, caretCharIndex ) {
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		var startCharIndex = token.charIndex;
+		var endCharIndex = startCharIndex + token.term.length;
+		token.original = token.term;
+		token.atOrBeforeCaret = ( caretCharIndex <= endCharIndex );
+		token.atOrAfterCaret = ( startCharIndex <= caretCharIndex );
+		token.isActive = token.atOrBeforeCaret && token.atOrAfterCaret;
+	}
+};
+
+TypingState.prototype.__compile = function( allTokens ) {
+	var charIndex = 0;
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		token.text = token.isUser ? token.user : token.mt;
+		token.charIndex = charIndex;
+		charIndex += token.text.length + token.sep.length;
+	}
+	var allText = allTokens.map( function(d) { return d.text + d.sep } ).join( "" );
+	return allText;
+};
+
+TypingState.prototype.__markMtExpired = function( allTokens, mtText ) {
+	var termsAndSeps = mtText.split( this.WHITESPACE );
+	var length = ( termsAndSeps.length + 1 ) / 2;
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		var term = ( n < length ) ? termsAndSeps[ n * 2 ] : "";
+		var isMt = ( n < length );
+		token.mt = term;
+		token.isMt = isMt;
+		token.isExpired = true;
+	}
+};
+
+TypingState.prototype.__markUserAccepted = function( allTokens, caretCharIndex ) {
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		var startCharIndex = token.charIndex;
+		var endCharIndex = startCharIndex + token.term.length;
+		token.isAccepted = ( caretCharIndex <= endCharIndex );
+	}
+};
+
+TypingState.prototype.__setCharIndexes = function( caretCharIndex, selectionCharIndex ) {
+	this.setAttr( "caretCharIndex", caretCharIndex );
+	if ( selectionCharIndex === caretCharIndex ) {
+		this.setAttr( "selectionStartCharIndex", caretCharIndex );
+		this.setAttr( "selectionEndCharIndex", caretCharIndex );
+		this.setAttr( "selectionDirection", "none" );
+	}
+	else if ( selectionCharIndex < caretCharIndex ) {
+		this.setAttr( "selectionStartCharIndex", selectionCharIndex );
+		this.setAttr( "selectionEndCharIndex", caretCharIndex );
+		this.setAttr( "selectionDirection", "forward" );
+	}
+	else {
+		this.setAttr( "selectionStartCharIndex", caretCharIndex );
+		this.setAttr( "selectionEndCharIndex", selectionCharIndex );
+		this.setAttr( "selectionDirection", "backward" );
+	}
+};
 
 /**
  * Update machine translation.
@@ -156,7 +329,6 @@ TypingState.prototype.__resetAllTokens = function( userText, mtText ) {
 	this.setAttr( "allText", allText );
 	this.setAttr( "userText", userText );
 	this.setAttr( "mtText", mtText );
-	this.setAttr( "originalText", allText );
 };
 
 /** @private **/
