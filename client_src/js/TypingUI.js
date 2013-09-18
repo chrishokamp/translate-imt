@@ -342,6 +342,7 @@ TypingUI.prototype.__onCaptureKeyDown = function() {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
+/*
 	else if ( d3.event.keyCode === this.KEY.RIGHT_ARROW || d3.event.keyCode === this.KEY.LEFT_ARROW ) {
 		var self = this.view.keystrokes[0][0];
 		var selectionStartCharIndex = self.selectionStart;
@@ -352,6 +353,7 @@ TypingUI.prototype.__onCaptureKeyDown = function() {
 		this.view.caret.selectAll( "span" ).style( "opacity", 1 )
 		this.view.showCaret = false;
 	}
+*/
 };
 
 TypingUI.prototype.__onCaptureKeyPress = function() {

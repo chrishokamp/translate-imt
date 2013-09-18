@@ -10,7 +10,7 @@ PTM.prototype.run = function() {
 	this.typingModel = new TypingModel( { "state" : this.typingState } );
 	this.typingUI = new TypingUI( { "model" : this.typingModel } );
 	this.server = new TranslateServer();
-//	this.server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
+	this.server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
 	this.typingState.on( "syncTranslation", this.updateTranslation.bind(this) );
 };
 
