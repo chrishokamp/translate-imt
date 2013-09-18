@@ -30,19 +30,15 @@ div.container {
 <script type="text/javascript">
 var sourceText = "After the 1993 hit movie Free Willy, activists and fans campaigned to release the movie's star, a captive killer whale named Keiko, and launched a story Hollywood couldn’t invent.";
 
-var updateTypingUI = function( syncKey ) {
+var onSyncTranslation = function( syncKey ) {
 	var handler = function( targetTranslation ) {
-		console.log( "Received HTTP response (key=" + syncKey + ")" );
-		if ( syncKey === typingState.getSyncKey() ) {
-			typingState.setText( targetTranslation, targetPrefix );
-			d3.select( ".SetUserText" ).text( targetPrefix );
-			d3.select( ".SetMtText" ).text( targetTranslation );
+		if ( typingState.syncTranslation( syncKey, targetTranslation ) ) {
+			d3.select( ".SetTranslation" ).text( targetTranslation );
 		}
 	};
-
-	var targetPrefix = typingState.getUserText();
-	server.translate( handler, sourceText, targetPrefix );
-	console.log( "Sent MT request (key=" + syncKey + ")" );
+	var userText = typingState.getUserText();
+	d3.select( ".SetUserText" ).text( userText );
+	server.translate( handler, sourceText, userText );
 };
 
 $(document).ready( function() {
@@ -54,23 +50,22 @@ $(document).ready( function() {
 	
 	var userText = "Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Freilassung";
 	var mtText = "Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Freilassung der Star des Films Willy, und startete eine Geschichte Hollywood könnte.";
-	typingState.setText( mtText, userText );
-	typingState.on( "token", updateTypingUI );
+	typingState.initTranslationAndUserText( mtText, userText, userText.length );
+	d3.select( ".SetTranslation" ).text( mtText );
 	d3.select( ".SetUserText" ).text( userText );
-	d3.select( ".SetMtText" ).text( mtText );
+	typingState.on( "syncTranslation", onSyncTranslation );
 	
 	d3.select( ".InitTypingUI" ).on( "click", function() {
-		var mtText = d3.select( ".SetMtText" )[0][0].value;
-		var userText = d3.select( ".SetUserText" )[0][0].value;
+		var mtText = d3.select( ".SetTranslation" )[0][0].value;
 		var caretCharIndex = parseInt( d3.select( ".SetCaretCharIndex" )[0][0].value );
 		var selectionCharIndex = parseInt( d3.select( ".SetSelectionCharIndex" )[0][0].value );
-		typingState.setText( mtText, userText, caretCharIndex, selectionCharIndex );
+		typingState.updateTranslation( mtText, caretCharIndex, selectionCharIndex );
 	});
 	d3.select( ".UpdateTypingUI" ).on( "click", function() {
 		var userText = d3.select( ".SetUserText" )[0][0].value;
 		var caretCharIndex = parseInt( d3.select( ".SetCaretCharIndex" )[0][0].value );
 		var selectionCharIndex = parseInt( d3.select( ".SetSelectionCharIndex" )[0][0].value );
-		typingState.updateText( userText, caretCharIndex, selectionCharIndex );
+		typingState.updateUserText( userText, caretCharIndex, selectionCharIndex );
 	});
 	d3.select( ".SetDebugLayout" ).on( "change", function() {
 		typingUI.DEBUG = d3.select( ".SetDebugLayout" )[0][0].checked;
@@ -94,7 +89,7 @@ $(document).ready( function() {
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">All Text: </span>
-			<textarea class="SetMtText" style="width: 400px; height: 80px"></textarea>
+			<textarea class="SetTranslation" style="width: 400px; height: 80px"></textarea>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Caret: </span>
@@ -106,8 +101,8 @@ $(document).ready( function() {
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
-			<input type="button" class="InitTypingUI" value="Initialize"/>
-			<input type="button" class="UpdateTypingUI" value="Update"/>
+			<input type="button" class="InitTypingUI" value="Update Machine Translation"/>
+			<input type="button" class="UpdateTypingUI" value="Update User-Entered Text"/>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Span Elements: </span>

@@ -45,9 +45,7 @@ TypingModel.prototype.__update = function() {
 	var activeSuggestionElements = [];
 	if ( activeSpanElement !== null ) {
 		var span = activeSpanElement;
-		if ( span.userTerm !== span.mtTerm ) {
-			activeSuggestionElements.push({ "term" : span.mtTerm, "sep" : span.mtSep });
-		}
+		activeSuggestionElements.push({ "term" : span.mtTerm, "sep" : span.mtSep });
 		for ( var j = 0; j < span.lookups.length; j++ ) {
 			var term = span.lookups[j];
 			activeSuggestionElements.push({ "term" : term, "sep" : " " });

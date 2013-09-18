@@ -15,12 +15,12 @@ TypingUI.prototype.initialize = function( options ) {
 	this.listenTo( this.model, "modified", this.render );
 };
 
-TypingUI.prototype.WIDTH = 800;
-TypingUI.prototype.HEIGHT = 120;
+TypingUI.prototype.WIDTH = 720;
+TypingUI.prototype.HEIGHT = 240;
 TypingUI.prototype.FONT_FAMILY = "Gill Sans";
 TypingUI.prototype.FONT_SIZE = 14;
 TypingUI.prototype.BLINK_CYCLE = 500;
-TypingUI.prototype.DEBUG = true;
+TypingUI.prototype.DEBUG = false;
 
 TypingUI.prototype.init = function() {
 	this.view = {};
@@ -107,6 +107,8 @@ TypingUI.prototype.render = function() {
 	// Determine the width of active span elements
 	for ( var i = 0; i < allSpanElements.length; i++ ) {
 		var span = allSpanElements[i];
+		delete span.__left;
+		delete span.__top;
 		delete span.__width;
 	}
 	if ( activeSpanElement ) {
@@ -158,16 +160,14 @@ TypingUI.prototype.render = function() {
 		this.view.suggestions.selectAll( "span" ).call( this.__setSuggestionStylesAndCoords.bind(this) );
 	}
 	
-	if ( caretSpanSegment ) {
-		elems = this.view.caret.selectAll( "span" ).data( [ caretSpanSegment ] );
-		elems.enter().append( "span" )
-			.style( "display", "inline-block" )
-			.style( "width", "1px" )
-			.style( "height", this.FONT_SIZE + "px" )
-			.style( "background", "#000" )
-		this.view.caret
-			.call( this.__setCaretCoords.bind(this) );
-	}
+	elems = this.view.caret.selectAll( "span" ).data( [ caretSpanSegment ] );
+	elems.enter().append( "span" )
+		.style( "display", "inline-block" )
+		.style( "width", "1px" )
+		.style( "height", this.FONT_SIZE + "px" )
+		.style( "background", "#000" )
+	this.view.caret
+		.call( this.__setCaretCoords.bind(this) );
 	
 	this.resize();
 };
@@ -365,6 +365,20 @@ TypingUI.prototype.__onCaptureKeyUp = function() {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
+	else if ( d3.event.keyCode === this.KEY.TICK ) {
+		d3.event.preventDefault();
+		d3.event.cancelBubble = true;
+	}
+	else if ( d3.event.keyCode === this.KEY.RIGHT_ARROW || d3.event.keyCode === this.KEY.LEFT_ARROW ) {
+		var self = this.view.keystrokes[0][0];
+		var selectionStartCharIndex = self.selectionStart;
+		var selectionEndCharIndex = self.selectionEnd;
+		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
+		var selectionCharIndex = ( self.selectionDirection !== "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
+		this.state.updateCaret( caretCharIndex, selectionCharIndex );
+		this.view.caret.selectAll( "span" ).style( "opacity", 1 )
+		this.view.showCaret = false;
+	}
 	else {
 		var self = this.view.keystrokes[0][0];
 		var allText = self.value;
@@ -372,7 +386,7 @@ TypingUI.prototype.__onCaptureKeyUp = function() {
 		var selectionEndCharIndex = self.selectionEnd;
 		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
 		var selectionCharIndex = ( self.selectionDirection !== "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
-		this.state.updateText( allText, caretCharIndex, selectionCharIndex );
+		this.state.updateUserText( allText, caretCharIndex, selectionCharIndex );
 	}
 };
 

@@ -8,7 +8,6 @@
 	<script type="text/javascript" src="js/underscore.js"></script>
 	<script type="text/javascript" src="js/backbone.js"></script>
 	<script type="text/javascript" src="js/chai.js"></script>
-	<script type="text/javascript" src="js/ElphabaModel.js"></script>
 	<script type="text/javascript" src="js/TypingState.js"></script>
 	<script type="text/javascript" src="js/TypingModel.js"></script>
 	<script type="text/javascript" src="js/TypingUI.js"></script>
@@ -16,27 +15,25 @@
 
 <script type="text/javascript">
 var typingState, typingModel, typingUI;
-var updateTypingUI = function() {
+
+var initTranslation = function() {
+	var sourceText = $('#src-input').val();
+	server.translate( function( translation ) { typingState.updateTranslation( translation ) }, sourceText );
+}
+var onSyncTranslation = function( syncKey ) {
 	var sourceText = $('#src-input').val();
 	var targetPrefix = typingState.getUserText();
-	var handler = function( targetTranslation ) {
-		var targetSuffix = targetTranslation.substr( targetPrefix.length );
-		typingState.updateTranslate( targetPrefix, targetSuffix )
-	};
-	server.translate( handler, sourceText, targetPrefix );
-};
-var initEventHandlers = function() {
-	d3.select( "#src-input" ).on( "change", function() {
-		updateTypingUI();
-	});
+	server.translate( function( translation ) { typingState.syncTranslation( syncKey, translation ) }, sourceText, targetPrefix );
 };
 $(document).ready( function() {
 	typingState = new TypingState();
 	typingModel = new TypingModel({ "state" : typingState });
 	typingUI = new TypingUI({ "model" : typingModel });
 	server = new TranslateServer();
-	typingState.on( "token", updateTypingUI );
-	initEventHandlers();
+	server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
+
+	typingState.on( "syncTranslation", onSyncTranslation );
+	d3.select( "#src-input" ).on( "change", initTranslation );
 });
 </script>
 </head>

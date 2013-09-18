@@ -3,7 +3,7 @@ var TypingState = Backbone.Model.extend({
 		"allTokens" : "",
 		"mtText" : "",
 		"userText" : "",
-		"caretCharIndex" : -1,
+		"caretCharIndex" : 0,
 		"selectionCharIndex" : 0,
 		"selectionStartCharIndex" : 0,  // For rendering and bound [ 0, userText.length ]
 		"selectionEndCharIndex" : 0,    // For rendering and bound [ 0, userText.length ]
@@ -14,18 +14,22 @@ var TypingState = Backbone.Model.extend({
 	}
 });
 
+TypingState.prototype.initialize = function() {
+	this.__prepareSync = _.debounce( this.__triggerSync, 500, true );
+}
+
 /** @private **/
 TypingState.prototype.WHITESPACE = /([ ]+)/g;
 
 /**
- * Reset the content of the Typing UI.
- * @param {string} mtText Content of the Typing UI.
- * @param {string} userText Prefix to be marked as user-entered text.
+ * Initialize the TypingUI with both machine translation and user-entered text.
+ * @param {string} mtText Machine translation.
+ * @param {string} userText User-entered text
  * @param {integer} [caretCharIndex] Location of the caret.
  * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
-TypingState.prototype.setText = function( mtText, userText, caretCharIndex, selectionCharIndex ) {
-	if ( ! caretCharIndex ) { caretCharIndex = ( this.get( "caretCharIndex" ) === -1 ) ? userText.length : this.get( "caretCharIndex" ) }
+TypingState.prototype.initTranslationAndUserText = function( mtText, userText, caretCharIndex, selectionCharIndex ) {
+	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 	
 	var allTokens = this.__initAllTokens( mtText, userText );
@@ -38,17 +42,37 @@ TypingState.prototype.setText = function( mtText, userText, caretCharIndex, sele
 	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
 	this.set( "isExpired", false );
 	this.trigger( "modified" );
-	return this;
 };
 
 /**
- * Incrementally update the content of the Typing UI.
- * Detect changes and mark corresponding tokens as expired or changed.
- * @param {string} userText Content of the Typing UI.
+ * Incrementally update the machine translation.
+ * @param {string} mtText Machine translation.
  * @param {integer} [caretCharIndex] Location of the caret.
  * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
-TypingState.prototype.updateText = function( userText, caretCharIndex, selectionCharIndex ) {
+TypingState.prototype.updateTranslation = function( mtText, caretCharIndex, selectionCharIndex ) {
+	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
+	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
+	
+	var userText = this.getUserText();
+	var allTokens = this.__initAllTokens( mtText, userText );
+	this.__markActiveToken( allTokens, caretCharIndex );
+	this.__markLookups( allTokens );
+
+	this.set( "allTokens", allTokens );
+	this.set( "mtText", mtText );
+	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	this.set( "isExpired", false );
+	this.trigger( "modified" );
+};
+
+/**
+ * Incrementally update user-entered text.
+ * @param {string} userText User-entered text.
+ * @param {integer} [caretCharIndex] Location of the caret.
+ * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
+ **/
+TypingState.prototype.updateUserText = function( userText, caretCharIndex, selectionCharIndex ) {
 	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 	
@@ -61,12 +85,16 @@ TypingState.prototype.updateText = function( userText, caretCharIndex, selection
 	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
 	if ( this.__checkForUpdates( allTokens ) ) {
 		this.set( "isExpired", true );
-		this.triggerUpdate();
+		this.__prepareSync();
 	}
 	this.trigger( "modified" );
-	return this;
 };
 
+/**
+ * Update the location of the caret.
+ * @param {integer} caretCharIndex Location of the caret.
+ * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
+ **/
 TypingState.prototype.updateCaret = function( caretCharIndex, selectionCharIndex ) {
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 
@@ -77,10 +105,9 @@ TypingState.prototype.updateCaret = function( caretCharIndex, selectionCharIndex
 	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
 	if ( this.__checkForUpdates( allTokens ) ) {
 		this.set( "isExpired", true );
-		this.triggerUpdate();
+		this.__prepareSync();
 	}
 	this.trigger( "modified" );
-	return this;
 };
 
 /** @private **/
@@ -99,13 +126,12 @@ TypingState.prototype.__initAllTokens = function( mtText, userText ) {
 		var mtSep = ( n < mtLength - 1 ) ? mtTermsAndSeps[ n * 2 + 1 ] : "";
 		var userTerm = ( n < userLength ) ? userTermsAndSeps[ n * 2 ] : "";
 		var userSep = ( n < userLength - 1 ) ? userTermsAndSeps[ n * 2 + 1 ] : "";
-		if ( userTerm !== "" ) { chai.assert.equal( mtTerm, userTerm ) }
-		if ( userSep !== "" ) { chai.assert.equal( mtSep, userSep ) }
 		token.mtTerm = mtTerm;
 		token.mtSep = mtSep;
 		token.userTerm = userTerm;
 		token.userSep = userSep;
 		token.isUser = ( userTerm !== "" );
+		token.isChanged = false;
 	}
 	return allTokens;
 };
@@ -131,6 +157,8 @@ TypingState.prototype.__updateAllTokens = function( allTokens, userText ) {
 				token.mtSep = "";
 				token.userTerm = userTerm;
 				token.userSep = userSep;
+				token.isUser = false;
+				token.isChanged = false;
 				allTokens.push( token );
 			}
 		}
@@ -178,8 +206,9 @@ TypingState.prototype.__markLookups = function( allTokens ) {
 TypingState.prototype.__checkForUpdates = function( allTokens ) {
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
-		if ( ( token.isUser && token.mtTerm !== token.userTerm ) || ( ! token.isUser && token.userTerm !== "" ) ) {
-			if ( ! token.isActive ) {
+		if ( ( token.isUser && token.mtTerm.toLowerCase() !== token.userTerm.toLowerCase() ) || ( ! token.isUser && token.userTerm !== "" ) ) {
+			if ( ! token.isActive && ! token.isChanged ) {
+				token.isChanged = true;
 				return true;
 			}
 		}
@@ -215,20 +244,28 @@ TypingState.prototype.__setSelectionCharIndexes = function( caretCharIndex, sele
 	}
 };
 
-/**
- * Trigger an event to update translation.
- **/
-TypingState.prototype.triggerUpdate = function() {
+TypingState.prototype.__triggerSync = function( syncKey ) {
+	this.__incrementSyncKey();
 	var syncKey = this.get( "syncKey" );
-	syncKey ++;
-	this.set( "syncKey", syncKey );
-	this.trigger( "token", syncKey );
-	return this;
+	this.trigger( "syncTranslation", syncKey );
+	console.log( "Sent HTTP request (key=" + syncKey + ")" );
+}
+
+TypingState.prototype.syncTranslation = function( key, translation ) {
+	var syncKey = this.get( "syncKey" );
+	if ( syncKey === key ) {
+		typingState.updateTranslation( translation );
+		console.log( "Received HTTP response (key=" + syncKey + ")" );
+		return true;
+	}
+	else {
+		console.log( "Discarded outdated HTTP response (key=" + syncKey + ")" );
+		return false;
+	}
 };
 
-TypingState.prototype.getSyncKey = function() {
-	var syncKey = this.get( "syncKey" );
-	return syncKey;
+TypingState.prototype.__incrementSyncKey = function() {
+	this.set( "syncKey", this.get( "syncKey" ) + 1 );
 };
 
 /**
