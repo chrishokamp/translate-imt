@@ -7,7 +7,6 @@
 	<script type="text/javascript" src="js/underscore.js"></script>
 	<script type="text/javascript" src="js/backbone.js"></script>
 	<script type="text/javascript" src="js/chai.js"></script>
-	<script type="text/javascript" src="js/ElphabaModel.js"></script>
 	<script type="text/javascript" src="js/TypingState.js"></script>
 	<script type="text/javascript" src="js/TypingModel.js"></script>
 	<script type="text/javascript" src="js/TypingUI.js"></script>
@@ -31,17 +30,21 @@ div.container {
 <script type="text/javascript">
 var sourceText = "After the 1993 hit movie Free Willy, activists and fans campaigned to release the movie's star, a captive killer whale named Keiko, and launched a story Hollywood couldn’t invent.";
 
-var updateTypingUI = function() {
-	var targetPrefix = typingState.getUserText();
+var updateTypingUI = function( syncKey ) {
 	var handler = function( targetTranslation ) {
-		var targetSuffix = targetTranslation.substr( targetPrefix.length );
-		typingState.updateTranslation( targetPrefix, targetSuffix );
-		d3.select( ".SetUserText" ).text( targetPrefix );
-		d3.select( ".SetMtText" ).text( targetSuffix );
-		d3.select( ".SetAllText" ).text( targetTranslation );
+		console.log( "Received HTTP response (key=" + syncKey + ")" );
+		if ( syncKey === typingState.getSyncKey() ) {
+			typingState.setText( targetTranslation, targetPrefix );
+			d3.select( ".SetUserText" ).text( targetPrefix );
+			d3.select( ".SetMtText" ).text( targetTranslation );
+		}
 	};
+
+	var targetPrefix = typingState.getUserText();
 	server.translate( handler, sourceText, targetPrefix );
+	console.log( "Sent MT request (key=" + syncKey + ")" );
 };
+
 $(document).ready( function() {
 	typingState = new TypingState();
 	typingModel = new TypingModel({ "state" : typingState });
@@ -49,29 +52,25 @@ $(document).ready( function() {
 	server = new TranslateServer();
 	server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
 	
-	var s = "Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Frei";
-	var t = "Freilassung der Star des Films Willy, und startete eine Geschichte Hollywood könnte.";
-	var st = "Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Freilassung der Star des Films Willy, und startete eine Geschichte Hollywood könnte.";
-	typingState.setAttr( "caretCharIndex", s.length );
-	typingState.setAttr( "selectionStartCharIndex", s.length );
-	typingState.setAttr( "selectionEndCharIndex", s.length );
-	typingState.updateTranslation( s, t );
+	var userText = "Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Freilassung";
+	var mtText = "Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Freilassung der Star des Films Willy, und startete eine Geschichte Hollywood könnte.";
+	typingState.setText( mtText, userText );
 	typingState.on( "token", updateTypingUI );
+	d3.select( ".SetUserText" ).text( userText );
+	d3.select( ".SetMtText" ).text( mtText );
 	
-	d3.select( ".SetUserText" ).text( s );
-	d3.select( ".SetMtText" ).text( t );
-	d3.select( ".SetAllText" ).text( st );
-	
-	d3.select( ".UpdateTranslation" ).on( "click", function() {
-		var userText = d3.select( ".SetUserText" )[0][0].value;
+	d3.select( ".InitTypingUI" ).on( "click", function() {
 		var mtText = d3.select( ".SetMtText" )[0][0].value;
-		typingState.updateTranslation( userText, mtText );
+		var userText = d3.select( ".SetUserText" )[0][0].value;
+		var caretCharIndex = parseInt( d3.select( ".SetCaretCharIndex" )[0][0].value );
+		var selectionCharIndex = parseInt( d3.select( ".SetSelectionCharIndex" )[0][0].value );
+		typingState.setText( mtText, userText, caretCharIndex, selectionCharIndex );
 	});
-	d3.select( ".UpdateAllText" ).on( "click", function() {
-		var allText = d3.select( ".SetAllText" )[0][0].value;
-		var caretCharIndex = parseInt( d3.select( ".SetCaretIndex" )[0][0].value );
-		var selectionStartCharIndex = parseInt( d3.select( ".SetSelectedStartIndex" )[0][0].value );
-		var selectionEndCharIndex = parseInt( d3.select( ".SetSelectedEndIndex" )[0][0].value );
+	d3.select( ".UpdateTypingUI" ).on( "click", function() {
+		var userText = d3.select( ".SetUserText" )[0][0].value;
+		var caretCharIndex = parseInt( d3.select( ".SetCaretCharIndex" )[0][0].value );
+		var selectionCharIndex = parseInt( d3.select( ".SetSelectionCharIndex" )[0][0].value );
+		typingState.updateText( userText, caretCharIndex, selectionCharIndex );
 	});
 	d3.select( ".SetDebugLayout" ).on( "change", function() {
 		typingUI.DEBUG = d3.select( ".SetDebugLayout" )[0][0].checked;
@@ -79,7 +78,7 @@ $(document).ready( function() {
 	});
 
 	var showSpanElements = function() {
-		d3.select( ".GetSpanElements" ).text( typingModel.getAttr( "allSpanElements" ).map( function(d) { return "[" + d.segments.map( function(d) { return d.text } ).join( "/" ) + "] " } ).join( " " ) )
+		d3.select( ".GetSpanElements" ).text( typingModel.get( "allSpanElements" ).map( function(d) { return "[" + d.segments.map( function(d) { return d.text } ).join( "/" ) + "] " } ).join( " " ) )
 	};
 	typingModel.on( "modified", showSpanElements );
 	showSpanElements();
@@ -91,35 +90,24 @@ $(document).ready( function() {
 	<div class="container" style="padding-right: 30px">
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">User Text: </span>
-			<textarea class="SetUserText" style="width: 400px; height: 80px">A beautiful, innovative collection in which Francisco Costa layered references to urb</textarea>
-		</p>
-		<p>
-			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">MT Text: </span>
-			<textarea class="SetMtText" style="width: 400px; height: 80px">urban tribes, ’80s art, handcraft and even, seemingly, radical chicks of the 1920s. It added up to a modern expression of fashion.</textarea>
-		</p>
-		<p>
-			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
-			<input type="button" class="UpdateTranslation" value="Update Translation"/>
+			<textarea class="SetUserText" style="width: 400px; height: 80px">Nach dem 1993 Kinohit Free Willy, Aktivisten und Fans auf Freilassung</textarea>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">All Text: </span>
-			<textarea class="SetAllText" style="width: 400px; height: 80px"></textarea>
+			<textarea class="SetMtText" style="width: 400px; height: 80px"></textarea>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Caret: </span>
-			<input type="range" class="SetCaretIndex" style="width: 400px" value="0" min="0" max="250"/>
+			<input type="range" class="SetCaretCharIndex" style="width: 400px" value="0" min="0" max="250"/>
 		</p>
 		<p>
-			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Selection Start: </span>
-			<input type="range" class="SetSelectedStartIndex" style="width: 400px" value="0" min="0" max="250"/><br/>
-		</p>
-		<p>
-			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Selection End: </span>
-			<input type="range" class="SetSelectedEndIndex" style="width: 400px" value="0" min="0" max="250"/>
+			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Selection: </span>
+			<input type="range" class="SetSelectionCharIndex" style="width: 400px" value="0" min="0" max="250"/><br/>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
-			<input type="button" class="UpdateAllText" value="Update All Text"/>
+			<input type="button" class="InitTypingUI" value="Initialize"/>
+			<input type="button" class="UpdateTypingUI" value="Update"/>
 		</p>
 		<p>
 			<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Span Elements: </span>

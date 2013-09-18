@@ -10,16 +10,17 @@ var TypingUI = Backbone.View.extend({
 
 TypingUI.prototype.initialize = function( options ) {
 	this.model = options.model;
+	this.state = this.model.state;
 	this.init();
 	this.listenTo( this.model, "modified", this.render );
 };
 
 TypingUI.prototype.WIDTH = 800;
-TypingUI.prototype.HEIGHT = 200;
+TypingUI.prototype.HEIGHT = 120;
 TypingUI.prototype.FONT_FAMILY = "Gill Sans";
 TypingUI.prototype.FONT_SIZE = 14;
 TypingUI.prototype.BLINK_CYCLE = 500;
-TypingUI.prototype.DEBUG = false;
+TypingUI.prototype.DEBUG = true;
 
 TypingUI.prototype.init = function() {
 	this.view = {};
@@ -27,7 +28,6 @@ TypingUI.prototype.init = function() {
 	this.view.canvas = this.view.container.append( "div" );
 	this.view.keystrokes = this.view.canvas.append( "textarea" ).attr( "class", "Keystrokes" );
 	this.view.dimensions = this.view.canvas.append( "div" ).attr( "class", "Dimensions" );
-	this.view.coordinates = this.view.canvas.append( "div" ).attr( "class", "Coordinates" );
 	this.view.overlay = this.view.canvas.append( "div" ).attr( "class", "Overlay" );
 	this.view.suggestionBox = this.view.canvas.append( "div" ).attr( "class", "SuggestionBox" );
 	this.view.suggestions = this.view.canvas.append( "div" ).attr( "class", "Suggestions" );
@@ -55,15 +55,9 @@ TypingUI.prototype.init = function() {
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 
-	this.view.coordinates
-		.style( "position", "absolute" )
-		.style( "pointer-events", "none" )
-		.call( this.__setOverlayStyles.bind(this) )
-		.call( this.__setFontStyles.bind(this) )
-
 	this.view.overlay
 		.style( "position", "absolute" )
-		.style( "border", "1px solid #eee" )
+		.style( "border", "1px solid #969696" )
 		.style( "background", "#fff" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
@@ -85,122 +79,86 @@ TypingUI.prototype.init = function() {
 		this.view.showCaret = ! ( this.view.showCaret === true );
 	}.bind(this) );
 	
-	this.render();
+	this.resize();
+};
+
+TypingUI.prototype.resize = function() {
+	this.view.container
+		.style( "width", this.WIDTH + "px" )
+		.style( "height", ( this.DEBUG ? this.HEIGHT * 3 : this.HEIGHT ) + "px" );
+	this.view.keystrokes
+		.style( "top", ( this.DEBUG ? this.HEIGHT * 1 : 0 ) + "px" )
+		.style( "opacity", this.DEBUG ? 1 : 0 )
+	this.view.dimensions
+		.style( "top", ( this.DEBUG ? this.HEIGHT * 2 : 0 ) + "px" )
+		.style( "opacity", this.DEBUG ? 1 : 0 );
 };
 
 TypingUI.prototype.render = function() {
-	var allSpanElements = this.model.getAttr( "allSpanElements" );
-	var activeSpanElement = this.model.getAttr( "activeSpanElement" );
-	var activeSuggestionElements = this.model.getAttr( "activeSuggestionElements" );
-	var caretSpanSegment = this.model.getAttr( "caretSpanSegment" );
-	var elems;
+	var allSpanElements = this.model.get( "allSpanElements" );
+	var activeSpanElement = this.model.get( "activeSpanElement" );
+	var activeSuggestionElements = this.model.get( "activeSuggestionElements" );
+	var caretSpanSegment = this.model.get( "caretSpanSegment" );
+	var elems, enterElems, termElems, sepElems;
 	
-	this.view.container
-		.style( "width", this.WIDTH + "px" )
-		.style( "height", ( this.DEBUG ? this.HEIGHT * 4 : this.HEIGHT ) + "px" );
-
 	this.view.keystrokes
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 3 : 0 ) + "px" )
-		.style( "opacity", this.DEBUG ? 1 : 0 )
 		.call( this.__setKeystrokesContent.bind(this) );
 
 	// Determine the width of active span elements
-	if ( allSpanElements !== undefined ) {
-		for ( var i = 0; i < allSpanElements.length; i++ ) {
-			var span = allSpanElements[i];
-			delete span.__width;
-		}
+	for ( var i = 0; i < allSpanElements.length; i++ ) {
+		var span = allSpanElements[i];
+		delete span.__width;
 	}
-	if ( activeSpanElement !== undefined ) {
+	if ( activeSpanElement ) {
 		elems = this.view.dimensions.selectAll( "span.word" ).data( [ activeSpanElement ].concat( activeSuggestionElements ) );
-		elems.enter().append( "span" ).attr( "class", "word" );
+		enterElems = elems.enter().append( "span" ).attr( "class", "word" ).style( "vertical-align", "top" ).style( "color", "#d9d9d9" );
+		enterElems.append( "span" ).attr( "class", "term" ).style( "vertical-align", "top" );
+		enterElems.append( "span" ).attr( "class", "sep" ).style( "vertical-align", "top" );
 		elems.exit().remove();
-		elems = this.view.dimensions.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
-		elems.enter().append( "span" ).attr( "class", "segment" );
-		elems.exit().remove();
+		elems = this.view.dimensions.selectAll( "span.word" );
+		termElems = elems.select( "span.term" ).selectAll( "span.termSegment" ).data( function(d) { return d.termSegments } );
+		termElems.enter().append( "span" ).attr( "class", "termSegment segment" ).style( "vertical-align", "top" ).style( "white-space", "pre-wrap" );
+		termElems.exit().remove();
+		sepElems = elems.select( "span.sep" ).selectAll( "span.sepSegment" ).data( function(d) { return d.sepSegments } );
+		sepElems.enter().append( "span" ).attr( "class", "sepSegment segment" ).style( "vertical-align", "top" ).style( "white-space", "pre-wrap" );
+		sepElems.exit().remove();
 
-		this.view.dimensions.selectAll( "span.segment" )
-			.text( function(d) { return d.text } )
-			.style( "position", "static" )
-			.style( "vertical-align", "top" )
-			.style( "white-space", "pre-wrap" )
-			.call( this.__setSpanTypeStyles.bind(this) );
-		this.view.dimensions.selectAll( "span.word" )
-			.style( "position", "static" )
-			.style( "vertical-align", "top" )
-			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__getSpanWidths.bind(this) );
+		this.view.dimensions.selectAll( "span.segment" ).text( function(d) { return d.text } )
+		this.view.dimensions.selectAll( "span.word" ).call( this.__setSpanTypeStyles.bind(this) );
+		this.view.dimensions.selectAll( "span.word" ).call( this.__getSpanWidths.bind(this) );
 	}
-	this.view.dimensions
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 1 : 0 ) + "px" )
-		.style( "opacity", this.DEBUG ? 1 : 0 );
 	
-	// Determine the coordinates of all span elements
-	if ( allSpanElements !== undefined ) {
-		elems = this.view.coordinates.selectAll( "span.word" ).data( allSpanElements );
-		elems.enter().append( "span" ).attr( "class", "word" );
-		elems.exit().remove();
-		elems = this.view.coordinates.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
-		elems.enter().append( "span" ).attr( "class", "segment" );
-		elems.exit().remove();
+	// Render all span elements to screen
+	elems = this.view.overlay.selectAll( "span.word" ).data( allSpanElements );
+	enterElems = elems.enter().append( "span" ).attr( "class", "word" ).style( "vertical-align", "top" ).style( "color", "#d9d9d9" );
+	enterElems.append( "span" ).attr( "class", "term" ).style( "vertical-align", "top" );
+	enterElems.append( "span" ).attr( "class", "sep" ).style( "vertical-align", "top" );
+	elems.exit().remove();
+	elems = this.view.overlay.selectAll( "span.word" );
+	termElems = elems.select( "span.term" ).selectAll( "span.termSegment" ).data( function(d) { return d.termSegments } );
+	termElems.enter().append( "span" ).attr( "class", "termSegment segment" ).style( "vertical-align", "top" ).style( "white-space", "pre-wrap" );
+	termElems.exit().remove();
+	sepElems = elems.select( "span.sep" ).selectAll( "span.sepSegment" ).data( function(d) { return d.sepSegments } );
+	sepElems.enter().append( "span" ).attr( "class", "sepSegment segment" ).style( "vertical-align", "top" ).style( "white-space", "pre-wrap" );
+	sepElems.exit().remove();
 
-		this.view.coordinates.selectAll( "span.segment" )
-			.text( function(d) { return d.text } )
-			.style( "position", "static" )
-			.style( "vertical-align", "top" )
-			.style( "white-space", "pre-wrap" )
-			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__getSpanCoords.bind(this) );
-		this.view.coordinates.selectAll( "span.word" )
-			.style( "position", "static" )
-			.style( "vertical-align", "top" )
-			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__getSpanCoords.bind(this) );
-	}
-	this.view.coordinates
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 2 : 0 ) + "px" )
-		.style( "opacity", this.DEBUG ? 1 : 0 );
+	this.view.overlay.selectAll( "span.segment" ).text( function(d) { return d.text } );
+	this.view.overlay.selectAll( "span.word" ).call( this.__setSpanTypeStyles.bind(this) );
+	this.view.overlay.selectAll( "span.segment" ).call( this.__getSpanCoords.bind(this) );
+	this.view.overlay.selectAll( "span.word" ).call( this.__getSpanCoords.bind(this) );
 	
-	// Render all span elements
-	if ( allSpanElements !== undefined ) {
-		elems = this.view.overlay.selectAll( "span.word" ).data( allSpanElements );
-		elems.enter().append( "span" ).attr( "class", "word" );
-		elems.exit().remove();
-		elems = this.view.overlay.selectAll( "span.word" ).selectAll( "span.segment" ).data( function(d) { return d.segments } );
-		elems.enter().append( "span" ).attr( "class", "segment" );
-		elems.exit().remove();
-
-		this.view.overlay.selectAll( "span.segment" )
-			.text( function(d) { return d.text } )
-			.style( "position", "static" )
-			.style( "vertical-align", "top" )
-			.style( "white-space", "pre-wrap" )
-			.call( this.__setSegmentStyles.bind(this) )
-			.call( this.__setSpanCoords.bind(this) );
-		this.view.overlay.selectAll( "span.word" )
-			.style( "position", "absolute" )
-			.style( "display", "inline-block" )
-			.call( this.__setSpanTypeStyles.bind(this) )
-			.call( this.__setSpanCoords.bind(this) );
-	}
-	this.view.overlay
-		.style( "top", 0 );
-	
-	// Render suggestions
-	if ( activeSpanElement !== undefined && activeSuggestionElements !== undefined ) {
+	// Render suggestions if available
+	if ( activeSpanElement ) {
 		this.view.suggestionBox.call( this.__setSuggestionBoxStylesAndCoords.bind(this) );
 		elems = this.view.suggestions.selectAll( "span" ).data( activeSuggestionElements )
-		elems.enter().append( "span" );
+		elems.enter().append( "span" ).style( "position", "absolute" );
 		elems.exit().remove();
 		
-		this.view.suggestions.selectAll( "span" )
-			.style( "position", "absolute" )
-			.text( function(d) { return d.text } )
-			.call( this.__setSuggestionStylesAndCoords.bind(this) );
+		this.view.suggestions.selectAll( "span" ).text( function(d) { return d.term } )
+		this.view.suggestions.selectAll( "span" ).call( this.__setSuggestionStylesAndCoords.bind(this) );
 	}
 	
-	if ( caretSpanSegment !== undefined ) {
-		// Render caret on screen
+	if ( caretSpanSegment ) {
 		elems = this.view.caret.selectAll( "span" ).data( [ caretSpanSegment ] );
 		elems.enter().append( "span" )
 			.style( "display", "inline-block" )
@@ -210,6 +168,8 @@ TypingUI.prototype.render = function() {
 		this.view.caret
 			.call( this.__setCaretCoords.bind(this) );
 	}
+	
+	this.resize();
 };
 
 TypingUI.prototype.__setSegmentStyles = function( elem ) {
@@ -217,33 +177,32 @@ TypingUI.prototype.__setSegmentStyles = function( elem ) {
 };
 
 TypingUI.prototype.__setSpanTypeStyles = function( elem ) {
-	var activeSuggestionElements = this.model.getAttr( "activeSuggestionElements" );
+	var isExpired = this.state.get( "isExpired" );
 	var setActiveStyles = function( elem ) {
-		elem.style( "color", "#238B45" )
-			.style( "border-bottom", activeSuggestionElements.length === 0 ? "1px dotted #238B45" : "none" )
+		elem.style( "color", "#2ca02c" );
+		elem.select( ".term" ).style( "border-bottom", "1px dotted #2ca02c" );
+		elem.selectAll( ".segment" ).style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
 	};
 	var setUserStyles = function( elem ) {
-		elem.style( "color", "#333" )
-			.style( "border", "none" )
-	};
-	var setCandidateStyles = function( elem ) {
-		elem.style( "color", "#66C2A4" )
-			.style( "border", "none" )
+		elem.style( "color", "#303030" );
+		elem.select( ".term" ).style( "border", "none" );
+		elem.selectAll( ".segment" ).style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
 	};
 	var setExpiredStyles = function( elem ) {
-		elem.style( "color", "#ccc" )
-			.style( "border", "none" )
+		elem.style( "color", "#d9d9d9" )
+		elem.select( ".term" ).style( "border", "none" )
+		elem.selectAll( ".segment" ).style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
 	};
 	var setMtStyles = function( elem ) {
-		elem.style( "color", "#999" )
-			.style( "border", "none" )
+		elem.transition().style( "color", "#969696" )
+		elem.select( ".term" ).style( "border", "none" )
+		elem.selectAll( ".segment" ).style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
 	};
-
-	elem.filter( function(d) { return d.isActive } ).call( setActiveStyles.bind(this) );
-	elem.filter( function(d) { return !d.isActive && d.isUser } ).call( setUserStyles.bind(this) );
-	elem.filter( function(d) { return !d.isActive && !d.isUser && d.isMtCandidate } ).call( setCandidateStyles.bind(this) );
-	elem.filter( function(d) { return !d.isActive && !d.isUser && d.isMtExpired } ).call( setExpiredStyles.bind(this) );
-	elem.filter( function(d) { return !d.isActive && !d.isUser && !(d.isMtCandidate||d.isMtExpired) } ).call( setMtStyles.bind(this) );
+	elem.filter( function(d) { return d.userTerm !== "" &&   d.isActive } ).call( setActiveStyles.bind(this) );
+	elem.filter( function(d) { return d.userTerm !== "" && ! d.isActive } ).call( setUserStyles.bind(this) );
+	elem.filter( function(d) { return d.userTerm === "" &&   isExpired } ).call( setExpiredStyles.bind(this) );
+	elem.filter( function(d) { return d.userTerm === "" && ! isExpired &&   d.isActive } ).call( setActiveStyles.bind(this) );
+	elem.filter( function(d) { return d.userTerm === "" && ! isExpired && ! d.isActive } ).call( setMtStyles.bind(this) );
 };
 
 TypingUI.prototype.__getSpanWidths = function( elem ) {
@@ -258,7 +217,6 @@ TypingUI.prototype.__getSpanWidths = function( elem ) {
 };
 
 TypingUI.prototype.__getSpanCoords = function( elem ) {
-	var activeSpanElement = this.model.getAttr( "activeSpanElement" );
 	elem.each( function(d) {
 		var self = d3.select(this)[0][0];
 		if ( d.hasOwnProperty( "__width" ) ) {
@@ -290,25 +248,25 @@ TypingUI.prototype.__setCaretCoords = function( elem ) {
 };
 
 TypingUI.prototype.__setSuggestionBoxStylesAndCoords = function( elem ) {
-	var activeSpanElement = this.model.getAttr( "activeSpanElement" );
-	var activeSuggestionElements = this.model.getAttr( "activeSuggestionElements" );
+	var activeSpanElement = this.model.get( "activeSpanElement" );
+	var activeSuggestionElements = this.model.get( "activeSuggestionElements" );
 	elem.style( "left", activeSpanElement.__left + "px" )
 		.style( "top", ( activeSpanElement.__top + this.FONT_SIZE + 4 ) + "px" )
 		.style( "width", activeSpanElement.__width + "px" )
 		.style( "height", (this.FONT_SIZE+6) * activeSuggestionElements.length + "px" )
 		.style( "background", "#fff" )
-		.style( "border", "1px solid #238B45" )
-		.style( "box-shadow", "1px 1px 4px #005824" )
+		.style( "border", "1px solid #2ca02c" )
+		.style( "box-shadow", "1px 1px 4px #2ca02c" )
 		.style( "opacity", activeSuggestionElements.length === 0 ? 0 : 1 )
 };
 
 TypingUI.prototype.__setSuggestionStylesAndCoords = function( elem ) {
-	var activeSpanElement = this.model.getAttr( "activeSpanElement" );
+	var activeSpanElement = this.model.get( "activeSpanElement" );
 	elem.style( "left", activeSpanElement.__left + "px" )
 		.style( "top", function(d,i) { return ( activeSpanElement.__top + this.FONT_SIZE + 4 + i * (this.FONT_SIZE+6) + 2 ) + "px" }.bind(this) )
 		.style( "width", activeSpanElement.__width + "px" )
 		.style( "height", (this.FONT_SIZE+6) + "px" )
-		.style( "color", "#999" )
+		.style( "color", "#2ca02c" )
 		.style( "border-top", function(d,i) { return (i===0) ? "none" : "1px solid #ccc" } )
 };
 
@@ -339,19 +297,14 @@ TypingUI.prototype.__setTextareaStyles = function( elem ) {
 
 TypingUI.prototype.__setKeystrokesContent = function( elem ) {
 	var self = elem[0][0];
-	var allText = this.model.state.getAttr( "allText" );
-	var caretCharIndex = this.model.getAttr( "caretCharIndex" );
-	var inputSelectionStart = this.model.getAttr( "inputSelectionStart" );
-	var inputSelectionEnd = this.model.getAttr( "inputSelectionEnd" );
-	self.value = allText;
-	self.selectionStart = inputSelectionStart;
-	self.selectionEnd = inputSelectionEnd;
-	if ( inputSelectionStart === inputSelectionEnd )
-		self.selectionDirection = "none";
-	else if ( caretCharIndex === inputSelectionStart )
-		self.selectionDirection = "backward";
-	else
-		self.selectionDirection = "forward";
+	var userText = this.state.getUserText();
+	var selectionStart = this.state.get( "selectionStartCharIndex" );
+	var selectionEnd = this.state.get( "selectionEndCharIndex" );
+	var selectionDirection = this.state.get( "selectionDirection" );
+	self.value = userText;
+	self.selectionStart = selectionStart;
+	self.selectionEnd = selectionEnd;
+	self.selectionDirection = selectionDirection;
 };
 
 TypingUI.prototype.__setFontStyles = function( elem ) {
@@ -361,12 +314,12 @@ TypingUI.prototype.__setFontStyles = function( elem ) {
 };
 
 TypingUI.prototype.__onCaptureFocus = function() {
-	this.view.overlay.style( "border-color", "#69c" );
+	this.view.overlay.style( "border-color", "#1f77b4" );
 	this.view.caret.style( "opacity", 1 );
 };
 
 TypingUI.prototype.__onCaptureBlur = function() {
-	this.view.overlay.style( "border-color", "#ccc" );
+	this.view.overlay.style( "border-color", "#969696" );
 	this.view.caret.style( "opacity", 0 );
 };
 
@@ -388,8 +341,15 @@ TypingUI.prototype.__onCaptureKeyDown = function() {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
-	else {
-		
+	else if ( d3.event.keyCode === this.KEY.RIGHT_ARROW || d3.event.keyCode === this.KEY.LEFT_ARROW ) {
+		var self = this.view.keystrokes[0][0];
+		var selectionStartCharIndex = self.selectionStart;
+		var selectionEndCharIndex = self.selectionEnd;
+		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
+		var selectionCharIndex = ( self.selectionDirection !== "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
+		this.state.updateCaret( caretCharIndex, selectionCharIndex );
+		this.view.caret.selectAll( "span" ).style( "opacity", 1 )
+		this.view.showCaret = false;
 	}
 };
 
@@ -397,10 +357,6 @@ TypingUI.prototype.__onCaptureKeyPress = function() {
 	if ( d3.event.keyCode === this.KEY.TAB ) {
 	}
 	else if ( d3.event.keyCode === this.KEY.TICK ) {
-		d3.event.preventDefault();
-		d3.event.cancelBubble = true;
-	}
-	else {
 	}
 };
 
@@ -409,23 +365,14 @@ TypingUI.prototype.__onCaptureKeyUp = function() {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
-	else if ( d3.event.keyCode === this.KEY.TICK ) {
-		d3.event.preventDefault();
-		d3.event.cancelBubble = true;
-		var self = this.view.keystrokes[0][0];
-		var allText = self.value;
-		var selectionStartCharIndex = self.selectionStart;
-		var selectionEndCharIndex = self.selectionEnd;
-		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
-		this.model.state.updateAllText( allText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex, true );
-	}
 	else {
 		var self = this.view.keystrokes[0][0];
 		var allText = self.value;
 		var selectionStartCharIndex = self.selectionStart;
 		var selectionEndCharIndex = self.selectionEnd;
 		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
-		this.model.state.updateAllText( allText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex );
+		var selectionCharIndex = ( self.selectionDirection !== "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
+		this.state.updateText( allText, caretCharIndex, selectionCharIndex );
 	}
 };
 
