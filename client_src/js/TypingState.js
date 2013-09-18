@@ -1,164 +1,277 @@
 var TypingState = Backbone.Model.extend({
 	"defaults" : {
-		"allText" : "",
+		"allTokens" : "",
+		"mtText" : "",
 		"userText" : "",
-		"matchedText" : "",		// Derived from userText
-		"matchedTokens" : [],	// Derived from userText
-		"currentTerm" : "",		// Derived from userText
-		"suggestions" : [],
-		"futureText" : "",
-		"futureTokens" : [],	// Derived from futureText
 		"caretCharIndex" : 0,
-		"selectionStartCharIndex" : 0,
-		"selectionEndCharIndex" : 0
+		"selectionCharIndex" : 0,
+		"selectionStartCharIndex" : 0,  // For rendering and bound [ 0, userText.length ]
+		"selectionEndCharIndex" : 0,    // For rendering and bound [ 0, userText.length ]
+		"selectionDirection" : "none",
+		"isGhostCaret" : false,
+		"isExpired" : false,
+		"syncKey" : 0
 	}
 });
 
-TypingState.prototype.initialize = function( options ) {
-	this.on( "change", function() { this.flush() }.bind(this) );
-};
+TypingState.prototype.initialize = function() {
+	this.__prepareSync = _.debounce( this.__triggerSync, 500, true );
+}
 
-TypingState.prototype.setCaretIndex = function( charIndex ) {
-	var maxCharIndex = this.getAttr( "allText" ).length;
-	if ( charIndex >= maxCharIndex ) { charIndex = maxCharIndex }
-	var minCharIndex = 0;
-	if ( charIndex < minCharIndex ) { charIndex = minCharIndex }
-	this.setAttr( "caretCharIndex", charIndex );
-};
+/** @private **/
+TypingState.prototype.WHITESPACE = /([ ]+)/g;
 
-TypingState.prototype.incrementCaretIndex = function() {
-	var charIndex = this.getAttr( "caretCharIndex" ) + 1;
-	var maxCharIndex = this.getAttr( "allText" ).length;
-	if ( charIndex >= maxCharIndex ) { charIndex = maxCharIndex }
-	this.setAttr( "caretCharIndex", charIndex );
-};
+/**
+ * Initialize the TypingUI with both machine translation and user-entered text.
+ * @param {string} mtText Machine translation.
+ * @param {string} userText User-entered text
+ * @param {integer} [caretCharIndex] Location of the caret.
+ * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
+ **/
+TypingState.prototype.initTranslationAndUserText = function( mtText, userText, caretCharIndex, selectionCharIndex ) {
+	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
+	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
+	
+	var allTokens = this.__initAllTokens( mtText, userText );
+	this.__markActiveToken( allTokens, caretCharIndex );
+	this.__markLookups( allTokens );
 
-TypingState.prototype.decrementCaretIndex = function() {
-	var charIndex = this.getAttr( "caretCharIndex" ) - 1;
-	var minCharIndex = 0;
-	if ( charIndex < minCharIndex ) { charIndex = minCharIndex }
-	this.setAttr( "caretCharIndex", charIndex );
-};
-
-TypingState.prototype.setSelectedIndexes = function( startCharIndex, endCharIndex ) {
-	if ( startCharIndex === undefined ) { startCharIndex = 0 }
-	if ( endCharIndex === undefined ) { endCharIndex = startCharIndex }
-	this.setAttr( [ "selectionStartCharIndex", "selectionEndCharIndex" ], [ startCharIndex, endCharIndex ] );
+	this.set( "allTokens", allTokens );
+	this.set( "mtText", mtText );
+	this.set( "userText", userText );
+	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	this.set( "isExpired", false );
+	this.trigger( "modified" );
 };
 
 /**
- * Set user-entered text (intended for development use only).
- * @param {String} text User-entered text.
+ * Incrementally update the machine translation.
+ * @param {string} mtText Machine translation.
+ * @param {integer} [caretCharIndex] Location of the caret.
+ * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
-TypingState.prototype.setUserText = function( userText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex ) {
-	// This regular expression should always yield an odd number of "termsAndSeps" values
-	// The odd entries are terms (for a total of N+1 terms)
-	// The even entries are separators (for a total of N separators)
-	var termsAndSeps = userText.split( /([ ]+)/g );
+TypingState.prototype.updateTranslation = function( mtText, caretCharIndex, selectionCharIndex ) {
+	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
+	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 	
-	// The first N terms and separators are referred to as "matched"
-	var matchedLength = ( termsAndSeps.length - 1 ) / 2;
-	var matchedText = termsAndSeps.slice( 0, termsAndSeps.length - 2 ).join("");
-	var matchedTokens = new Array( matchedLength );
-	for ( var i = 0; i < matchedLength; i++ ) {
-		var term = termsAndSeps[ i * 2 ];
-		var sep = termsAndSeps[ i * 2 + 1 ];
-		var token = { "text" : term, "sep" : sep };
-		matchedTokens[ i ] = token;
+	var userText = this.getUserText();
+	var allTokens = this.__initAllTokens( mtText, userText );
+	this.__markActiveToken( allTokens, caretCharIndex );
+	this.__markLookups( allTokens );
+
+	this.set( "allTokens", allTokens );
+	this.set( "mtText", mtText );
+	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	this.set( "isExpired", false );
+	this.trigger( "modified" );
+};
+
+/**
+ * Incrementally update user-entered text.
+ * @param {string} userText User-entered text.
+ * @param {integer} [caretCharIndex] Location of the caret.
+ * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
+ **/
+TypingState.prototype.updateUserText = function( userText, caretCharIndex, selectionCharIndex ) {
+	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
+	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
+	
+	var allTokens = this.get( "allTokens" );
+	this.__updateAllTokens( allTokens, userText )
+	this.__markActiveToken( allTokens, caretCharIndex );
+	this.__markLookups( allTokens );
+
+	this.set( "userText", userText );
+	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	if ( this.__checkForUpdates( allTokens ) ) {
+		this.set( "isExpired", true );
+		this.__prepareSync();
 	}
-	// The final term is referred to as "current"
-	var currentTerm = termsAndSeps[ termsAndSeps.length - 1 ];
-	
-	// Recalculate inputText
-	var futureText = this.getAttr( "futureText" );
-	var inputText = userText + " " + futureText;
-	
-	if ( caretCharIndex === undefined && selectionStartCharIndex === undefined && selectionEndCharIndex === undefined ) {
- 		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText" ],
-		[ userText, matchedText, matchedTokens, currentTerm, inputText ] );
+	this.trigger( "modified" );
+};
+
+/**
+ * Update the location of the caret.
+ * @param {integer} caretCharIndex Location of the caret.
+ * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
+ **/
+TypingState.prototype.updateCaret = function( caretCharIndex, selectionCharIndex ) {
+	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
+
+	var allTokens = this.get( "allTokens" );
+	this.__markActiveToken( allTokens, caretCharIndex );
+	this.__markLookups( allTokens );
+
+	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	if ( this.__checkForUpdates( allTokens ) ) {
+		this.set( "isExpired", true );
+		this.__prepareSync();
 	}
-	else if ( selectionStartCharIndex === undefined && selectionEndCharIndex === undefined ) {
-		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText", "caretCharIndex" ],
-		[ userText, matchedText, matchedTokens, currentTerm, inputText, caretCharIndex ] );
+	this.trigger( "modified" );
+};
+
+/** @private **/
+TypingState.prototype.__initAllTokens = function( mtText, userText ) {
+	var mtTermsAndSeps = mtText.split( this.WHITESPACE );
+	var mtLength = ( mtTermsAndSeps.length + 1 ) / 2;
+	var userTermsAndSeps = userText.split( this.WHITESPACE );
+	var userLength = ( userTermsAndSeps.length + 1 ) / 2;
+	chai.assert( userLength <= mtLength );
+	
+	var allTokens = _.range( mtLength ).map( function( n ) { return { "index" : n } } );
+	
+	for ( var n = 0; n < mtLength; n++ ) {
+		var token = allTokens[ n ];
+		var mtTerm = mtTermsAndSeps[ n * 2 ];
+		var mtSep = ( n < mtLength - 1 ) ? mtTermsAndSeps[ n * 2 + 1 ] : "";
+		var userTerm = ( n < userLength ) ? userTermsAndSeps[ n * 2 ] : "";
+		var userSep = ( n < userLength - 1 ) ? userTermsAndSeps[ n * 2 + 1 ] : "";
+		token.mtTerm = mtTerm;
+		token.mtSep = mtSep;
+		token.userTerm = userTerm;
+		token.userSep = userSep;
+		token.original = userTerm;
+		token.isChanged = false;
+	}
+	return allTokens;
+};
+
+/** @private **/
+TypingState.prototype.__updateAllTokens = function( allTokens, userText ) {
+	var userTermsAndSeps = userText.split( this.WHITESPACE );
+	var userLength = ( userTermsAndSeps.length + 1 ) / 2;
+	
+	var length = Math.max( allTokens.length, userLength );
+	for ( var n = 0; n < length; n++ ) {
+		if ( n < userLength ) {
+			var userTerm = userTermsAndSeps[ n * 2 ];
+			var userSep = ( n < userLength - 1 ) ? userTermsAndSeps[ n * 2 + 1 ] : "";
+			if ( n < allTokens.length ) {
+				var token = allTokens[ n ];
+				token.userTerm = userTerm;
+				token.userSep = userSep;
+			}
+			else {
+				var token = {};
+				token.mtTerm = "";
+				token.mtSep = "";
+				token.userTerm = userTerm;
+				token.userSep = userSep;
+				token.original = "";
+				token.isChanged = false;
+				allTokens.push( token );
+			}
+		}
+		else {
+			if ( n < allTokens.length ) {
+				var token = allTokens[ n ];
+				token.userTerm = "";
+				token.userSep = "";
+			}
+		}
+	}
+};
+
+/** @private **/
+TypingState.prototype.__markActiveToken = function( allTokens, caretCharIndex ) {
+	var charIndex = 0;
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		token.isUser = ( token.userTerm !== "" );
+		token.term = ( token.userTerm !== "" ) ? token.userTerm : token.mtTerm;
+		token.sep = ( token.userSep !== "" ) ? token.userSep : token.mtSep;
+		var startCharIndex = charIndex;
+		charIndex += token.term.length;
+		var endCharIndex = charIndex;
+		charIndex += token.sep.length;
+		var atOrBeforeCaret = ( caretCharIndex <= endCharIndex );
+		var atOrAfterCaret = ( startCharIndex <= caretCharIndex );
+		var isActive = ( atOrBeforeCaret && atOrAfterCaret );
+		token.startCharIndex = startCharIndex;
+		token.endCharIndex = endCharIndex;
+		token.atOrBeforeCaret = atOrBeforeCaret;
+		token.atOrAfterCaret = atOrAfterCaret;
+		token.isActive = isActive;
+	}
+};
+
+/** @private **/
+TypingState.prototype.__markLookups = function( allTokens ) {
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		token.lookups = [];
+	}
+};
+
+/** @private **/
+TypingState.prototype.__checkForUpdates = function( allTokens ) {
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		if ( token.original !== token.userTerm ) {
+			if ( ! token.isActive && ! token.isChanged ) {
+				token.isChanged = true;
+				return true;
+			}
+		}
+	}
+	return false;
+};
+
+/** @private **/
+TypingState.prototype.__setSelectionCharIndexes = function( caretCharIndex, selectionCharIndex ) {
+	this.set( "caretCharIndex", caretCharIndex );
+	this.set( "selectionCharIndex", selectionCharIndex );
+
+	var userText = this.get( "userText" );
+	var maxCharIndex = userText.length;
+	var boundCaretCharIndex = Math.min( maxCharIndex, caretCharIndex );
+	var boundSelectionCharIndex = Math.min( maxCharIndex, selectionCharIndex );
+	var isGhostCaret = boundCaretCharIndex < caretCharIndex;
+	this.set( "isGhostCaret", isGhostCaret );
+	if ( selectionCharIndex === caretCharIndex ) {
+		this.set( "selectionStartCharIndex", boundCaretCharIndex );
+		this.set( "selectionEndCharIndex", boundCaretCharIndex );
+		this.set( "selectionDirection", "none" );
+	}
+	else if ( selectionCharIndex < caretCharIndex ) {
+		this.set( "selectionStartCharIndex", boundSelectionCharIndex );
+		this.set( "selectionEndCharIndex", boundCaretCharIndex );
+		this.set( "selectionDirection", "forward" );
 	}
 	else {
-		this.setAttr( [ "userText", "matchedText", "matchedTokens", "currentTerm", "allText", "caretCharIndex", "selectionStartCharIndex", "selectionEndCharIndex" ],
-		[ userText, matchedText, matchedTokens, currentTerm, inputText, caretCharIndex, selectionStartCharIndex, selectionEndCharIndex ] );
+		this.set( "selectionStartCharIndex", boundCaretCharIndex );
+		this.set( "selectionEndCharIndex", boundSelectionCharIndex );
+		this.set( "selectionDirection", "backward" );
 	}
-	return this;
 };
 
+TypingState.prototype.__triggerSync = function( syncKey ) {
+	this.__incrementSyncKey();
+	var syncKey = this.get( "syncKey" );
+	this.trigger( "syncTranslation", syncKey );
+	console.log( "Sent HTTP request (key=" + syncKey + ")" );
+}
+
+TypingState.prototype.syncTranslation = function( key, translation ) {
+	var syncKey = this.get( "syncKey" );
+	if ( syncKey === key ) {
+		this.updateTranslation( translation );
+		console.log( "Received HTTP response (key=" + syncKey + ")" );
+		return true;
+	}
+	else {
+		console.log( "Discarded outdated HTTP response (key=" + syncKey + ")" );
+		return false;
+	}
+};
+
+TypingState.prototype.__incrementSyncKey = function() {
+	this.set( "syncKey", this.get( "syncKey" ) + 1 );
+};
+
+/**
+ * Get user-entered text (i.e., sentencee prefix) for generating the machine translation.
+ **/
 TypingState.prototype.getUserText = function() {
-	return this.getAttr( "userText" );
-};
-
-/**
- * Retrieve the full text as entered by the user.
- * @return {String} User-entered text.
- **/
-TypingState.prototype.getUserText = function() {
-	return this.getAttr( "userText" );
-};
-
-/**
- * Retrieve all terms except the last one, as entered by the user.
- * @return {String} User-entered text.
- **/
-
-/**
- * Retrieve the final term entered by the user.
- * @return {String} User-enterd text.
- **/
-TypingState.prototype.getCurrentTerm = function() {
-	return this.getAttr( "currentTerm" );
-};
-
-/**
- * Set autocomplete suggestions for the current term.
- * @param {String[]} suggestions A list of suggested terms.
- **/
-TypingState.prototype.setSuggestions = function( suggestions ) {
-	this.setAttr( "suggestions", suggestions );
-	return this;
-};
-
-/**
- * Set machine-translated text (excluding matched text and current term).
-* @param {String} text Machine translation.
- **/
-TypingState.prototype.setFutureText = function( futureText ) {
-	var terms = futureText.split( /[ ]+/g );
-	var futureLength = terms.length;
-	var futureTokens = new Array( futureLength );
-	for ( var i = 0; i < futureLength; i++ ) {
-		var term = terms[ i ];
-		var sep = ( i === futureLength - 1 ) ? "" : " ";
-		var token = { "text" : term, "sep" : sep };
-		futureTokens[ i ] = token;
-	}
-	
-	// Recalculate inputText
-	var userText = this.getAttr( "userText" );
-	var inputText = userText + " " + futureText;
-	
-	this.setAttr( [ "futureText", "futureTokens", "allText" ], [ futureText, futureTokens, inputText ] );
-	return this;
-};
-
-/**
- * Set machine-translated text (excluding matched text and current term).
-* @param {String[]} terms A list of machine-translated terms.
- **/
-TypingState.prototype.setFutureTerms = function( terms ) {
-	var futureText = terms.join( " " );
-	var futureLength = terms.length;
-	var futureTokens = new Array( futureLength );
-	for ( var i = 0; i < futureLength; i++ ) {
-		var term = terms[ i ];
-		var sep = ( i === futureLength - 1 ) ? "" : " ";
-		var token = { "text" : term, "sep" : sep };
-		futureTokens[ i ] = token;
-	}
-	this.setAttr( [ "futureText", "futureTokens" ], [ futureText, futureTokens ] );
-	return this;
+	return this.get( "userText" );
 };

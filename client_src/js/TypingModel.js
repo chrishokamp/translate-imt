@@ -1,12 +1,9 @@
 var TypingModel = Backbone.Model.extend({
 	"defaults" : {
 		"allSpanElements" : [],
+		"activeSpanElement" : null,
 		"caretSpanSegment" : null,
-		"currentSpanElement" : null,
-		"spacingSpanElement" : null,
-		"suggestionElements" : [],
-		"inputSelectionStart" : 0,
-		"inputSelectionEnd" : 0
+		"activeSuggestionElements" : []
 	}
 });
 
@@ -16,177 +13,88 @@ TypingModel.prototype.initialize = function( options ) {
 };
 
 TypingModel.prototype.__update = function() {
-	var allSpanElements = [];
-	var suggestionElements = [];
-	
-	// Generate a list of span elements (with fields: text, type, startCharIndex, endCharIndex)
-	// Within each span element are a list of segments (with fields: text, startCharIndex, endCharIndex)
-	var matchedTokens = this.state.getAttr( "matchedTokens" );
-	var currentTerm = this.state.getAttr( "currentTerm" );
-	var futureTokens = this.state.getAttr( "futureTokens" );
-	var suggestions = this.state.getAttr( "suggestions" )
-	allSpanElements = this.__appendSpansFromTokens( allSpanElements, matchedTokens, "matched" );
-	allSpanElements = this.__appendSpansFromCurrentTerm( allSpanElements, currentTerm, suggestions );
-	allSpanElements = this.__appendSpansFromTokens( allSpanElements, futureTokens, "future" );
-	this.__generateSegments( allSpanElements );
-	
-	// Split segments (if necessary) for selected text or for positioning the caret
-	var selectionStartCharIndex = this.state.getAttr( "selectionStartCharIndex" );
-	var selectionEndCharIndex = this.state.getAttr( "selectionEndCharIndex" );
-	var selectionMinCharIndex = Math.min( selectionStartCharIndex, selectionEndCharIndex );
-	var selectionMaxCharIndex = Math.max( selectionStartCharIndex, selectionEndCharIndex );
-	var caretCharIndex = this.state.getAttr( "caretCharIndex" );
-	this.__splitSegments( allSpanElements, [ selectionMinCharIndex, selectionMaxCharIndex, caretCharIndex ] );
+	var allTokens = this.state.get( "allTokens" );
 
-	// Identify the first (and only) span element corresponding to the current term
-	var currentSpanElement = null;
+	// Each token contained fields: term, sep, startCharIndex, endCharIndex, atOrBeforeCaret, atOrAfterCaret, isActive, lookups
+	// Each span element now contains fields: termSegments, sepSegments
+	var allSpanElements = allTokens;
 	for ( var i = 0; i < allSpanElements.length; i++ ) {
 		var span = allSpanElements[i];
-		if ( span.type === "current" ) {
-			currentSpanElement = span;
-			break;
-		}
+		span.termSegments = [{
+			"text" : span.term,
+			"startCharIndex" : span.startCharIndex,
+			"endCharIndex" : span.endCharIndex
+		}];
+		span.sepSegments = [{
+			"text" : span.sep,
+			"startCharIndex" : span.endCharIndex,
+			"endCharIndex" : span.endCharIndex + span.sep.length
+		}];
 	}
-	var spacingSpanElement = null;
+	
+	// Identify active span element
+	var activeSpanElement = null;
 	for ( var i = 0; i < allSpanElements.length; i++ ) {
 		var span = allSpanElements[i];
-		if ( span.type === "spacing" ) {
-			spacingSpanElement = span;
-			break;
+		if ( span.isActive ) {
+			activeSpanElement = span;
 		}
 	}
 	
-	// Identify all selected span segments
+	// Construct suggestion elements for the active token
+	var activeSuggestionElements = [];
+	if ( activeSpanElement !== null ) {
+		var span = activeSpanElement;
+		activeSuggestionElements.push({ "term" : span.mtTerm, "sep" : span.mtSep });
+		for ( var j = 0; j < span.lookups.length; j++ ) {
+			var term = span.lookups[j];
+			activeSuggestionElements.push({ "term" : term, "sep" : " " });
+		}
+		for ( var j = 0; j < activeSuggestionElements.length; j++ ) {
+			var span = activeSuggestionElements[j];
+			span.termSegments = [{ "text" : span.term }];
+			span.sepSegments = [{ "text" : span.sep }];
+		}
+	}
+	
+	// Split segments on caret position and text selection boundaries
+	var caretCharIndex = this.state.get( "caretCharIndex" );
+	var selectionCharIndex = this.state.get( "selectionCharIndex" );
+	var splitCharIndexes = [ caretCharIndex, selectionCharIndex ];
+	for ( var i = 0; i < allSpanElements.length; i++ ) {
+		var span = allSpanElements[i];
+		var termSegments = span.termSegments;
+		var sepSegments = span.sepSegments;
+		for ( var j = 0; j < splitCharIndexes.length; j++ ) {
+			termSegments = this.__splitSegments( termSegments, splitCharIndexes[j] );
+			sepSegments = this.__splitSegments( sepSegments, splitCharIndexes[j] );
+		}
+		span.termSegments = termSegments;
+		span.sepSegments = sepSegments;
+		span.segments = span.termSegments.concat( span.sepSegments );
+	}
+	
+	// Identify all selected span segments and the segment immediately following the caret
+	var caretSpanSegment = null;
+	var selectionMinCharIndex = Math.min( caretCharIndex, selectionCharIndex );
+	var selectionMaxCharIndex = Math.max( caretCharIndex, selectionCharIndex );
 	for ( var i = 0; i < allSpanElements.length; i++ ) {
 		var span = allSpanElements[i];
 		for ( var j = 0; j < span.segments.length; j++ ) {
 			var segment = span.segments[j];
 			segment.isSelected = ( selectionMinCharIndex <= segment.startCharIndex && segment.endCharIndex <= selectionMaxCharIndex );
+			if ( segment.startCharIndex === caretCharIndex ) { caretSpanSegment = segment }
 		}
 	}
-	
-	// Identify the segment immediately following the caret (insert new span/segment if necessary)
-	var caretSpanSegment = null;
-	for ( var i = 0; i < allSpanElements.length; i++ ) {
-		var span = allSpanElements[i];
-		for ( var j = 0; j < span.segments.length; j++ ) {
-			var segment = span.segments[j];
-			if ( segment.startCharIndex === caretCharIndex ) {
-				caretSpanSegment = segment;
-				break;
-			}
-		}
-	}
-	if ( caretSpanSegment === null ) {
-		var charIndex = ( allSpanElements.length === 0 ) ? 0 : allSpanElements[ allSpanElements.length - 1 ].endCharIndex;
-		var segment = {
-			"text" : "",
-			"startCharIndex" : charIndex,
-			"endCharIndex" : charIndex
-		};
-		var span = {
-			"text" : "",
-			"type" : "extra",
-			"startCharIndex" : charIndex,
-			"endCharIndex" : charIndex,
-			"segments" : [ segment ]
-		};
-		allSpanElements.push( span );
-		caretSpanSegment = segment;
-	}
-	
-	// Create suggestion Elements
-	for ( var i = 0; i < suggestions.length; i++ ) {
-		var text = suggestions[i];
-		var segment = {
-			"text" : text
-		};
-		var element = {
-			"text" : text,
-			"segments" : [ segment ]
-		};
-		suggestionElements.push( element );
-	}
 
-	this.setAttr( "allSpanElements", allSpanElements );
-	this.setAttr( "caretSpanSegment", caretSpanSegment );
-	this.setAttr( "currentSpanElement", currentSpanElement );
-	this.setAttr( "spacingSpanElement", spacingSpanElement );
-	this.setAttr( "suggestionElements", suggestionElements );
-	this.setAttr( "inputSelectionStart", selectionMinCharIndex );
-	this.setAttr( "inputSelectionEnd", selectionMaxCharIndex );
-	this.flush();
+	this.set( "allSpanElements", allSpanElements );
+	this.set( "activeSpanElement", activeSpanElement );
+	this.set( "caretSpanSegment", caretSpanSegment );
+	this.set( "activeSuggestionElements", activeSuggestionElements );
+	this.trigger( "modified" );
 };
 
-TypingModel.prototype.__appendSpansFromTokens = function( allSpanElements, tokens, type ) {
-	var charIndex = ( allSpanElements.length === 0 ) ? 0 : allSpanElements[ allSpanElements.length - 1 ].endCharIndex;
-	for ( var i = 0; i < tokens.length; i++ ) {
-		var token = tokens[i];
-		if ( token.text.length > 0 ) {
-			var text = token.text;
-			var span = { "text" : text, "type" : type };
-			span.startCharIndex = charIndex;
-			charIndex += text.length;
-			span.endCharIndex = charIndex;
-			allSpanElements.push( span );
-		}
-		if ( token.sep.length > 0 ) {
-			var text = token.sep;
-			var span = { "text" : text, "type" : type };
-			span.startCharIndex = charIndex;
-			charIndex += text.length;
-			span.endCharIndex = charIndex;
-			allSpanElements.push( span );
-		}
-	}
-	return allSpanElements;
-};
-
-TypingModel.prototype.__appendSpansFromCurrentTerm = function( allSpanElements, currentTerm, suggestions ) {
-	var charIndex = ( allSpanElements.length === 0 ) ? 0 : allSpanElements[ allSpanElements.length - 1 ].endCharIndex;
-	var text = currentTerm;
-	var span = { "text" : text, "type" : "current" };
-	span.startCharIndex = charIndex;
-	charIndex += text.length;
-	span.endCharIndex = charIndex;
-	allSpanElements.push( span );
-	
-	var text = " ";
-	var span = { "text" : text, "type" : "spacing" };
-	span.startCharIndex = charIndex;
-	charIndex += text.length;
-	span.endCharIndex = charIndex;
-	allSpanElements.push( span );
-	
-	return allSpanElements;
-};
-
-TypingModel.prototype.__generateSegments = function( allSpanElements ) {
-	for ( var i = 0; i < allSpanElements.length; i++ ) {
-		var span = allSpanElements[i];
-		var segment = {
-			"text" : span.text,
-			"type" : span.type,
-			"startCharIndex" : span.startCharIndex,
-			"endCharIndex" : span.endCharIndex
-		};
-		span.segments = [ segment ];
-	}
-};
-
-TypingModel.prototype.__splitSegments = function( allSpanElements, charIndexes ) {
-	for ( var i = 0; i < allSpanElements.length; i++ ) {
-		var span = allSpanElements[i];
-		var segments = span.segments;
-		for ( var j = 0; j < charIndexes.length; j++ ) {
-			var charIndex = charIndexes[j];
-			segments = this.__splitSegmentByCharIndex( segments, charIndex );
-		}
-		span.segments = segments;
-	}
-};
-
-TypingModel.prototype.__splitSegmentByCharIndex = function( initSegments, charIndex ) {
+TypingModel.prototype.__splitSegments = function( initSegments, charIndex ) {
 	var segments = [];
 	for ( var i = 0; i < initSegments.length; i++ ) {
 		var segment = initSegments[i];
@@ -195,7 +103,7 @@ TypingModel.prototype.__splitSegmentByCharIndex = function( initSegments, charIn
 			var firstSegment = {
 				"text" : segment.text.substr( 0, split ),
 				"startCharIndex" : segment.startCharIndex,
-				"endCharIndex " : charIndex
+				"endCharIndex" : charIndex
 			};
 			var secondSegment = {
 				"text" : segment.text.substr( split ),

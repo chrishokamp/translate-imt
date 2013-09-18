@@ -1,73 +1,28 @@
 // Deployment options
 // console.log = function() {};
 
-// Setup the global namespace
-var PTM = {};
+var PTM = function() {};
 
-$(document).ready( function() {
-  PTM.sourceBox = new SourceBox("data/en-source.js", updateTranslation);
-  PTM.sourceBox.render("source");
-  
-  // TODO(spenceg) Move to PTM namespace
-  // TODO(spenceg) How to update when the source text changes?
-  typingState = new TypingState();
-	typingModel = new TypingModel({ "state" : typingState });
-	typingUI = new TypingUI({ "model" : typingModel });
-		
-	typingState.on( "token", updateTranslation );
-	d3.select( "#tgt-input" ).on( "keyup", function() { typingState.setUserText( d3.event.srcElement.value ) } );
-});
-
-
-var updateUI = function(data, elapsedRequestTime) {
-	console.log(data);
-	$('#output').empty();
-	for (var i = 0; i < data.tgtList.length; i++) {
-		$('#output').append('<p>' + data.tgtList[i] + '</p>');
-	}
-	$('#output').append('<span style="font-size:small;color:red">request: ' + elapsedRequestTime.toFixed(2).toString() + 's</span>');
-
-	// Load top MT into the Typing UI
-	var mtText = data.tgtList[0];
-	var userText = typingState.getUserText();
-	var futureText = mtText.substr( userText.length );
-	typingState.setFutureText( futureText );
+PTM.prototype.run = function() {
+	this.sourceBox = new SourceBox( "data/en-source.js", this.initTranslation.bind(this) );
+	this.sourceBox.render( "source" );
+	this.typingState = new TypingState();
+	this.typingModel = new TypingModel( { "state" : this.typingState } );
+	this.typingUI = new TypingUI( { "model" : this.typingModel } );
+	this.server = new TranslateServer();
+//	this.server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
+	this.typingState.on( "syncTranslation", this.onSyncTranslation.bind(this) );
 };
 
-
-var sendTranslationMessage = function(msg, callback) {
-  var startTime = Date.now();
-  $.ajax({
-		url: _serverURL,
-		dataType: "json",
-		data: {tReq : JSON.stringify(msg), },
-		success: function(data){
-			var totalTime = (Date.now()-startTime) / 1000;
-      callback(data, totalTime);
-		},
-		error: function(jqXHR, textStatus, errorThrown){
-			console.log("Translation request failed");
-			console.log(errorThrown);
-		},
-	});
+PTM.prototype.initTranslation = function() {
+	var handler = function( translation ) { this.typingState.updateTranslation( translation ) };
+	var sourceText = this.sourceBox.getSourceText();
+	this.server.translate( handler.bind(this), sourceText );
 };
 
-
-var updateTranslation = function() {
-	// Get source text
-	var source = PTM.sourceBox.getSourceText();
-		
-	// Get user-entered target prefix
-	var tgtPrefix = typingState.getUserText();
-
-	// Translation message
-	var msg = {
-		src : _srcLang,
-		tgt : _tgtLang,
-		n : 3,
-		text : source,
-		tgtPrefix : tgtPrefix,
-	};
-
-  sendTranslationMessage(msg, updateUI);
+PTM.prototype.onSyncTranslation = function( syncKey ) {
+	var handler = function( translation ) { this.typingState.syncTranslation( syncKey, translation ) };
+	var sourceText = this.sourceBox.getSourceText();
+	var targetPrefix = this.typingState.getUserText();
+	this.server.translate( handler.bind(this), sourceText, targetPrefix );
 };

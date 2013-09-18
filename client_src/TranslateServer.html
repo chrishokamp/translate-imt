@@ -24,6 +24,7 @@ EventLogger.prototype.log = function( message ) {
 <script type="text/javascript">
 $(document).ready( function() {
 	server = new TranslateServer();
+	server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
 	logger = new EventLogger( "TranslateServer" );
 	var translateHandler = function( targetTranslation, requestData, responseData ) {
 		logger.log( "translation = " + targetTranslation );
@@ -67,7 +68,7 @@ div.container {
 		<textarea class="GetTargetPrefix" style="width: 400px; height: 80px"></textarea>
 	</p>
 	<p>
-		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Target Prefix: </span>
+		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Translation: </span>
 		<textarea class="SetTargetTranslation" style="width: 400px; height: 80px; background: #eee" disabled></textarea>
 	</p>
 	<p>

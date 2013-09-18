@@ -55,7 +55,7 @@ TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, opt
 		};
 		responseData.timing = timing;
 		var targetTranslation = responseData.tgtList[0];
-		console.log( "[TranslateServer] [success] " + duration.toFixed(2) + " seconds", targetTranslation, requestData, responseData, responseObject, responseMessage );
+		console.log( "[TranslateServer] [success] [" + duration.toFixed(2) + " seconds]", targetTranslation, requestData, responseData, responseObject, responseMessage );
 		if ( f !== undefined ) {
 			f( targetTranslation, requestData, responseData );
 		}
@@ -69,7 +69,7 @@ TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, opt
 					"duration" : duration
 				};
 		responseData.timing = timing;
-		console.log( "[TranslateServer] [error] " + duration.toFixed(2) + " seconds", null, requestData, responseData, responseObject, responseMessage );
+		console.log( "[TranslateServer] [error] [" + duration.toFixed(2) + " seconds]", null, requestData, responseData, responseObject, responseMessage );
 		if ( f !== undefined ) {
 			f( null, requestData, responseData );
 		}

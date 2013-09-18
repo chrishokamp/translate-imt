@@ -1,37 +1,30 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
+    <title>PTM Prototype Interface</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <script type="text/javascript" src="js/d3.js"></script>
-    <script type="text/javascript" src="js/jquery.js"></script>
-    <script type="text/javascript" src="js/underscore.js"></script>
-    <script type="text/javascript" src="js/backbone.js"></script>
-    <script type="text/javascript" src="js/ElphabaModel.js"></script>
-    <script type="text/javascript" src="js/TypingState.js"></script>
-    <script type="text/javascript" src="js/TypingModel.js"></script>
-    <script type="text/javascript" src="js/TypingUI.js"></script>
-
-    <script type="text/javascript">
-      // Global variables
-      _serverURL = "http://joan.stanford.edu:8017/t";
-      _srcLang = "EN";
-      _tgtLang = "DE";
-    </script>
+	<script type="text/javascript" src="js/d3.js"></script>
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/underscore.js"></script>
+	<script type="text/javascript" src="js/backbone.js"></script>
+	<script type="text/javascript" src="js/chai.js"></script>
+	<script type="text/javascript" src="js/TypingState.js"></script>
+	<script type="text/javascript" src="js/TypingModel.js"></script>
+	<script type="text/javascript" src="js/TypingUI.js"></script>
+	<script type="text/javascript" src="js/TranslateServer.js"></script>
     <script type="text/javascript" src="js/SourceBox.js"></script>
     <script type="text/javascript" src="js/ptm.js"></script>
-
-    <title>PTM Prototype Interface</title>
+<script type="text/javascript">
+$(document).ready( function() {
+	var ptm = new PTM();
+	ptm.run();
+});
+</script>
 </head>
 <body>
-
 <div id="wrapper" style="padding:1em;width=600px;max-width:600px">  
-
-  <div id="source"></div>
-
-  <br>
-
+  <div id="source"></div><br>
   <div class="TypingUI"></div><br/>
-
   <div id="output"></div>
 </div>
 
