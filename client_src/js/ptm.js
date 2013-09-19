@@ -9,7 +9,7 @@ PTM.prototype.run = function() {
 	this.typingUI = new TypingUI( { "model" : this.typingModel } );
 	this.server = new TranslateServer();
   
-  this.sourceBox = new SourceBox( "data/en-source.js", this.initTranslation.bind(this) , this.server.wordQuery.bind(this.server));
+  this.sourceBox = new SourceBox( "data/en-source.ann.json", this.initTranslation.bind(this) , this.server.wordQuery.bind(this.server));
 	this.sourceBox.render( "source" );
   
 	this.typingState.on( "syncTranslation", this.updateTranslation.bind(this) );

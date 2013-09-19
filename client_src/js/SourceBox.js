@@ -1,11 +1,13 @@
 // Source textbox for PTM application
-function SourceBox(jsonFileName, onChangeCallback, sourceQueryCallback) {
-  this.jsonFileName = jsonFileName;
+function SourceBox(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback) {
+  this.jsonFileName = jsonCoreNLPFile;
   this.curSelection = null;
   this.onChangeCallback = onChangeCallback;
   this.sourceQueryCallback = sourceQueryCallback;
   this.segments = [];
   this.curSegment = 0;
+
+  this.chunkLists = [];
 }
 
 SourceBox.prototype.CSS_SEGMENT_CLASS = "SourceBox-segment";
@@ -17,9 +19,18 @@ SourceBox.prototype.CSS_WORD_OPTION_CLASS = "SourceBox-option";
 SourceBox.prototype.AES_SEGMENT_SELECT = "#E8E8E8";
 SourceBox.prototype.AES_WORD_SELECT = "#99CCFF";
 
-SourceBox.prototype.getSourceText = function(event) {
-  var srcText = this.segments[this.curSegment];
-  return srcText;
+SourceBox.prototype.getSourceText = function() {
+  return this.segments[this.curSegment];
+};
+
+SourceBox.prototype.getChunks = function() {
+  return this.chunkLists[this.curSegment];
+};
+
+SourceBox.prototype.isChunk = function(start,end) {
+  var chunkVector = this.chunkLists[this.curSegment];
+  var span = [start,end];
+  return span in chunkVector;
 };
 
 SourceBox.prototype.layoutCurrentWithTranslation = function(tgtText, alignments) {
@@ -49,6 +60,9 @@ SourceBox.prototype.closeSourceOptions = function(event) {
 };
 
 SourceBox.prototype.renderSourceOptions = function(options, event) {
+  if (options.rules === undefined || options.rules.length === 0) {
+    return;
+  }
   var tokDiv = $(event.target);
   var toolTip = $('#'+this.CSS_TOOLTIP_ID);
   toolTip.css("left", event.clientX + "px" )
@@ -62,6 +76,25 @@ SourceBox.prototype.renderSourceOptions = function(options, event) {
   });
 };
 
+SourceBox.prototype.makeChunkList = function(bitVector) {
+  var left = -1;
+  var chunkList = {};
+  for (var i = 0; i < bitVector.length; i++) {
+    if (left < 0 && bitVector[i] === true) {
+      left = i;
+    } else if (left >= 0 && bitVector[i] === false) {
+      var span = [left,i-1];
+      chunkList[span] = 1;
+      left = -1;
+    }
+  }
+  if (left >= 0) {
+    var span = [left,i-1];
+    chunkList[span] = 1;
+  }
+  return chunkList;
+};
+
 SourceBox.prototype.render = function(targetDiv) {
   // Insert the options display box
   $('body').append('<div id="' + this.CSS_TOOLTIP_ID + '"></div>');
@@ -70,12 +103,13 @@ SourceBox.prototype.render = function(targetDiv) {
   // Add event handlers for each div (for clicking)
   var self = this;
   $.getJSON(this.jsonFileName, function(data) {
-    $.each(data.srclist, function(i,val){
-      self.segments[i] = val;
+    $.each(data, function(i,val){
+      self.segments[i] = val.tokens.join(' ');
+      self.chunkLists[i] = self.makeChunkList(val.isBaseNP);
+      console.log(self.chunkLists[i]);
       var id = targetDiv + "-" + i;
-      var tokens = val.split(" ");      
       var divStr = '<div class="' + self.CSS_SEGMENT_CLASS + '" id="' + id + '">';
-      $.each(tokens, function(j,tok) {
+      $.each(val.tokens, function(j,tok) {
         var tokenId = id + "-" + j;
         var tokStr = '<span class="' + self.CSS_TOKEN_CLASS + '" id="' + tokenId + '">' + tok + '</span> ';
         divStr += tokStr;
@@ -88,11 +122,11 @@ SourceBox.prototype.render = function(targetDiv) {
     });
 
     // Source selection callback
-    $('.'+self.CSS_SEGMENT_CLASS).click(function(event) {
+    $('div.'+self.CSS_SEGMENT_CLASS).click(function(event) {
       self.handleSelect(event);
     });
     // Single-word query callback
-    $('.'+self.CSS_TOKEN_CLASS).hover(function(event) {
+    $('span.'+self.CSS_TOKEN_CLASS).hover(function(event) {
       $(event.target).css('background-color', self.AES_WORD_SELECT);
       self.sourceQueryCallback($(event.target).text(),
                                event, self.renderSourceOptions.bind(self));
