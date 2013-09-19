@@ -1,0 +1,16 @@
+
+#wrapper {
+   padding:1em;
+   width:600px;
+   max-width:600px;
+}
+
+.SourceBox-segment {
+   margin-bottom:0.5em;
+   cursor:pointer;
+}
+
+.SourceBox-token {
+   margin-left:0.1em;
+   margin-bottom:0.3em;
+}

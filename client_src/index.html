@@ -3,29 +3,30 @@
 <head>
     <title>PTM Prototype Interface</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<script type="text/javascript" src="js/d3.js"></script>
-	<script type="text/javascript" src="js/jquery.js"></script>
-	<script type="text/javascript" src="js/underscore.js"></script>
-	<script type="text/javascript" src="js/backbone.js"></script>
-	<script type="text/javascript" src="js/chai.js"></script>
-	<script type="text/javascript" src="js/TypingState.js"></script>
-	<script type="text/javascript" src="js/TypingModel.js"></script>
-	<script type="text/javascript" src="js/TypingUI.js"></script>
-	<script type="text/javascript" src="js/TranslateServer.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/ptm-style.css">
+    <script type="text/javascript" src="js/d3.js"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/underscore.js"></script>
+    <script type="text/javascript" src="js/backbone.js"></script>
+    <script type="text/javascript" src="js/chai.js"></script>
+    <script type="text/javascript" src="js/TypingState.js"></script>
+    <script type="text/javascript" src="js/TypingModel.js"></script>
+    <script type="text/javascript" src="js/TypingUI.js"></script>
+    <script type="text/javascript" src="js/TranslateServer.js"></script>
     <script type="text/javascript" src="js/SourceBox.js"></script>
     <script type="text/javascript" src="js/ptm.js"></script>
-<script type="text/javascript">
-$(document).ready( function() {
-	var ptm = new PTM();
-	ptm.run();
-});
-</script>
+    <script type="text/javascript">
+      $(document).ready( function() {
+      var ptm = new PTM();
+      ptm.run();
+      });
+    </script>
 </head>
 <body>
-<div id="wrapper" style="padding:1em;width=600px;max-width:600px">  
-  <div id="source"></div><br>
+<div id="wrapper">  
+  <div id="source"></div><br/>
   <div class="TypingUI"></div><br/>
-  <div id="output"></div>
+  <div id="debug-output"></div>
 </div>
 
 </body>

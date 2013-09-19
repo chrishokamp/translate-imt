@@ -1,7 +1,71 @@
 var TranslateServer = function() {};
 
-TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
 TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
+
+// Debug settings
+//TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
+// TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8017/t";
+TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
+TranslateServer.prototype.SRC_LANG = "EN";
+TranslateServer.prototype.TGT_LANG = "DE";
+
+TranslateServer.prototype.QUERY_LIMIT = 4;
+
+TranslateServer.prototype.wordQuery = function(word, event, callback) {
+  if (word === undefined) {
+    return [];
+  }
+
+  var rqReqData = {
+		"src" : this.SRC_LANG,
+		"tgt" : this.TGT_LANG,
+		"spanLimit" : this.QUERY_LIMIT,
+		"text" : word
+	};
+  var requestData = {
+		"rqReq" : JSON.stringify( rqReqData )
+	};
+  
+  var requestTime = new Date();
+	var successHandler = function( responseData, responseObject, responseMessage ) {
+		var responseTime = new Date();
+		var duration = ( responseTime - requestTime ) / 1000;
+		var timing = {
+			"requestTime" : this.formatter( requestTime ),
+			"responseTime" : this.formatter( responseTime ),
+			"duration" : duration
+		};
+		responseData.timing = timing;
+		console.log( "[TranslateServer] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
+		if ( callback !== undefined ) {
+			callback( responseData, event );
+		}
+	}.bind(this);
+	var errorHandler = function( responseData, responseObject, responseMessage ) {
+		var responseTime = new Date();
+		var duration = ( responseTime - requestTime ) / 1000;
+		var timing = {
+					"requestTime" : this.formatter( requestTime ),
+					"responseTime" : this.formatter( responseTime ),
+					"duration" : duration
+				};
+		responseData.timing = timing;
+		console.log( "[TranslateServer] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
+		if ( callback !== undefined ) {
+			callback(responseData, event );
+		}
+	}.bind(this);
+	
+	// Send the request
+	var requestMessage = {
+		"url" : this.SERVER_URL,
+		"dataType" : "json",
+		"data" : requestData,
+		"success" : successHandler,
+		"error" : errorHandler
+	};
+	$.ajax( requestMessage );
+}
 
 /**
  * Make a translate request.
@@ -30,8 +94,8 @@ TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, opt
 
 	// Generate tReq data for a HTTP request
 	var tReqData = {
-		"src" : "EN",
-		"tgt" : "DE",
+		"src" : this.SRC_LANG,
+		"tgt" : this.TGT_LANG,
 		"n" : 1,
 		"text" : sourceText,
 		"tgtPrefix" : targetPrefix,
