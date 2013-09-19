@@ -40,25 +40,12 @@ SourceBox.prototype.closeSourceOptions = function(event) {
 };
 
 SourceBox.prototype.renderSourceOptions = function(options, event) {
+  // TODO(spenceg): Render a box near the source span
   var div = $('#debug-output');
   div.empty();
-  // TODO(spenceg): Render a box near the source span
   $.each(options.rules,function(i,val) {
     div.append('<p>' + val.tgt + '</p>');
   });
-
-  $(event.target).css('background-color','#99CCFF');
-  
-  var self = this;
-  $(event.target).mouseout(function(event){
-    self.closeSourceOptions(event);
-  });
-};
-
-SourceBox.prototype.handleSourceQuery = function(event) {
-  var word = $(event.target).text();
-  console.log(word);
-  this.sourceQueryCallback(word, event, this.renderSourceOptions.bind(this));
 };
 
 SourceBox.prototype.render = function(targetDiv) {
@@ -88,8 +75,12 @@ SourceBox.prototype.render = function(targetDiv) {
       self.handleSelect(event);
     });
     // Single-word query callback
-    $('.'+self.CSS_TOKEN_CLASS).mouseover(function(event) {
-      self.handleSourceQuery(event);
+    $('.'+self.CSS_TOKEN_CLASS).hover(function(event) {
+      $(event.target).css('background-color','#99CCFF');
+      self.sourceQueryCallback($(event.target).text(),
+                               event, self.renderSourceOptions.bind(self));
+    },function(event) {
+      self.closeSourceOptions(event);
     });
   });
 };
