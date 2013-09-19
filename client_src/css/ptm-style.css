@@ -14,3 +14,13 @@
    margin-left:0.1em;
    margin-bottom:0.3em;
 }
+
+#SourceBox-tooltip {
+   position:fixed;
+   display:none;
+   pointer-events:none;
+}
+
+.SourceBox-option {
+   
+}

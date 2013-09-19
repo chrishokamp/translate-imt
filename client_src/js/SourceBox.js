@@ -10,6 +10,12 @@ function SourceBox(jsonFileName, onChangeCallback, sourceQueryCallback) {
 
 SourceBox.prototype.CSS_SEGMENT_CLASS = "SourceBox-segment";
 SourceBox.prototype.CSS_TOKEN_CLASS = "SourceBox-token";
+SourceBox.prototype.CSS_TOOLTIP_ID = "SourceBox-tooltip";
+SourceBox.prototype.CSS_WORD_OPTION_CLASS = "SourceBox-option";
+
+// CSS elements here
+SourceBox.prototype.AES_SEGMENT_SELECT = "#E8E8E8";
+SourceBox.prototype.AES_WORD_SELECT = "#99CCFF";
 
 SourceBox.prototype.getSourceText = function(event) {
   var srcText = this.segments[this.curSegment];
@@ -25,9 +31,11 @@ SourceBox.prototype.handleSelect = function(event) {
   if (segmentDiv.attr('class') !== this.CSS_SEGMENT_CLASS) {
     segmentDiv = $(event.target).parent();
   }
-  segmentDiv.css('background-color','#E8E8E8');
+  segmentDiv.css('background-color', this.AES_SEGMENT_SELECT);
   if (this.curSelection) {
-    this.curSelection.css('background-color','#FFFFFF');
+    var parColor = this.curSelection.parent().css('background-color');
+    this.curSelection.css('background-color', parColor);
+    this.curSelection.children().css('background-color', parColor);
   }
   this.curSelection = segmentDiv;
   this.curSegment = segmentDiv.attr('id').split('-')[1];
@@ -35,20 +43,29 @@ SourceBox.prototype.handleSelect = function(event) {
 };
 
 SourceBox.prototype.closeSourceOptions = function(event) {
+  $('#'+this.CSS_TOOLTIP_ID).css('display','none');
   var parentColor = $(event.target).parent().css('background-color');
   $(event.target).css('background-color',parentColor);
 };
 
 SourceBox.prototype.renderSourceOptions = function(options, event) {
-  // TODO(spenceg): Render a box near the source span
-  var div = $('#debug-output');
-  div.empty();
+  var tokDiv = $(event.target);
+  var toolTip = $('#'+this.CSS_TOOLTIP_ID);
+  toolTip.css("left", event.clientX + "px" )
+    .css("top", event.clientY + "px" )
+    .css( "display", "inline-block" );
+  
+  toolTip.empty();
+  var self = this;
   $.each(options.rules,function(i,val) {
-    div.append('<p>' + val.tgt + '</p>');
+    toolTip.append('<div class="' + self.CSS_WORD_OPTION_CLASS + '">' + val.tgt + '</div>');
   });
 };
 
 SourceBox.prototype.render = function(targetDiv) {
+  // Insert the options display box
+  $('body').append('<div id="' + this.CSS_TOOLTIP_ID + '"></div>');
+
   // Load json from file and render in target box
   // Add event handlers for each div (for clicking)
   var self = this;
@@ -76,7 +93,7 @@ SourceBox.prototype.render = function(targetDiv) {
     });
     // Single-word query callback
     $('.'+self.CSS_TOKEN_CLASS).hover(function(event) {
-      $(event.target).css('background-color','#99CCFF');
+      $(event.target).css('background-color', self.AES_WORD_SELECT);
       self.sourceQueryCallback($(event.target).text(),
                                event, self.renderSourceOptions.bind(self));
     },function(event) {
