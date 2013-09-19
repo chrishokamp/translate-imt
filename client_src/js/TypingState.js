@@ -5,8 +5,8 @@ var TypingState = Backbone.Model.extend({
 		"userText" : "",
 		"caretCharIndex" : 0,
 		"selectionCharIndex" : 0,
-		"selectionStartCharIndex" : 0,  // For rendering and bound [ 0, userText.length ]
-		"selectionEndCharIndex" : 0,    // For rendering and bound [ 0, userText.length ]
+		"selectionStartCharIndex" : 0,  // For rendering; value is bounded between [ 0, userText.length ]
+		"selectionEndCharIndex" : 0,    // For rendering; value is bounded between [ 0, userText.length ]
 		"selectionDirection" : "none",
 		"isGhostCaret" : false,
 		"isExpired" : false,
@@ -256,11 +256,11 @@ TypingState.prototype.syncTranslation = function( key, translation ) {
 	var syncKey = this.get( "syncKey" );
 	if ( syncKey === key ) {
 		this.updateTranslation( translation );
-		console.log( "Received HTTP response (key=" + syncKey + ")" );
+		console.log( "Received HTTP response (key=" + key + ")" );
 		return true;
 	}
 	else {
-		console.log( "Discarded outdated HTTP response (key=" + syncKey + ")" );
+		console.log( "Discarded outdated HTTP response (key=" + key + ")" );
 		return false;
 	}
 };
