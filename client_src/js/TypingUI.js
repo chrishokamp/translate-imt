@@ -367,6 +367,26 @@ TypingUI.prototype.__onCaptureKeyUp = function() {
 	if ( d3.event.keyCode === this.KEY.TAB ) {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
+		
+		var activeSpanElement = this.model.get( "activeSpanElement" );
+		var self = this.view.keystrokes[0][0];
+		var spanStartCharIndex = activeSpanElement.startCharIndex;
+		var spanEndCharIndex = activeSpanElement.endCharIndex;
+		var selectionStartCharIndex = self.selectionStart;
+		var selectionEndCharIndex = self.selectionEnd;
+		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
+		console.log( activeSpanElement, self.value.substring( spanStartCharIndex, caretCharIndex ), activeSpanElement.mtTerm.substr( 0, caretCharIndex - spanStartCharIndex ) )
+		if ( self.value.substring( spanStartCharIndex, caretCharIndex ) === activeSpanElement.mtTerm.substr( 0, caretCharIndex - spanStartCharIndex ) ) {
+			var substr = activeSpanElement.mtTerm.substr( caretCharIndex - spanStartCharIndex );
+			if ( substr.length > 0 ) {
+				this.state.updateUserText( self.value + substr, caretCharIndex + substr.length );
+			}
+			else {
+				if ( activeSpanElement.nextToken !== null ) {
+					this.state.updateUserText( self.value + activeSpanElement.mtSep + activeSpanElement.nextToken.mtTerm, caretCharIndex + activeSpanElement.mtSep.length + activeSpanElement.nextToken.mtTerm.length );
+				}
+			}
+		}
 	}
 	else if ( d3.event.keyCode === this.KEY.TICK ) {
 		d3.event.preventDefault();

@@ -56,6 +56,12 @@ TypingState.prototype.updateTranslation = function( mtText, caretCharIndex, sele
 	
 	var userText = this.getUserText();
 	var allTokens = this.__initAllTokens( mtText, userText );
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[n];
+		var nextToken = ( n < allTokens.length - 1 ) ? allTokens[n+1] : null;
+		token.nextToken = nextToken;
+	}
+	
 	this.__markActiveToken( allTokens, caretCharIndex );
 	this.__markLookups( allTokens );
 

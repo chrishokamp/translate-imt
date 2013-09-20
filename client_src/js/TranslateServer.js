@@ -9,24 +9,23 @@ TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
 TranslateServer.prototype.SRC_LANG = "EN";
 TranslateServer.prototype.TGT_LANG = "DE";
 
-TranslateServer.prototype.QUERY_LIMIT = 4;
+TranslateServer.prototype.TRANSLATE_LIMIT = 1;
+TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
 
 TranslateServer.prototype.wordQuery = function(word, callback) {
   if (word === undefined) {
     return [];
   }
-
   var rqReqData = {
 		"src" : this.SRC_LANG,
 		"tgt" : this.TGT_LANG,
-		"spanLimit" : this.QUERY_LIMIT,
+		"spanLimit" : this.WORD_QUERY_LIMIT,
 		"text" : word
 	};
-  var requestData = {
+	var requestData = {
 		"rqReq" : JSON.stringify( rqReqData )
 	};
-  
-  var requestTime = new Date();
+ 	var requestTime = new Date();
 	var successHandler = function( responseData, responseObject, responseMessage ) {
 		var responseTime = new Date();
 		var duration = ( responseTime - requestTime ) / 1000;
@@ -36,7 +35,7 @@ TranslateServer.prototype.wordQuery = function(word, callback) {
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		console.log( "[TranslateServer] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
+		console.log( "[rqReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		if ( callback !== undefined ) {
 			callback(responseData);
 		}
@@ -45,12 +44,12 @@ TranslateServer.prototype.wordQuery = function(word, callback) {
 		var responseTime = new Date();
 		var duration = ( responseTime - requestTime ) / 1000;
 		var timing = {
-					"requestTime" : this.formatter( requestTime ),
-					"responseTime" : this.formatter( responseTime ),
-					"duration" : duration
-				};
+			"requestTime" : this.formatter( requestTime ),
+			"responseTime" : this.formatter( responseTime ),
+			"duration" : duration
+		};
 		responseData.timing = timing;
-		console.log( "[TranslateServer] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
+		console.log( "[rqReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		if ( callback !== undefined ) {
 			callback(responseData);
 		}
@@ -69,19 +68,16 @@ TranslateServer.prototype.wordQuery = function(word, callback) {
 
 /**
  * Make a translate request.
- * @param {function} f Call back function on either a successful or failed request. The arguments for f are: targetTranslation, requestData, responseData.	On failed requests, targetTranslation is null.
+ * @param {function} f Callback function on either a successful or failed request. The arguments for f are: targetTranslation, requestData, responseData.  On failed requests, targetTranslation is null.
  * @param {string} sourceText Sentence in source language.
  * @param {string} targetPrefix Partially translated sentence in target language.
  * @param {{string:object}} options Additional options for the request (src, tgt, n).
  **/
-TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, options ) {
+TranslateServer.prototype.translate = function( callback, sourceText, targetPrefix, options ) {
 	// Default arguments
-	if ( f === undefined ) {
-		return;
-	}
 	if ( sourceText === undefined || sourceText.length === 0 ) {
-		if ( f !== undefined ) {
-			f( "", null, null );
+		if ( callback !== undefined ) {
+			callback( "", null, null );
 			return;
 		}
 	}
@@ -96,7 +92,7 @@ TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, opt
 	var tReqData = {
 		"src" : this.SRC_LANG,
 		"tgt" : this.TGT_LANG,
-		"n" : 1,
+		"n" : this.TRANSLATE_LIMIT,
 		"text" : sourceText,
 		"tgtPrefix" : targetPrefix,
 	};
@@ -118,24 +114,24 @@ TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, opt
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		var targetTranslation = responseData.tgtList[0];
-		console.log( "[TranslateServer] [success] [" + duration.toFixed(2) + " seconds]", targetTranslation, requestData, responseData, responseObject, responseMessage );
-		if ( f !== undefined ) {
-			f( targetTranslation, requestData, responseData );
+		var targetTranslation = ( responseData.tgtList.length === 0 ) ? "" : responseData.tgtList[0];
+		console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", targetTranslation, requestData, responseData, responseObject, responseMessage );
+		if ( callback !== undefined ) {
+			callback( targetTranslation, requestData, responseData );
 		}
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
 		var responseTime = new Date();
 		var duration = ( responseTime - requestTime ) / 1000;
 		var timing = {
-					"requestTime" : this.formatter( requestTime ),
-					"responseTime" : this.formatter( responseTime ),
-					"duration" : duration
-				};
+			"requestTime" : this.formatter( requestTime ),
+			"responseTime" : this.formatter( responseTime ),
+			"duration" : duration
+		};
 		responseData.timing = timing;
-		console.log( "[TranslateServer] [error] [" + duration.toFixed(2) + " seconds]", null, requestData, responseData, responseObject, responseMessage );
-		if ( f !== undefined ) {
-			f( null, requestData, responseData );
+		console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", null, requestData, responseData, responseObject, responseMessage );
+		if ( callback !== undefined ) {
+			callback( null, requestData, responseData );
 		}
 	}.bind(this);
 	
