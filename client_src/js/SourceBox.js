@@ -7,6 +7,12 @@ function SourceBox(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback) {
   this.segments = {};
   this.curSegment = 0;
 
+  this.ruleQueryCache = {};
+
+  // Tooltip fields
+  this.tooltipTimeout = undefined;
+  this.selectedToken = undefined;
+  
   // Source annotations
   this.chunkLists = {};
 }
@@ -17,8 +23,15 @@ SourceBox.prototype.CSS_TOOLTIP_ID = "SourceBox-tooltip";
 SourceBox.prototype.CSS_WORD_OPTION_CLASS = "SourceBox-option";
 
 // CSS elements here
-SourceBox.prototype.AES_SEGMENT_SELECT = "#E8E8E8";
+// Text color when segment is selected
+SourceBox.prototype.AES_SEGMENT_SELECT = "Black";
+
+// Background color when source token selected for rule
+// query
 SourceBox.prototype.AES_WORD_SELECT = "#99CCFF";
+
+// Background color of selected source option
+SourceBox.prototype.AES_OPTION_SELECT = "LightGray";
 
 SourceBox.prototype.getSourceText = function() {
   return this.segments[this.curSegment];
@@ -41,9 +54,10 @@ SourceBox.prototype.layoutCurrentWithTranslation = function(tgtText, alignments)
 SourceBox.prototype.handleSelect = function(event) {
   var segmentDiv = $(event.target);
   if (segmentDiv.attr('class') !== this.CSS_SEGMENT_CLASS) {
+    // Ignore events on the token span
     segmentDiv = $(event.target).parent();
   }
-  segmentDiv.css('background-color', this.AES_SEGMENT_SELECT);
+  segmentDiv.children().css('color', this.AES_SEGMENT_SELECT);
   if (this.curSelection) {
     var parColor = this.curSelection.parent().css('background-color');
     this.curSelection.css('background-color', parColor);
@@ -54,27 +68,61 @@ SourceBox.prototype.handleSelect = function(event) {
   this.onChangeCallback();
 };
 
-SourceBox.prototype.closeSourceOptions = function(event) {
+SourceBox.prototype.closeTooltip = function(target) {
+  // Reset state
+  clearTimeout(this.tooltipTimeout);
+  this.tooltipTimeout = undefined;
+  this.selectedToken = undefined;
+
+  // Close the tooltip
   $('#'+this.CSS_TOOLTIP_ID).css('display','none');
-  var parentColor = $(event.target).parent().css('background-color');
-  $(event.target).css('background-color',parentColor);
+  var targetDiv = $(target);
+  var parentColor = targetDiv.parent().css('background-color');
+  targetDiv.css('background-color',parentColor);
 };
 
-SourceBox.prototype.renderSourceOptions = function(options, event) {
-  if (options.rules === undefined || options.rules.length === 0) {
+SourceBox.prototype.openTooltip = function(options, event) {
+  this.ruleQueryCache[event.target.id] = options;
+  if (options.rules === undefined || options.rules.length === 0 ||
+     event.target === this.selectedToken) {
     return;
   }
+  this.selectedToken = event.target;
+
+  // Populate the tooltip
   var tokDiv = $(event.target);
   var toolTip = $('#'+this.CSS_TOOLTIP_ID);
-  toolTip.css("left", event.clientX + "px" )
-    .css("top", event.clientY + "px" )
-    .css( "display", "inline-block" );
-  
   toolTip.empty();
   var self = this;
   $.each(options.rules,function(i,val) {
     toolTip.append('<div class="' + self.CSS_WORD_OPTION_CLASS + '">' + val.tgt + '</div>');
   });
+
+  // Hover events over options
+  $('div.'+this.CSS_WORD_OPTION_CLASS).hover(function(event) {
+    $(event.target).css('background-color',self.AES_OPTION_SELECT);
+  },function(event) {
+    var targetDiv = $(event.target);
+    var parentColor = targetDiv.parent().css('background-color');
+    targetDiv.css('background-color',parentColor);
+  });
+  
+  // Tooltip close
+  toolTip.hover(function(event) {
+    // Clear the mouseleave event from the token div
+    clearTimeout(self.tooltipTimeout);
+    self.tooltipTimeout = undefined;
+  },function(event) {
+    // Cursor has moved away from the tooltip
+    clearTimeout(self.tooltipTimeout);
+    self.tooltipTimeout = setTimeout(function() {self.closeTooltip(self.selectedToken)}, 100);
+  });
+
+  // Position and open the tooltip
+  var pos = tokDiv.position();
+  toolTip.css("left", pos.left + (0.75*tokDiv.outerWidth()) + "px" )
+    .css("top", pos.top + tokDiv.outerHeight() + "px" )
+    .css( "display", "inline-block" );
 };
 
 SourceBox.prototype.makeChunkList = function(bitVector) {
@@ -96,29 +144,31 @@ SourceBox.prototype.makeChunkList = function(bitVector) {
   return chunkList;
 };
 
-// TODO(spenceg): Clean this up
-SourceBox.prototype.posToAttr = function(pos) {
-  var pref = pos.slice(0,2);
-  if (pref === 'NN') {
-    return 'N';
-  } else if (pref === 'VB') {
-    return 'V';
-  } else if (pref === 'JJ') {
-    return 'A';
+// TODO(spenceg): Prototype only
+SourceBox.prototype.getPOSColor = function(posTag) {
+  if (posTag === 'N') {
+    return "CornflowerBlue";
+  } else if (posTag === 'V') {
+    return "IndianRed";
+  } else if (posTag === 'A') {
+    return "GreenYellow";
+  } else if (posTag === 'ADV') {
+    return "Thistle";
   }
-  return 'O';
-}
+  return 'DarkGray';
+};
 
-// TODO(spenceg): Clean this up
+// TODO(spenceg): Prototype only. Clean this up
 SourceBox.prototype.renderPOSBox = function() {
-  var formStr = '<form id="pos-box"><input type="checkbox" value="N">Noun<input type="checkbox" value="V">Verb<input type="checkbox" value="A">Adjective<input type="checkbox" value="O">Other</form>';
+  var formStr = '<form id="pos-box"><input type="checkbox" value="N">Noun<input type="checkbox" value="V">Verb<input type="checkbox" value="A">Adjective<input type="checkbox" value="ADV">Adverb</form>';
   $('#debug-output').append(formStr);
-
+  var self = this;
   $('#pos-box :checkbox').click(function() {
     var box = $(this);
     var pos = box.val();
     if (box.is(':checked')) {
-      $("span[pos='" + pos + "']").css('background-color', '#E8E8E8'); 
+      var posColor = self.getPOSColor(pos);
+      $("span[pos='" + pos + "']").css('background-color', posColor); 
     } else {
       $("span[pos='" + pos + "']").css('background-color', '#FFFFFF'); 
     }
@@ -129,21 +179,25 @@ SourceBox.prototype.render = function(targetDiv) {
   // Insert the options display box
   $('body').append('<div id="' + this.CSS_TOOLTIP_ID + '"></div>');
 
-  // TODO(spenceg): Debugging only
+  // TODO(spenceg): Prototype
   this.renderPOSBox();
   
   // Load json from file and render in target box
   // Add event handlers for each div (for clicking)
   var self = this;
+  var firstSegment = undefined;
   $.getJSON(this.jsonFileName, function(data) {
     $.each(data, function(i,val){
       var id = targetDiv + i;
+      if (firstSegment === undefined) {
+        firstSegment = id;
+      }
       self.segments[id] = val.tokens.join(' ');
       self.chunkLists[id] = self.makeChunkList(val.isBaseNP);
       var divStr = '<div class="' + self.CSS_SEGMENT_CLASS + '" id="' + id + '">';
       $.each(val.tokens, function(j,tok) {
         var tokenId = id + "-" + j;
-        var tokStr = '<span class="' + self.CSS_TOKEN_CLASS + '" id="' + tokenId + '" pos="' + self.posToAttr(val.pos[j]) + '">' + tok + '</span> ';
+        var tokStr = '<span class="' + self.CSS_TOKEN_CLASS + '" id="' + tokenId + '" pos="' + val.pos[j] + '">' + tok + '</span> ';
         divStr += tokStr;
       });
       divStr += '</div>';
@@ -153,18 +207,41 @@ SourceBox.prototype.render = function(targetDiv) {
       }
     });
 
-    // Source selection callback
+    // Translation callback
     $('div.'+self.CSS_SEGMENT_CLASS).click(function(event) {
       self.handleSelect(event);
     });
+    
     // Single-word query callback
     $('span.'+self.CSS_TOKEN_CLASS).hover(function(event) {
-      $(event.target).css('background-color', self.AES_WORD_SELECT);
-      self.sourceQueryCallback($(event.target).text(),
-                               event, self.renderSourceOptions.bind(self));
+      console.log('source-token-mouseenter: ' + event.target.id);
+
+      if (event.target === self.selectedToken) {
+        clearTimeout(self.tooltipTimeout);
+        self.tooltipTimeout = undefined;
+        return;
+      } else {
+        self.closeTooltip(self.selectedToken);
+      }
+      var targetDiv = $(event.target);
+      targetDiv.css('background-color', self.AES_WORD_SELECT);
+      if (event.target.id in self.ruleQueryCache) {
+        // Hit the cache
+        self.openTooltip(self.ruleQueryCache[event.target.id], event);
+      } else {
+        // Hit the server
+        self.sourceQueryCallback(targetDiv.text(), function(data) {
+          self.openTooltip(data,event);
+        });
+      }
     },function(event) {
-      self.closeSourceOptions(event);
+      // Fires if cursor moves into space
+      self.tooltipTimeout = setTimeout(function(){self.closeTooltip(event.target)}, 250);
+      console.log('source-token-mouseleave: ' + self.tooltipTimeout);
     });
+
+    // Set the first selected segment
+    $('div#'+firstSegment).trigger('click');
   });
 };
 
