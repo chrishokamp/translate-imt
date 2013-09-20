@@ -4,10 +4,10 @@ TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
 
 // Debug settings
 //TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
-//TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8017/t";
-TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
+TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8017/t";
+//TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
 TranslateServer.prototype.SRC_LANG = "EN";
-TranslateServer.prototype.TGT_LANG = "DE";
+TranslateServer.prototype.TGT_LANG = "FR";
 
 TranslateServer.prototype.QUERY_LIMIT = 4;
 

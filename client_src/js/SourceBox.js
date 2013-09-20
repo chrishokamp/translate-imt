@@ -4,10 +4,11 @@ function SourceBox(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback) {
   this.curSelection = null;
   this.onChangeCallback = onChangeCallback;
   this.sourceQueryCallback = sourceQueryCallback;
-  this.segments = [];
+  this.segments = {};
   this.curSegment = 0;
 
-  this.chunkLists = [];
+  // Source annotations
+  this.chunkLists = {};
 }
 
 SourceBox.prototype.CSS_SEGMENT_CLASS = "SourceBox-segment";
@@ -49,7 +50,7 @@ SourceBox.prototype.handleSelect = function(event) {
     this.curSelection.children().css('background-color', parColor);
   }
   this.curSelection = segmentDiv;
-  this.curSegment = segmentDiv.attr('id').split('-')[1];
+  this.curSegment = segmentDiv.attr('id');
   this.onChangeCallback();
 };
 
@@ -95,27 +96,58 @@ SourceBox.prototype.makeChunkList = function(bitVector) {
   return chunkList;
 };
 
+// TODO(spenceg): Clean this up
+SourceBox.prototype.posToAttr = function(pos) {
+  var pref = pos.slice(0,2);
+  if (pref === 'NN') {
+    return 'N';
+  } else if (pref === 'VB') {
+    return 'V';
+  } else if (pref === 'JJ') {
+    return 'A';
+  }
+  return 'O';
+}
+
+// TODO(spenceg): Clean this up
+SourceBox.prototype.renderPOSBox = function() {
+  var formStr = '<form id="pos-box"><input type="checkbox" value="N">Noun<input type="checkbox" value="V">Verb<input type="checkbox" value="A">Adjective<input type="checkbox" value="O">Other</form>';
+  $('#debug-output').append(formStr);
+
+  $('#pos-box :checkbox').click(function() {
+    var box = $(this);
+    var pos = box.val();
+    if (box.is(':checked')) {
+      $("span[pos='" + pos + "']").css('background-color', '#E8E8E8'); 
+    } else {
+      $("span[pos='" + pos + "']").css('background-color', '#FFFFFF'); 
+    }
+  });
+};
+
 SourceBox.prototype.render = function(targetDiv) {
   // Insert the options display box
   $('body').append('<div id="' + this.CSS_TOOLTIP_ID + '"></div>');
 
+  // TODO(spenceg): Debugging only
+  this.renderPOSBox();
+  
   // Load json from file and render in target box
   // Add event handlers for each div (for clicking)
   var self = this;
   $.getJSON(this.jsonFileName, function(data) {
     $.each(data, function(i,val){
-      self.segments[i] = val.tokens.join(' ');
-      self.chunkLists[i] = self.makeChunkList(val.isBaseNP);
-      console.log(self.chunkLists[i]);
-      var id = targetDiv + "-" + i;
+      var id = targetDiv + i;
+      self.segments[id] = val.tokens.join(' ');
+      self.chunkLists[id] = self.makeChunkList(val.isBaseNP);
       var divStr = '<div class="' + self.CSS_SEGMENT_CLASS + '" id="' + id + '">';
       $.each(val.tokens, function(j,tok) {
         var tokenId = id + "-" + j;
-        var tokStr = '<span class="' + self.CSS_TOKEN_CLASS + '" id="' + tokenId + '">' + tok + '</span> ';
+        var tokStr = '<span class="' + self.CSS_TOKEN_CLASS + '" id="' + tokenId + '" pos="' + self.posToAttr(val.pos[j]) + '">' + tok + '</span> ';
         divStr += tokStr;
       });
       divStr += '</div>';
-      $('#' + targetDiv).append(divStr);
+      $('#'+targetDiv).append(divStr);
       if (i == 0) {
         $('#'+id).css('margin-top','0.5em');
       }
