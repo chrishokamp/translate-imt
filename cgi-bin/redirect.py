@@ -8,20 +8,28 @@ import urllib2
 import cgi
 import cgitb
 
-def getQuery():
+def getRequest():
 	form = cgi.FieldStorage()
-	return form.getfirst( 'tReq' )
-
-def makeRequest( tReq ):
-	url = 'http://joan.stanford.edu:8017/t?tReq={}'.format( urllib.quote( tReq ) )
+	req = {}
+	req[ 'tReq' ] = form.getfirst( 'tReq' )
+	req[ 'rqReq' ] = form.getfirst( 'rqReq' )
+	return req
+	
+def makeRequest( req ):
+	query = []
+	if req[ 'tReq' ] is not None:
+		query.append( 'tReq={}'.format( urllib.quote( req[ 'tReq' ] ) ) )
+	if req[ 'rqReq' ] is not None:
+		query.append( 'rqReq={}'.format( urllib.quote( req[ 'rqReq' ] ) ) )
+	url = 'http://joan.stanford.edu:8017/t?{}'.format( '&'.join( query ) )
 	request = urllib2.urlopen( url )
 	content = request.read()
 	return json.loads( content, encoding = 'ISO-8859-1' )
 
 # Enable debugging
 cgitb.enable()
-query = getQuery()
-response = makeRequest( query )
+req = getRequest()
+response = makeRequest( req )
 content = response
 
 # Send out latest labels
