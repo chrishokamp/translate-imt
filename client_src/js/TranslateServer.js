@@ -68,19 +68,16 @@ TranslateServer.prototype.wordQuery = function(word, event, callback) {
 
 /**
  * Make a translate request.
- * @param {function} f Call back function on either a successful or failed request. The arguments for f are: targetTranslation, requestData, responseData.  On failed requests, targetTranslation is null.
+ * @param {function} f Callback function on either a successful or failed request. The arguments for f are: targetTranslation, requestData, responseData.  On failed requests, targetTranslation is null.
  * @param {string} sourceText Sentence in source language.
  * @param {string} targetPrefix Partially translated sentence in target language.
  * @param {{string:object}} options Additional options for the request (src, tgt, n).
  **/
-TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, options ) {
+TranslateServer.prototype.translate = function( callback, sourceText, targetPrefix, options ) {
 	// Default arguments
-	if ( f === undefined ) {
-		return;
-	}
 	if ( sourceText === undefined || sourceText.length === 0 ) {
-		if ( f !== undefined ) {
-			f( "", null, null );
+		if ( callback !== undefined ) {
+			callback( "", null, null );
 			return;
 		}
 	}
@@ -119,8 +116,8 @@ TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, opt
 		responseData.timing = timing;
 		var targetTranslation = ( responseData.tgtList.length === 0 ) ? "" : responseData.tgtList[0];
 		console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", targetTranslation, requestData, responseData, responseObject, responseMessage );
-		if ( f !== undefined ) {
-			f( targetTranslation, requestData, responseData );
+		if ( callback !== undefined ) {
+			callback( targetTranslation, requestData, responseData );
 		}
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
@@ -133,8 +130,8 @@ TranslateServer.prototype.translate = function( f, sourceText, targetPrefix, opt
 		};
 		responseData.timing = timing;
 		console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", null, requestData, responseData, responseObject, responseMessage );
-		if ( f !== undefined ) {
-			f( null, requestData, responseData );
+		if ( callback !== undefined ) {
+			callback( null, requestData, responseData );
 		}
 	}.bind(this);
 	
