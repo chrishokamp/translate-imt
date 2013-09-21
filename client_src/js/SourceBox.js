@@ -22,17 +22,6 @@ SourceBox.prototype.CSS_TOKEN_CLASS = "SourceBox-token";
 SourceBox.prototype.CSS_TOOLTIP_ID = "SourceBox-tooltip";
 SourceBox.prototype.CSS_WORD_OPTION_CLASS = "SourceBox-option";
 
-// CSS elements here
-// Text color when segment is selected
-SourceBox.prototype.AES_SEGMENT_SELECT = "Black";
-
-// Background color when source token selected for rule
-// query
-SourceBox.prototype.AES_WORD_SELECT = "#99CCFF";
-
-// Background color of selected source option
-SourceBox.prototype.AES_OPTION_SELECT = "LightGray";
-
 SourceBox.prototype.getSourceText = function() {
   return this.segments[this.curSegment];
 };
@@ -57,7 +46,7 @@ SourceBox.prototype.handleSelect = function(event) {
     // Ignore events on the token span
     segmentDiv = $(event.target).parent();
   }
-  segmentDiv.children().css('color', this.AES_SEGMENT_SELECT);
+  segmentDiv.attr('src-select', 'T');
   if (this.curSelection) {
     var parColor = this.curSelection.parent().css('background-color');
     this.curSelection.css('background-color', parColor);
@@ -76,9 +65,7 @@ SourceBox.prototype.closeTooltip = function(target) {
 
   // Close the tooltip
   $('#'+this.CSS_TOOLTIP_ID).css('display','none');
-  var targetDiv = $(target);
-  var parentColor = targetDiv.parent().css('background-color');
-  targetDiv.css('background-color',parentColor);
+  $(target).attr('src-word-select','F');
 };
 
 SourceBox.prototype.openTooltip = function(options, event) {
@@ -100,11 +87,9 @@ SourceBox.prototype.openTooltip = function(options, event) {
 
   // Hover events over options
   $('div.'+this.CSS_WORD_OPTION_CLASS).hover(function(event) {
-    $(event.target).css('background-color',self.AES_OPTION_SELECT);
+    $(event.target).attr('tgt-word-select', 'T');
   },function(event) {
-    var targetDiv = $(event.target);
-    var parentColor = targetDiv.parent().css('background-color');
-    targetDiv.css('background-color',parentColor);
+    $(event.target).attr('tgt-word-select', 'F');
   });
   
   // Tooltip close
@@ -144,19 +129,6 @@ SourceBox.prototype.makeChunkList = function(bitVector) {
   return chunkList;
 };
 
-// TODO(spenceg): Prototype only
-SourceBox.prototype.getPOSColor = function(posTag) {
-  if (posTag === 'N') {
-    return "CornflowerBlue";
-  } else if (posTag === 'V') {
-    return "IndianRed";
-  } else if (posTag === 'A') {
-    return "GreenYellow";
-  } else if (posTag === 'ADV') {
-    return "Thistle";
-  }
-  return 'DarkGray';
-};
 
 // TODO(spenceg): Prototype only. Clean this up
 SourceBox.prototype.renderPOSBox = function() {
@@ -167,10 +139,9 @@ SourceBox.prototype.renderPOSBox = function() {
     var box = $(this);
     var pos = box.val();
     if (box.is(':checked')) {
-      var posColor = self.getPOSColor(pos);
-      $("span[pos='" + pos + "']").css('background-color', posColor); 
+      $("span[pos='" + pos + "-x']").attr('pos', pos); 
     } else {
-      $("span[pos='" + pos + "']").css('background-color', '#FFFFFF'); 
+      $("span[pos='" + pos + "']").attr('pos', pos + '-x'); 
     }
   });
 };
@@ -197,7 +168,7 @@ SourceBox.prototype.render = function(targetDiv) {
       var divStr = '<div class="' + self.CSS_SEGMENT_CLASS + '" id="' + id + '">';
       $.each(val.tokens, function(j,tok) {
         var tokenId = id + "-" + j;
-        var tokStr = '<span class="' + self.CSS_TOKEN_CLASS + '" id="' + tokenId + '" pos="' + val.pos[j] + '">' + tok + '</span> ';
+        var tokStr = '<span class="' + self.CSS_TOKEN_CLASS + '" id="' + tokenId + '" pos="' + val.pos[j] + '-x">' + tok + '</span> ';
         divStr += tokStr;
       });
       divStr += '</div>';
@@ -214,8 +185,6 @@ SourceBox.prototype.render = function(targetDiv) {
     
     // Single-word query callback
     $('span.'+self.CSS_TOKEN_CLASS).hover(function(event) {
-      console.log('source-token-mouseenter: ' + event.target.id);
-
       if (event.target === self.selectedToken) {
         clearTimeout(self.tooltipTimeout);
         self.tooltipTimeout = undefined;
@@ -224,7 +193,7 @@ SourceBox.prototype.render = function(targetDiv) {
         self.closeTooltip(self.selectedToken);
       }
       var targetDiv = $(event.target);
-      targetDiv.css('background-color', self.AES_WORD_SELECT);
+      targetDiv.attr('src-word-select', 'T');
       if (event.target.id in self.ruleQueryCache) {
         // Hit the cache
         self.openTooltip(self.ruleQueryCache[event.target.id], event);
@@ -234,10 +203,9 @@ SourceBox.prototype.render = function(targetDiv) {
           self.openTooltip(data,event);
         });
       }
-    },function(event) {
+    }, function(event) {
       // Fires if cursor moves into space
       self.tooltipTimeout = setTimeout(function(){self.closeTooltip(event.target)}, 250);
-      console.log('source-token-mouseleave: ' + self.tooltipTimeout);
     });
 
     // Set the first selected segment

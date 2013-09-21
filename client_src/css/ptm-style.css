@@ -8,12 +8,12 @@
 .SourceBox-segment {
    margin-bottom:0.5em;
    cursor:pointer;
+   color:LightGray;
 }
 
 .SourceBox-token {
    margin-left:0.1em;
    margin-bottom:0.3em;
-   color:LightGray;
 }
 
 #SourceBox-tooltip {
@@ -30,3 +30,30 @@
    font-size:small;
 }
 
+[src-select=T] {
+   color:Black;
+}
+
+[src-word-select=T] {
+   background-color:#99CCFF;
+}
+
+[tgt-word-select=T] {
+   background-color:LightGray;
+}
+
+[pos=N] {
+   background-color:CornflowerBlue;
+}
+
+[pos=V] {
+   background-color:IndianRed;
+}
+
+[pos=A] {
+   background-color:GreenYellow;
+}
+
+[pos=ADV] {
+   background-color:Thistle;
+}
