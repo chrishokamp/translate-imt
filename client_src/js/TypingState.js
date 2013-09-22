@@ -1,8 +1,8 @@
 var TypingState = Backbone.Model.extend({
 	"defaults" : {
 		"allTokens" : "",
-		"mtText" : "",
-		"userText" : "",
+		"mtTexts" : [],           // A list of machine translations
+		"userText" : "",          // User-entered translations
 		"caretCharIndex" : 0,
 		"selectionCharIndex" : 0,
 		"selectionStartCharIndex" : 0,  // For rendering; value is bounded between [ 0, userText.length ]
@@ -23,12 +23,13 @@ TypingState.prototype.WHITESPACE = /([ ]+)/g;
 
 /**
  * Initialize the TypingUI with both machine translation and user-entered text.
- * @param {string} mtText Machine translation.
+ * @param {string[]} mtTexts A list of machine translations.
  * @param {string} userText User-entered text
  * @param {integer} [caretCharIndex] Location of the caret.
  * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
 TypingState.prototype.initTranslationAndUserText = function( mtText, userText, caretCharIndex, selectionCharIndex ) {
+	var mtText = ( mtTexts === null || mtTexts.length === 0 ) ? "" : mtTexts[0];
 	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 	
@@ -37,7 +38,7 @@ TypingState.prototype.initTranslationAndUserText = function( mtText, userText, c
 	this.__markLookups( allTokens );
 
 	this.set( "allTokens", allTokens );
-	this.set( "mtText", mtText );
+	this.set( "mtTexts", mtTexts )
 	this.set( "userText", userText );
 	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
 	this.set( "isExpired", false );
@@ -46,11 +47,12 @@ TypingState.prototype.initTranslationAndUserText = function( mtText, userText, c
 
 /**
  * Incrementally update the machine translation.
- * @param {string} mtText Machine translation.
+ * @param {string[]} mtTexts A list of machine translations.
  * @param {integer} [caretCharIndex] Location of the caret.
  * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
 TypingState.prototype.updateTranslation = function( mtText, caretCharIndex, selectionCharIndex ) {
+	var mtText = ( mtTexts === null || mtTexts.length === 0 ) ? "" : mtTexts[0];
 	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 	
@@ -66,7 +68,7 @@ TypingState.prototype.updateTranslation = function( mtText, caretCharIndex, sele
 	this.__markLookups( allTokens );
 
 	this.set( "allTokens", allTokens );
-	this.set( "mtText", mtText );
+	this.set( "mtTexts", mtTexts );
 	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
 	this.set( "isExpired", false );
 	this.trigger( "modified" );

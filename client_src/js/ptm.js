@@ -19,7 +19,7 @@ PTM.prototype.run = function() {
  * Initialize TypingUI.
  **/
 PTM.prototype.initTranslation = function() {
-	var handler = function( translations ) { this.typingState.updateTranslation( translations === null ? "" : translations[0] ) };
+	var handler = function( translations ) { this.typingState.updateTranslation( translations ) };
 	var sourceText = this.sourceBox.getSourceText();
 	this.server.translate( sourceText, "", handler.bind(this) );
 };
@@ -29,7 +29,7 @@ PTM.prototype.initTranslation = function() {
  * @param {Object} syncKey An arbitrary identifier that is unique for each request. Pass back to TypingUI to ensure synchronization.
  **/
 PTM.prototype.updateTranslation = function( syncKey ) {
-	var handler = function( translations ) { this.typingState.syncTranslation( syncKey, translations === null ? "" : translations[0] ) };
+	var handler = function( translations ) { this.typingState.syncTranslation( syncKey, translations ) };
 	var sourceText = this.sourceBox.getSourceText();
 	var targetPrefix = this.typingState.getUserText();
 	this.server.translate( sourceText, targetPrefix, handler.bind(this) );
