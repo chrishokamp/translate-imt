@@ -2,7 +2,8 @@ var TypingState = Backbone.Model.extend({
 	"defaults" : {
 		"allTokens" : "",
 		"mtTexts" : [],           // A list of machine translations
-		"userText" : "",          // User-entered translations
+		"userText" : "",          // User-entered translation
+		"ghostText" : "",         // Best machine translation based on the current user-entered text
 		"caretCharIndex" : 0,     // Caret location; may extend beyond the boundary of userText.
 		"selectionCharIndex" : 0, // Location of text selection boundary, whichever end that is opposite from caret location; may extend beyond the boundary of userText.
 		"selectionStartCharIndex" : 0,  // For rendering purposes: value is bounded between [ 0, userText.length ]
@@ -29,18 +30,18 @@ TypingState.prototype.WHITESPACE = /([ ]+)/g;
  * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
 TypingState.prototype.initTranslationAndUserText = function( mtTexts, userText, caretCharIndex, selectionCharIndex ) {
-	var mtText = ( mtTexts === null || mtTexts.length === 0 ) ? "" : mtTexts[0];
 	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 	
-	var allTokens = this.__initAllTokens( mtText, userText );
+	var allTokens = this.__initAllTokens( mtTexts, userText );
 	this.__markActiveToken( allTokens, caretCharIndex );
-	this.__markLookups( allTokens );
 
 	this.set( "allTokens", allTokens );
 	this.set( "mtTexts", mtTexts )
 	this.set( "userText", userText );
-	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	this.set( "caretCharIndex", caretCharIndex );
+	this.set( "selectionCharIndex", selectionCharIndex );
+	this.__setSelectionCharIndexes();
 	this.set( "isExpired", false );
 	this.trigger( "modified" );
 };
@@ -52,24 +53,18 @@ TypingState.prototype.initTranslationAndUserText = function( mtTexts, userText, 
  * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
 TypingState.prototype.updateTranslation = function( mtTexts, caretCharIndex, selectionCharIndex ) {
-	var mtText = ( mtTexts === null || mtTexts.length === 0 ) ? "" : mtTexts[0];
+	var userText = this.getUserText();
 	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
-	
-	var userText = this.getUserText();
-	var allTokens = this.__initAllTokens( mtText, userText );
-	for ( var n = 0; n < allTokens.length; n++ ) {
-		var token = allTokens[n];
-		var nextToken = ( n < allTokens.length - 1 ) ? allTokens[n+1] : null;
-		token.nextToken = nextToken;
-	}
-	
+
+	var allTokens = this.__initAllTokens( mtTexts, userText );
 	this.__markActiveToken( allTokens, caretCharIndex );
-	this.__markLookups( allTokens );
 
 	this.set( "allTokens", allTokens );
 	this.set( "mtTexts", mtTexts );
-	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	this.set( "caretCharIndex", caretCharIndex );
+	this.set( "selectionCharIndex", selectionCharIndex );
+	this.__setSelectionCharIndexes();
 	this.set( "isExpired", false );
 	this.trigger( "modified" );
 };
@@ -87,10 +82,11 @@ TypingState.prototype.updateUserText = function( userText, caretCharIndex, selec
 	var allTokens = this.get( "allTokens" );
 	this.__updateAllTokens( allTokens, userText )
 	this.__markActiveToken( allTokens, caretCharIndex );
-	this.__markLookups( allTokens );
 
 	this.set( "userText", userText );
-	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	this.set( "caretCharIndex", caretCharIndex );
+	this.set( "selectionCharIndex", selectionCharIndex );
+	this.__setSelectionCharIndexes();
 	if ( this.__checkForUpdates( allTokens ) ) {
 		this.set( "isExpired", true );
 		this.__prepareSync();
@@ -108,9 +104,10 @@ TypingState.prototype.updateCaret = function( caretCharIndex, selectionCharIndex
 
 	var allTokens = this.get( "allTokens" );
 	this.__markActiveToken( allTokens, caretCharIndex );
-	this.__markLookups( allTokens );
 
-	this.__setSelectionCharIndexes( caretCharIndex, selectionCharIndex );
+	this.set( "caretCharIndex", caretCharIndex );
+	this.set( "selectionCharIndex", selectionCharIndex );
+	this.__setSelectionCharIndexes();
 	if ( this.__checkForUpdates( allTokens ) ) {
 		this.set( "isExpired", true );
 		this.__prepareSync();
@@ -119,27 +116,61 @@ TypingState.prototype.updateCaret = function( caretCharIndex, selectionCharIndex
 };
 
 /** @private **/
-TypingState.prototype.__initAllTokens = function( mtText, userText ) {
-	var mtTermsAndSeps = mtText.split( this.WHITESPACE );
-	var mtLength = ( mtTermsAndSeps.length + 1 ) / 2;
+TypingState.prototype.__initAllTokens = function( mtTexts, userText ) {
+	var mtTermsAndSepsList = [];
+	var mtLengthList = [];
+	var maxLength = 0;
+	for ( var k = 0; k < mtTexts.length; k++ ) {
+		var mtText = mtTexts[ k ];
+		var mtTermsAndSeps = mtText.split( this.WHITESPACE );
+		var mtLength = ( mtTermsAndSeps.length + 1 ) / 2;
+		mtTermsAndSepsList.push( mtTermsAndSeps );
+		mtLengthList.push( mtLength );
+		maxLength = Math.max( maxLength, mtLength );
+	}
 	var userTermsAndSeps = userText.split( this.WHITESPACE );
 	var userLength = ( userTermsAndSeps.length + 1 ) / 2;
-	chai.assert( userLength <= mtLength );
+	var maxLength = Math.max( maxLength, userLength );
 	
-	var allTokens = _.range( mtLength ).map( function( n ) { return { "index" : n } } );
+	var allTokens = _.range( maxLength ).map( function( n ) {
+		return {
+			"mtTerms" : [],
+			"mtSeps" : [],
+			"userTerm" : "",
+			"userSep" : "",
+			"prefixTerm" : "",
+			"isChanged" : false
+		}
+	});
 	
-	for ( var n = 0; n < mtLength; n++ ) {
+	for ( var k = 0; k < mtTexts.length; k++ ) {
+		var mtTermsAndSeps = mtTermsAndSepsList[ k ];
+		var mtLength = mtLengthList[ k ];
+		for ( var n = 0; n < mtLength; n++ ) {
+			var token = allTokens[ n ];
+			var mtTerm = mtTermsAndSeps[ n * 2 ];
+			var mtSep = ( n < mtLength - 1 ) ? mtTermsAndSeps[ n * 2 + 1 ] : "";
+			if ( token.mtTerms.indexOf( mtTerm ) === -1 ) {
+				token.mtTerms.push( mtTerm );
+			}
+			if ( token.mtSeps.indexOf( mtSep ) === -1 ) {
+				token.mtSeps.push( mtSep );
+			}
+		}
+	}
+	for ( var n = 0; n < userLength; n++ ) {
 		var token = allTokens[ n ];
-		var mtTerm = mtTermsAndSeps[ n * 2 ];
-		var mtSep = ( n < mtLength - 1 ) ? mtTermsAndSeps[ n * 2 + 1 ] : "";
-		var userTerm = ( n < userLength ) ? userTermsAndSeps[ n * 2 ] : "";
+		var userTerm = userTermsAndSeps[ n * 2 ];
 		var userSep = ( n < userLength - 1 ) ? userTermsAndSeps[ n * 2 + 1 ] : "";
-		token.mtTerm = mtTerm;
-		token.mtSep = mtSep;
 		token.userTerm = userTerm;
 		token.userSep = userSep;
-		token.original = userTerm;
-		token.isChanged = false;
+		token.prefixTerm = userTerm;
+	}
+	
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[n];
+		var nextToken = ( n < allTokens.length - 1 ) ? allTokens[ n + 1 ] : allTokens[ 0 ];
+		token.nextToken = nextToken;
 	}
 	return allTokens;
 };
@@ -161,11 +192,11 @@ TypingState.prototype.__updateAllTokens = function( allTokens, userText ) {
 			}
 			else {
 				var token = {};
-				token.mtTerm = "";
-				token.mtSep = "";
+				token.mtTerms = [];
+				token.mtSeps = [];
 				token.userTerm = userTerm;
 				token.userSep = userSep;
-				token.original = "";
+				token.prefixTerm = "";
 				token.isChanged = false;
 				allTokens.push( token );
 			}
@@ -186,8 +217,12 @@ TypingState.prototype.__markActiveToken = function( allTokens, caretCharIndex ) 
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
 		token.isUser = ( token.userTerm !== "" );
-		token.term = ( token.userTerm !== "" ) ? token.userTerm : token.mtTerm;
-		token.sep = ( token.userSep !== "" ) ? token.userSep : token.mtSep;
+		
+		token.mtTerm = this.__getBestMtTerm( token.mtTerms, token.userTerm );
+		token.mtSep = this.__getBestMtSep( token.mtSeps, token.userSep );
+		token.term = token.userTerm + token.mtTerm.substr( token.userTerm.length );
+		token.sep = token.userSep + token.mtSep.substr( token.userSep.length );
+		
 		var startCharIndex = charIndex;
 		charIndex += token.term.length;
 		var endCharIndex = charIndex;
@@ -195,6 +230,7 @@ TypingState.prototype.__markActiveToken = function( allTokens, caretCharIndex ) 
 		var atOrBeforeCaret = ( caretCharIndex <= endCharIndex );
 		var atOrAfterCaret = ( startCharIndex <= caretCharIndex );
 		var isActive = ( atOrBeforeCaret && atOrAfterCaret );
+		
 		token.startCharIndex = startCharIndex;
 		token.endCharIndex = endCharIndex;
 		token.atOrBeforeCaret = atOrBeforeCaret;
@@ -204,10 +240,30 @@ TypingState.prototype.__markActiveToken = function( allTokens, caretCharIndex ) 
 };
 
 /** @private **/
-TypingState.prototype.__markLookups = function( allTokens ) {
-	for ( var n = 0; n < allTokens.length; n++ ) {
-		var token = allTokens[ n ];
-		token.lookups = [];
+TypingState.prototype.__getBestMtTerm = function( mtTerms, userTerm ) {
+	if ( mtTerms.length === 0 ) {
+		return "";
+	}
+	var userLength = userTerm.length;
+	if ( userLength === 0 ) {
+		return mtTerms[ 0 ];
+	}
+	for ( var k = 0; k < mtTerms.length; k++ ) {
+		var mtTerm = mtTerms[ k ];
+		if ( userTerm === mtTerm.substr( 0, userLength ) ) {
+			return mtTerm;
+		}
+	}
+	return "";
+};
+
+/** @private **/
+TypingState.prototype.__getBestMtSep = function( mtSeps, userSep ) {
+	if ( mtSeps.length === 0 ) {
+		return "";
+	}
+	else {
+		return mtSeps[ 0 ];
 	}
 };
 
@@ -215,7 +271,7 @@ TypingState.prototype.__markLookups = function( allTokens ) {
 TypingState.prototype.__checkForUpdates = function( allTokens ) {
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
-		if ( token.original !== token.userTerm ) {
+		if ( token.prefixTerm !== token.userTerm ) {
 			if ( ! token.isActive && ! token.isChanged ) {
 				token.isChanged = true;
 				return true;
@@ -226,10 +282,10 @@ TypingState.prototype.__checkForUpdates = function( allTokens ) {
 };
 
 /** @private **/
-TypingState.prototype.__setSelectionCharIndexes = function( caretCharIndex, selectionCharIndex ) {
-	this.set( "caretCharIndex", caretCharIndex );
-	this.set( "selectionCharIndex", selectionCharIndex );
-
+TypingState.prototype.__setSelectionCharIndexes = function() {
+	var caretCharIndex = this.get( "caretCharIndex" );
+	var selectionCharIndex = this.get( "selectionCharIndex" );
+	
 	var userText = this.get( "userText" );
 	var maxCharIndex = userText.length;
 	var boundCaretCharIndex = Math.min( maxCharIndex, caretCharIndex );
@@ -253,6 +309,7 @@ TypingState.prototype.__setSelectionCharIndexes = function( caretCharIndex, sele
 	}
 };
 
+/** @private **/
 TypingState.prototype.__triggerSync = function( syncKey ) {
 	this.__incrementSyncKey();
 	var syncKey = this.get( "syncKey" );
@@ -260,6 +317,7 @@ TypingState.prototype.__triggerSync = function( syncKey ) {
 	console.log( "Sent HTTP request (key=" + syncKey + ")" );
 }
 
+/** @private **/
 TypingState.prototype.syncTranslation = function( key, translation ) {
 	var syncKey = this.get( "syncKey" );
 	if ( syncKey === key ) {
@@ -273,6 +331,7 @@ TypingState.prototype.syncTranslation = function( key, translation ) {
 	}
 };
 
+/** @private **/
 TypingState.prototype.__incrementSyncKey = function() {
 	this.set( "syncKey", this.get( "syncKey" ) + 1 );
 };
