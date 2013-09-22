@@ -9,7 +9,7 @@ PTM.prototype.run = function() {
 	this.typingUI = new TypingUI( { "model" : this.typingModel } );
 	this.server = new TranslateServer();
   
-  this.sourceBox = new SourceBox( "data/en-source.ann.json", this.initTranslation.bind(this) , this.server.wordQuery.bind(this.server));
+	this.sourceBox = new SourceBox( "data/en-source.ann.json", this.initTranslation.bind(this) , this.server.wordQuery.bind(this.server));
 	this.sourceBox.render( "source" );
   
 	this.typingState.on( "syncTranslation", this.updateTranslation.bind(this) );
@@ -19,9 +19,9 @@ PTM.prototype.run = function() {
  * Initialize TypingUI.
  **/
 PTM.prototype.initTranslation = function() {
-	var handler = function( translation ) { this.typingState.updateTranslation( translation ) };
+	var handler = function( translations ) { this.typingState.updateTranslation( translations === null ? "" : translations[0] ) };
 	var sourceText = this.sourceBox.getSourceText();
-	this.server.translate( handler.bind(this), sourceText );
+	this.server.translate( sourceText, "", handler.bind(this) );
 };
 
 /**
@@ -29,8 +29,8 @@ PTM.prototype.initTranslation = function() {
  * @param {Object} syncKey An arbitrary identifier that is unique for each request. Pass back to TypingUI to ensure synchronization.
  **/
 PTM.prototype.updateTranslation = function( syncKey ) {
-	var handler = function( translation ) { this.typingState.syncTranslation( syncKey, translation ) };
+	var handler = function( translations ) { this.typingState.syncTranslation( syncKey, translations === null ? "" : translations[0] ) };
 	var sourceText = this.sourceBox.getSourceText();
 	var targetPrefix = this.typingState.getUserText();
-	this.server.translate( handler.bind(this), sourceText, targetPrefix );
+	this.server.translate( sourceText, targetPrefix, handler.bind(this) );
 };

@@ -3,20 +3,26 @@ var TranslateServer = function() {};
 TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
 
 // Debug settings
-//TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
 //TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8017/t";
-TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
+//TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
+TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
 TranslateServer.prototype.SRC_LANG = "EN";
 TranslateServer.prototype.TGT_LANG = "DE";
 
-TranslateServer.prototype.TRANSLATE_LIMIT = 1;
+TranslateServer.prototype.TRANSLATE_LIMIT = 10;
 TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
 
-TranslateServer.prototype.wordQuery = function(word, callback) {
-  if (word === undefined) {
-    return [];
-  }
-  var rqReqData = {
+/**
+ * Make a word query.
+ * @param {string} word Word in the source language.
+ * @param {function} f Callback function that takes up to 2 arguments: responseData, requestData.
+ **/
+
+TranslateServer.prototype.wordQuery = function( word, callback ) {
+	if ( word === undefined ) {
+		return [];
+	}
+	var rqReqData = {
 		"src" : this.SRC_LANG,
 		"tgt" : this.TGT_LANG,
 		"spanLimit" : this.WORD_QUERY_LIMIT,
@@ -37,7 +43,7 @@ TranslateServer.prototype.wordQuery = function(word, callback) {
 		responseData.timing = timing;
 		console.log( "[rqReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		if ( callback !== undefined ) {
-			callback(responseData);
+			callback( responseData, requestData );
 		}
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
@@ -51,11 +57,9 @@ TranslateServer.prototype.wordQuery = function(word, callback) {
 		responseData.timing = timing;
 		console.log( "[rqReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		if ( callback !== undefined ) {
-			callback(responseData);
+			callback( responseData, requestData );
 		}
 	}.bind(this);
-	
-	// Send the request
 	var requestMessage = {
 		"url" : this.SERVER_URL,
 		"dataType" : "json",
@@ -68,24 +72,19 @@ TranslateServer.prototype.wordQuery = function(word, callback) {
 
 /**
  * Make a translate request.
- * @param {function} f Callback function on either a successful or failed request. The arguments for f are: targetTranslation, requestData, responseData.  On failed requests, targetTranslation is null.
  * @param {string} sourceText Sentence in source language.
  * @param {string} targetPrefix Partially translated sentence in target language.
- * @param {{string:object}} options Additional options for the request (src, tgt, n).
+ * @param {function} f Callback function that takes up to 3 arguments: translations, responseData, requestData.
  **/
-TranslateServer.prototype.translate = function( callback, sourceText, targetPrefix, options ) {
-	// Default arguments
-	if ( sourceText === undefined || sourceText.length === 0 ) {
+TranslateServer.prototype.translate = function( sourceText, targetPrefix, callback ) {
+	if ( sourceText === undefined || sourceText === "" ) {
 		if ( callback !== undefined ) {
-			callback( "", null, null );
+			callback( [], null, null );
 			return;
 		}
 	}
 	if ( targetPrefix === undefined ) {
 		targetPrefix = "";
-	}
-	if ( options === undefined ) {
-		options = {};
 	}
 
 	// Generate tReq data for a HTTP request
@@ -96,9 +95,6 @@ TranslateServer.prototype.translate = function( callback, sourceText, targetPref
 		"text" : sourceText,
 		"tgtPrefix" : targetPrefix,
 	};
-	for ( var key in options ) {
-		tReqData[ key ] = options[ key ];
-	}
 	var requestData = {
 		"tReq" : JSON.stringify( tReqData )
 	};
@@ -114,10 +110,10 @@ TranslateServer.prototype.translate = function( callback, sourceText, targetPref
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		var targetTranslation = ( responseData.tgtList.length === 0 ) ? "" : responseData.tgtList[0];
-		console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", targetTranslation, requestData, responseData, responseObject, responseMessage );
+		var translations = responseData.tgtList;
+		console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", translations, requestData, responseData, responseObject, responseMessage );
 		if ( callback !== undefined ) {
-			callback( targetTranslation, requestData, responseData );
+			callback( translations, requestData, responseData );
 		}
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
