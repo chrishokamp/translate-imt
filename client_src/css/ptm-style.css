@@ -6,9 +6,11 @@
 }
 
 .SourceBox-segment {
-   margin-bottom:0.5em;
+   font-family:Palatino Linotype,serif;
+   margin-bottom:1.0em;
    cursor:pointer;
    color:LightGray;
+   line-height:125%;
 }
 
 .SourceBox-token {
@@ -17,13 +19,13 @@
 }
 
 #SourceBox-tooltip {
-   padding:0.2em 0.2em 0.2em 0.2em;
+   padding:0.2em 0.2em 0em 0.3em;
    position:fixed;
    display:none;
    box-shadow: 2px 2px 1px #888888;
    z-index:99;
    background-color:#FFFFFF;
-   font-family:Gill Sans, Helvetica Neue, sans-serif;
+   font-family:Gill Sans, Helvetica, sans-serif;
    border-left-style:solid;
    border-color:#99CCFF;
 }
@@ -31,7 +33,7 @@
 .SourceBox-option {
    cursor:pointer;
    font-size:small;
-   margin-bottom:0.1em;
+   margin-bottom:0.2em;
 }
 
 [src-select=T] {

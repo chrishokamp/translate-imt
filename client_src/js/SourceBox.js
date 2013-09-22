@@ -1,8 +1,9 @@
 // Source textbox for PTM application
-function SourceBox(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback) {
+function SourceBox(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback, selectTranslationCallback) {
   this.jsonFileName = jsonCoreNLPFile;
   this.onChangeCallback = onChangeCallback;
   this.sourceQueryCallback = sourceQueryCallback;
+  this.selectTranslationCallback = selectTranslationCallback;
   this.segments = {};
   this.curSegment = 0;
 
@@ -43,7 +44,7 @@ SourceBox.prototype.handleSelect = function(event) {
   var segmentDiv = $(event.target);
   if (segmentDiv.attr('class') !== this.CSS_SEGMENT_CLASS) {
     // Ignore events on the token span
-    segmentDiv = $(event.target).parent();
+    segmentDiv = segmentDiv.parent();
   }
   segmentDiv.attr('src-select', 'T');
   this.curSegment = segmentDiv.attr('id');
@@ -80,11 +81,16 @@ SourceBox.prototype.openTooltip = function(options, event) {
     toolTip.append('<div class="' + self.CSS_WORD_OPTION_CLASS + '">' + val.tgt + '</div>');
   });
 
-  // Hover events over options
+  // Callbacks over translation options
   $('div.'+this.CSS_WORD_OPTION_CLASS).hover(function(event) {
     $(event.target).attr('tgt-word-select', 'T');
   },function(event) {
     $(event.target).attr('tgt-word-select', 'F');
+  }).click(function(event) {
+    if (self.selectTranslationCallback) {
+      var text = $(event.target).text();
+      self.selectTranslationCallback(text);
+    }
   });
   
   // Tooltip close
@@ -95,7 +101,7 @@ SourceBox.prototype.openTooltip = function(options, event) {
   },function(event) {
     // Cursor has moved away from the tooltip
     clearTimeout(self.tooltipTimeout);
-    self.tooltipTimeout = setTimeout(function() {self.closeTooltip(self.selectedToken)}, 100);
+    self.tooltipTimeout = setTimeout(function() {self.closeTooltip(self.selectedToken)}, 1000);
   });
 
   // Position and open the tooltip

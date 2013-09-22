@@ -8,8 +8,12 @@ PTM.prototype.run = function() {
 	this.typingModel = new TypingModel( { "state" : this.typingState } );
 	this.typingUI = new TypingUI( { "model" : this.typingModel } );
 	this.server = new TranslateServer();
-  
-  this.sourceBox = new SourceBox( "data/en-source.ann.json", this.initTranslation.bind(this) , this.server.wordQuery.bind(this.server));
+
+  // TODO(spenceg): Replace with document selected by server.
+  var docId = Math.floor(Math.random() * (3 - 1 + 1)) + 1;
+  var docName = "data/en-source." + docId + ".json";
+
+  this.sourceBox = new SourceBox( docName, this.initTranslation.bind(this) , this.server.wordQuery.bind(this.server));
 	this.sourceBox.render( "source" );
   
 	this.typingState.on( "syncTranslation", this.updateTranslation.bind(this) );
