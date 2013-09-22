@@ -1,7 +1,6 @@
 // Source textbox for PTM application
 function SourceBox(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback) {
   this.jsonFileName = jsonCoreNLPFile;
-  this.curSelection = null;
   this.onChangeCallback = onChangeCallback;
   this.sourceQueryCallback = sourceQueryCallback;
   this.segments = {};
@@ -47,12 +46,6 @@ SourceBox.prototype.handleSelect = function(event) {
     segmentDiv = $(event.target).parent();
   }
   segmentDiv.attr('src-select', 'T');
-  if (this.curSelection) {
-    var parColor = this.curSelection.parent().css('background-color');
-    this.curSelection.css('background-color', parColor);
-    this.curSelection.children().css('background-color', parColor);
-  }
-  this.curSelection = segmentDiv;
   this.curSegment = segmentDiv.attr('id');
   this.onChangeCallback();
 };
@@ -65,16 +58,18 @@ SourceBox.prototype.closeTooltip = function(target) {
 
   // Close the tooltip
   $('#'+this.CSS_TOOLTIP_ID).css('display','none');
-  $(target).attr('src-word-select','F');
+  // Deselect everything. Sometimes events don't fire. We know
+  // that the tooltip is closed, so nothing should be selected.
+  $('span.'+this.CSS_TOKEN_CLASS).attr('src-word-select','F');
 };
 
 SourceBox.prototype.openTooltip = function(options, event) {
-  this.ruleQueryCache[event.target.id] = options;
   if (options.rules === undefined || options.rules.length === 0 ||
      event.target === this.selectedToken) {
     return;
   }
   this.selectedToken = event.target;
+  this.ruleQueryCache[event.target.id] = options;
 
   // Populate the tooltip
   var tokDiv = $(event.target);
@@ -105,7 +100,7 @@ SourceBox.prototype.openTooltip = function(options, event) {
 
   // Position and open the tooltip
   var pos = tokDiv.position();
-  toolTip.css("left", pos.left + (0.75*tokDiv.outerWidth()) + "px" )
+  toolTip.css("left", pos.left + (0.65*tokDiv.outerWidth()) + "px" )
     .css("top", pos.top + tokDiv.outerHeight() + "px" )
     .css( "display", "inline-block" );
 };

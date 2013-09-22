@@ -1,8 +1,8 @@
 
 #wrapper {
    padding:1em;
-   width:600px;
-   max-width:600px;
+   width:710px;
+   max-width:710px;
 }
 
 .SourceBox-segment {
@@ -17,17 +17,21 @@
 }
 
 #SourceBox-tooltip {
-   padding-top:0.2em;
-   padding-bottom:0.2em;
+   padding:0.2em 0.2em 0.2em 0.2em;
    position:fixed;
    display:none;
-   border-style:solid;
-   border-width:1px;
+   box-shadow: 2px 2px 1px #888888;
+   z-index:99;
+   background-color:#FFFFFF;
+   font-family:Gill Sans, Helvetica Neue, sans-serif;
+   border-left-style:solid;
+   border-color:#99CCFF;
 }
 
 .SourceBox-option {
    cursor:pointer;
    font-size:small;
+   margin-bottom:0.1em;
 }
 
 [src-select=T] {

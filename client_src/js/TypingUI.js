@@ -17,7 +17,7 @@ TypingUI.prototype.initialize = function( options ) {
 
 TypingUI.prototype.WIDTH = 720;
 TypingUI.prototype.HEIGHT = 240;
-TypingUI.prototype.FONT_FAMILY = "Gill Sans";
+TypingUI.prototype.FONT_FAMILY = "Gill Sans, Helvetica Neue, sans-serif";
 TypingUI.prototype.FONT_SIZE = 14;
 TypingUI.prototype.BLINK_CYCLE = 500;
 TypingUI.prototype.DEBUG = false;
