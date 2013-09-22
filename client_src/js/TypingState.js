@@ -3,11 +3,11 @@ var TypingState = Backbone.Model.extend({
 		"allTokens" : "",
 		"mtTexts" : [],           // A list of machine translations
 		"userText" : "",          // User-entered translations
-		"caretCharIndex" : 0,
-		"selectionCharIndex" : 0,
-		"selectionStartCharIndex" : 0,  // For rendering; value is bounded between [ 0, userText.length ]
-		"selectionEndCharIndex" : 0,    // For rendering; value is bounded between [ 0, userText.length ]
-		"selectionDirection" : "none",
+		"caretCharIndex" : 0,     // Caret location; may extend beyond the boundary of userText.
+		"selectionCharIndex" : 0, // Location of text selection boundary, whichever end that is opposite from caret location; may extend beyond the boundary of userText.
+		"selectionStartCharIndex" : 0,  // For rendering purposes: value is bounded between [ 0, userText.length ]
+		"selectionEndCharIndex" : 0,    // For rendering purposes: value is bounded between [ 0, userText.length ]
+		"selectionDirection" : "none",  // For rendering purposes: none, forward, or backward
 		"isGhostCaret" : false,
 		"isExpired" : false,
 		"syncKey" : 0
@@ -28,7 +28,7 @@ TypingState.prototype.WHITESPACE = /([ ]+)/g;
  * @param {integer} [caretCharIndex] Location of the caret.
  * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
-TypingState.prototype.initTranslationAndUserText = function( mtText, userText, caretCharIndex, selectionCharIndex ) {
+TypingState.prototype.initTranslationAndUserText = function( mtTexts, userText, caretCharIndex, selectionCharIndex ) {
 	var mtText = ( mtTexts === null || mtTexts.length === 0 ) ? "" : mtTexts[0];
 	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
@@ -51,7 +51,7 @@ TypingState.prototype.initTranslationAndUserText = function( mtText, userText, c
  * @param {integer} [caretCharIndex] Location of the caret.
  * @param {integet} [selectionCharIndex] Location of the opposite end of selection from the caret.
  **/
-TypingState.prototype.updateTranslation = function( mtText, caretCharIndex, selectionCharIndex ) {
+TypingState.prototype.updateTranslation = function( mtTexts, caretCharIndex, selectionCharIndex ) {
 	var mtText = ( mtTexts === null || mtTexts.length === 0 ) ? "" : mtTexts[0];
 	if ( ! caretCharIndex ) { caretCharIndex = this.get( "caretCharIndex" ) }
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
