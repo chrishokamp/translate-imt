@@ -79,7 +79,7 @@ TranslateServer.prototype.wordQuery = function( word, callback ) {
 TranslateServer.prototype.translate = function( sourceText, targetPrefix, callback ) {
 	if ( sourceText === undefined || sourceText === "" ) {
 		if ( callback !== undefined ) {
-			callback( [], null, null );
+			callback( [], "", "" );
 			return;
 		}
 	}
@@ -125,9 +125,9 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", null, requestData, responseData, responseObject, responseMessage );
+		console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", "", requestData, responseData, responseObject, responseMessage );
 		if ( callback !== undefined ) {
-			callback( null, requestData, responseData );
+			callback( "", requestData, responseData );
 		}
 	}.bind(this);
 	

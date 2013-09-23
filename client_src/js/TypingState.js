@@ -1,6 +1,6 @@
 var TypingState = Backbone.Model.extend({
 	"defaults" : {
-		"allTokens" : "",
+		"allTokens" : [],
 		"mtTexts" : [],           // A list of machine translations
 		"userText" : "",          // User-entered translation
 		"ghostText" : "",         // Best machine translation based on the current user-entered text

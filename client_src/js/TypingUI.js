@@ -98,7 +98,6 @@ TypingUI.prototype.__onCaptureResize = function() {
 TypingUI.prototype.__getViewDimensions = function() {
 	this.__width = this.view.keystrokes[0][0].offsetWidth + 6;
 	this.__height = this.view.keystrokes[0][0].offsetHeight + 6;
-	console.log( this.__width, this.__height );
 };
 
 TypingUI.prototype.__setViewDimensions = function() {
@@ -110,7 +109,7 @@ TypingUI.prototype.__setViewDimensions = function() {
 		.style( "width", ( this.__width - 6 ) + "px" )
 		.style( "height", ( this.__height - 6 ) + "px" )
 		.style( "background", this.BACKGROUND_COLOR )
-		.style( "color", this.BACKGROUND_COLOR )
+		.style( "color", this.DEBUG ? this.FOREGROUND_COLOR : this.BACKGROUND_COLOR )
 	this.view.dimensions
 		.style( "top", ( this.DEBUG ? this.__height * 2 : 0 ) + "px" )
 		.style( "opacity", this.DEBUG ? 1 : 0 );
@@ -153,7 +152,6 @@ TypingUI.prototype.render = function() {
 		sepElems.exit().remove();
 
 		this.view.dimensions.selectAll( "span.segment" ).text( function(d) { return d.text } )
-		this.view.dimensions.selectAll( "span.word" ).call( this.__setSpanTypeStyles.bind(this) );
 		this.view.dimensions.selectAll( "span.word" ).call( this.__getSpanWidths.bind(this) );
 	}
 	
@@ -172,6 +170,7 @@ TypingUI.prototype.render = function() {
 	sepElems.exit().remove();
 
 	this.view.overlay.selectAll( "span.segment" ).text( function(d) { return d.text } );
+	this.view.overlay.selectAll( "span.segment" ).call( this.__setSegmentStyles.bind(this) );
 	this.view.overlay.selectAll( "span.word" ).call( this.__setSpanTypeStyles.bind(this) );
 	this.view.overlay.selectAll( "span.segment" ).call( this.__getSpanCoords.bind(this) );
 	this.view.overlay.selectAll( "span.word" ).call( this.__getSpanCoords.bind(this) );
@@ -198,33 +197,47 @@ TypingUI.prototype.render = function() {
 };
 
 TypingUI.prototype.__setSegmentStyles = function( elem ) {
-	elem.style( "background", function(d) { return d.isSelected ? "#fe9" : "none" } )
+	var isExpired = this.state.get( "isExpired" );
+	var setUserStyles = function( elem ) {
+		elem.style( "color", "#303030" );
+		elem.style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
+	};
+	var setActiveMtStyles = function( elem ) {
+		elem.style( "color", "#2ca02c" );
+		elem.style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
+	};
+	var setMtStyles = function( elem ) {
+		elem.transition().style( "color", "#bdbdbd" )
+		elem.style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
+	};
+	var setExpiredMtStyles = function( elem ) {
+		elem.style( "color", "#d9d9d9" )
+		elem.style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
+	};
+	elem.filter( function(d) { return   d.isUser                                } ).call( setUserStyles.bind(this) );
+	elem.filter( function(d) { return ! d.isUser &&   isExpired                 } ).call( setExpiredMtStyles.bind(this) );
+	elem.filter( function(d) { return ! d.isUser && ! isExpired &&   d.isActive } ).call( setActiveMtStyles.bind(this) );
+	elem.filter( function(d) { return ! d.isUser && ! isExpired && ! d.isActive } ).call( setMtStyles.bind(this) );
 };
 
 TypingUI.prototype.__setSpanTypeStyles = function( elem ) {
 	var isExpired = this.state.get( "isExpired" );
 	var setActiveStyles = function( elem ) {
-		elem.style( "color", "#2ca02c" );
+//		elem.style( "color", "#2ca02c" );
 		elem.select( ".term" ).style( "border-bottom", "1px dotted #2ca02c" );
-		elem.selectAll( ".segment" ).style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
 	};
 	var setUserStyles = function( elem ) {
-		elem.style( "color", "#303030" );
+//		elem.style( "color", "#303030" );
 		elem.select( ".term" ).style( "border", "none" );
-		elem.selectAll( ".segment" ).style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
 	};
 	var setExpiredStyles = function( elem ) {
-		elem.style( "color", "#d9d9d9" )
+//		elem.style( "color", "#d9d9d9" )
 		elem.select( ".term" ).style( "border", "none" )
-		elem.selectAll( ".segment" ).style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
 	};
 	var setMtStyles = function( elem ) {
-		elem.transition().style( "color", "#bdbdbd" )
+//		elem.transition().style( "color", "#bdbdbd" )
 		elem.select( ".term" ).style( "border", "none" )
-		elem.selectAll( ".segment" ).style( "background", function(d) { return d.isSelected ? "#ffee33" : null } );
 	};
-//	elem.filter( function(d) { return   d.isUser &&   d.isActive } ).call( setActiveStyles.bind(this) );
-//	elem.filter( function(d) { return   d.isUser && ! d.isActive } ).call( setUserStyles.bind(this) );
 	elem.filter( function(d) { return   d.isUser                                } ).call( setUserStyles.bind(this) );
 	elem.filter( function(d) { return ! d.isUser &&   isExpired                 } ).call( setExpiredStyles.bind(this) );
 	elem.filter( function(d) { return ! d.isUser && ! isExpired &&   d.isActive } ).call( setActiveStyles.bind(this) );
@@ -390,7 +403,6 @@ TypingUI.prototype.__onCaptureKeyUp = function() {
 		var selectionStartCharIndex = self.selectionStart;
 		var selectionEndCharIndex = self.selectionEnd;
 		var caretCharIndex = ( self.selectionDirection === "forward" ) ? selectionEndCharIndex : selectionStartCharIndex;
-		console.log( activeSpanElement, self.value.substring( spanStartCharIndex, caretCharIndex ), activeSpanElement.mtTerm.substr( 0, caretCharIndex - spanStartCharIndex ) )
 		if ( self.value.substring( spanStartCharIndex, caretCharIndex ) === activeSpanElement.mtTerm.substr( 0, caretCharIndex - spanStartCharIndex ) ) {
 			var substr = activeSpanElement.mtTerm.substr( caretCharIndex - spanStartCharIndex );
 			if ( substr.length > 0 ) {

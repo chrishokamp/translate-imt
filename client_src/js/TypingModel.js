@@ -81,6 +81,8 @@ TypingModel.prototype.__update = function() {
 		var span = allSpanElements[i];
 		for ( var j = 0; j < span.segments.length; j++ ) {
 			var segment = span.segments[j];
+			segment.isActive = span.isActive;
+			segment.isUser = ( segment.endCharIndex <= caretCharIndex );
 			segment.isSelected = ( selectionMinCharIndex <= segment.startCharIndex && segment.endCharIndex <= selectionMaxCharIndex );
 			if ( segment.startCharIndex === caretCharIndex ) { caretSpanSegment = segment }
 		}
