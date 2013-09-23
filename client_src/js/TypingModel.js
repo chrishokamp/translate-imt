@@ -7,6 +7,9 @@ var TypingModel = Backbone.Model.extend({
 	}
 });
 
+/** @private **/
+TypingModel.prototype.CONSOLE_LOGS = false;
+
 TypingModel.prototype.initialize = function( options ) {
 	this.state = options.state;
 	this.listenTo( this.state, "modified", this.__update );

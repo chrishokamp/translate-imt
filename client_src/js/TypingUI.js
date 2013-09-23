@@ -24,7 +24,12 @@ TypingUI.prototype.FONT_SIZE = 14;    // Font height in pixels
 TypingUI.prototype.FOREGROUND_COLOR = "#333";
 TypingUI.prototype.BACKGROUND_COLOR = "#fff";
 TypingUI.prototype.BLINK_CYCLE = 500; // Duration of a caret blink in milliseconds
+
+/** @private **/
 TypingUI.prototype.DEBUG = false;
+
+/** @private **/
+TypingUI.prototype.CONSOLE_LOGS = false;
 
 TypingUI.prototype.__initViews = function() {
 	this.view = {};

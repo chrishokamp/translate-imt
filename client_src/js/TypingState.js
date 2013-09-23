@@ -22,6 +22,9 @@ TypingState.prototype.initialize = function() {
 /** @private **/
 TypingState.prototype.WHITESPACE = /([ ]+)/g;
 
+/** @private **/
+TypingState.prototype.CONSOLE_LOGS = false;
+
 /**
  * Initialize the TypingUI with both machine translation and user-entered text.
  * @param {string[]} mtTexts A list of machine translations.
@@ -314,7 +317,10 @@ TypingState.prototype.__triggerSync = function( syncKey ) {
 	this.__incrementSyncKey();
 	var syncKey = this.get( "syncKey" );
 	this.trigger( "syncTranslation", syncKey );
-	console.log( "Sent HTTP request (key=" + syncKey + ")" );
+	
+	if ( this.CONSOLE_LOGS ) {
+		console.log( "Sent HTTP request (key=" + syncKey + ")" );
+	}
 }
 
 /** @private **/
@@ -322,11 +328,16 @@ TypingState.prototype.syncTranslation = function( key, translation ) {
 	var syncKey = this.get( "syncKey" );
 	if ( syncKey === key ) {
 		this.updateTranslation( translation );
-		console.log( "Received HTTP response (key=" + key + ")" );
+
+		if ( this.CONSOLE_LOGS ) {
+			console.log( "Received HTTP response (key=" + key + ")" );
+		}
 		return true;
 	}
 	else {
-		console.log( "Discarded outdated HTTP response (key=" + key + ")" );
+		if ( this.CONSOLE_LOGS ) {
+			console.log( "Discarded outdated HTTP response (key=" + key + ")" );
+		}
 		return false;
 	}
 };
