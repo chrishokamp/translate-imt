@@ -11,18 +11,22 @@ var TypingUI = Backbone.View.extend({
 TypingUI.prototype.initialize = function( options ) {
 	this.model = options.model;
 	this.state = this.model.state;
-	this.init();
+	this.__width = 720;
+	this.__height = 80;
+	this.__initViews();
+	this.__setViewAttributes();
+	this.__setViewDimensions();
 	this.listenTo( this.model, "modified", this.render );
 };
 
-TypingUI.prototype.WIDTH = 720;
-TypingUI.prototype.HEIGHT = 240;
 TypingUI.prototype.FONT_FAMILY = "Gill Sans, Helvetica Neue, sans-serif";
-TypingUI.prototype.FONT_SIZE = 14;
-TypingUI.prototype.BLINK_CYCLE = 500;
+TypingUI.prototype.FONT_SIZE = 14;    // Font height in pixels
+TypingUI.prototype.FOREGROUND_COLOR = "#333";
+TypingUI.prototype.BACKGROUND_COLOR = "#fff";
+TypingUI.prototype.BLINK_CYCLE = 500; // Duration of a caret blink in milliseconds
 TypingUI.prototype.DEBUG = false;
 
-TypingUI.prototype.init = function() {
+TypingUI.prototype.__initViews = function() {
 	this.view = {};
 	this.view.container = d3.select( this.el );
 	this.view.canvas = this.view.container.append( "div" );
@@ -32,44 +36,42 @@ TypingUI.prototype.init = function() {
 	this.view.suggestionBox = this.view.canvas.append( "div" ).attr( "class", "SuggestionBox" );
 	this.view.suggestions = this.view.canvas.append( "div" ).attr( "class", "Suggestions" );
 	this.view.caret = this.view.canvas.append( "div" ).attr( "class", "Caret" );
+};
 
+TypingUI.prototype.__setViewAttributes = function() {
 	this.view.container
 		.style( "position", "static" );
-		
 	this.view.canvas
 		.style( "position", "absolute" );
-	
 	this.view.keystrokes
 		.style( "position", "absolute" )
+		.style( "resize", "none" )
 		.call( this.__setTextareaStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
 		.on( "focus", this.__onCaptureFocus.bind(this) )
 		.on( "blur", this.__onCaptureBlur.bind(this) )
+		.on( "resize", this.__onCaptureResize.bind(this) )
 		.on( "keydown", this.__onCaptureKeyDown.bind(this) )
 		.on( "keypress", this.__onCaptureKeyPress.bind(this) )
-		.on( "keyup", this.__onCaptureKeyUp.bind(this) )
-
+		.on( "keyup", this.__onCaptureKeyUp.bind(this) );
 	this.view.dimensions
 		.style( "position", "absolute" )
 		.style( "pointer-events", "none" )
 		.call( this.__setOverlayStyles.bind(this) )
-		.call( this.__setFontStyles.bind(this) )
-
+		.call( this.__setFontStyles.bind(this) );
 	this.view.overlay
 		.style( "position", "absolute" )
-		.style( "border", "1px solid #969696" )
-		.style( "background", "#fff" )
+		.style( "pointer-events", "none" )
 		.call( this.__setOverlayStyles.bind(this) )
 		.call( this.__setFontStyles.bind(this) )
-		.on( "click", this.__onOverlayClick.bind(this) )
-		
+		.on( "click", this.__onOverlayClick.bind(this) );		
 	this.view.suggestionBox
 		.style( "position", "absolute" )
-		
+		.style( "pointer-events", "none" );
 	this.view.suggestions
 		.style( "position", "absolute" )
-		.call( this.__setFontStyles.bind(this) )
-
+		.style( "pointer-events", "none" )
+		.call( this.__setFontStyles.bind(this) );
 	this.view.caret
 		.style( "position", "absolute" )
 		.style( "pointer-events", "none" )
@@ -78,20 +80,45 @@ TypingUI.prototype.init = function() {
 		this.view.caret.selectAll( "span" ).style( "opacity", this.view.showCaret === true ? 1 : 0 )
 		this.view.showCaret = ! ( this.view.showCaret === true );
 	}.bind(this) );
-	
-	this.resize();
 };
 
-TypingUI.prototype.resize = function() {
+TypingUI.prototype.__onCaptureFocus = function() {
+	this.view.caret.style( "opacity", 1 );
+};
+
+TypingUI.prototype.__onCaptureBlur = function() {
+	this.view.caret.style( "opacity", 0 );
+};
+
+TypingUI.prototype.__onCaptureResize = function() {
+	this.view.__getViewDimensions();
+	this.view.__setViewDimensions();
+};
+
+TypingUI.prototype.__getViewDimensions = function() {
+	this.__width = this.view.keystrokes[0][0].offsetWidth + 6;
+	this.__height = this.view.keystrokes[0][0].offsetHeight + 6;
+	console.log( this.__width, this.__height );
+};
+
+TypingUI.prototype.__setViewDimensions = function() {
 	this.view.container
-		.style( "width", this.WIDTH + "px" )
-		.style( "height", ( this.DEBUG ? this.HEIGHT * 3 : this.HEIGHT ) + "px" );
+		.style( "width", this.__width + "px" )
+		.style( "height", ( this.DEBUG ? this.__height * 3 : this.__height ) + "px" );
 	this.view.keystrokes
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 1 : 0 ) + "px" )
-		.style( "opacity", this.DEBUG ? 1 : 0 )
+		.style( "top", ( this.DEBUG ? this.__height * 1 : 0 ) + "px" )
+		.style( "width", ( this.__width - 6 ) + "px" )
+		.style( "height", ( this.__height - 6 ) + "px" )
+		.style( "background", this.BACKGROUND_COLOR )
+		.style( "color", this.BACKGROUND_COLOR )
 	this.view.dimensions
-		.style( "top", ( this.DEBUG ? this.HEIGHT * 2 : 0 ) + "px" )
+		.style( "top", ( this.DEBUG ? this.__height * 2 : 0 ) + "px" )
 		.style( "opacity", this.DEBUG ? 1 : 0 );
+};
+
+TypingUI.prototype.resize = function( debug ) {
+	this.DEBUG = debug;
+	this.__setViewDimensions();
 };
 
 TypingUI.prototype.render = function() {
@@ -168,8 +195,6 @@ TypingUI.prototype.render = function() {
 		.style( "background", "#000" )
 	this.view.caret
 		.call( this.__setCaretCoords.bind(this) );
-	
-	this.resize();
 };
 
 TypingUI.prototype.__setSegmentStyles = function( elem ) {
@@ -273,8 +298,8 @@ TypingUI.prototype.__setSuggestionStylesAndCoords = function( elem ) {
 
 TypingUI.prototype.__setOverlayStyles = function( elem ) {
 	elem.style( "padding", "10px" )
-		.style( "width", (this.WIDTH-22) + "px" )
-		.style( "height", (this.HEIGHT-22) + "px" )
+		.style( "width", (this.__width-22) + "px" )
+		.style( "height", (this.__height-22) + "px" )
 		
 		// Do no show text selections
 		.style( "user-select", "none" )
@@ -286,8 +311,8 @@ TypingUI.prototype.__setOverlayStyles = function( elem ) {
 };
 
 TypingUI.prototype.__setTextareaStyles = function( elem ) {
-	elem.style( "width", this.WIDTH + "px" )
-		.style( "height", this.HEIGHT + "px" )
+	elem.style( "width", this.__width + "px" )
+		.style( "height", this.__height + "px" )
 		.attr( "spellcheck", false )
 		.attr( "autocapitalize", "off" )
 		.attr( "autocomplete", "off" )
@@ -312,16 +337,6 @@ TypingUI.prototype.__setFontStyles = function( elem ) {
 	elem.style( "font-family", this.FONT_FAMILY )
 		.style( "font-size", this.FONT_SIZE + "px" )
 		.style( "vertical-align", "top" )
-};
-
-TypingUI.prototype.__onCaptureFocus = function() {
-	this.view.overlay.style( "border-color", "#1f77b4" );
-	this.view.caret.style( "opacity", 1 );
-};
-
-TypingUI.prototype.__onCaptureBlur = function() {
-	this.view.overlay.style( "border-color", "#969696" );
-	this.view.caret.style( "opacity", 0 );
 };
 
 TypingUI.prototype.KEY = {
