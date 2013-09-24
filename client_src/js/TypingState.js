@@ -171,9 +171,9 @@ TypingState.prototype.__initAllTokens = function( mtTexts, userText ) {
 	for ( var k = 0; k < mtTexts.length; k++ ) {
 		var mtTermsAndSeps = mtTermsAndSepsList[ k ];
 		var mtLength = mtLengthList[ k ];
-		for ( var n = 0; n < mtLength; n++ ) {
+		for ( var n = 0; n < maxLength; n++ ) {
 			var token = allTokens[ n ];
-			var mtTerm = mtTermsAndSeps[ n * 2 ];
+			var mtTerm = ( n < mtLength ) ? mtTermsAndSeps[ n * 2 ] : "";
 			var mtSep = ( n < mtLength - 1 ) ? mtTermsAndSeps[ n * 2 + 1 ] : "";
 			if ( token.mtTerms.indexOf( mtTerm ) === -1 ) {
 				token.mtTerms.push( mtTerm );
