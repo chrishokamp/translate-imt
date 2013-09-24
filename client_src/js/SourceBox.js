@@ -65,12 +65,12 @@ SourceBox.prototype.closeTooltip = function(target) {
 };
 
 SourceBox.prototype.openTooltip = function(options, event) {
+  this.ruleQueryCache[event.target.id] = options;
   if (options.rules === undefined || options.rules.length === 0 ||
      event.target === this.selectedToken) {
     return;
   }
   this.selectedToken = event.target;
-  this.ruleQueryCache[event.target.id] = options;
 
   // Populate the tooltip
   var tokDiv = $(event.target);
