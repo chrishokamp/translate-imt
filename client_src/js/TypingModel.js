@@ -55,7 +55,9 @@ TypingModel.prototype.__update = function() {
 	
 	// Construct suggestion elements for the active token
 	var activeSuggestionElements = [];
-	if ( activeSpanElement !== null ) {
+	var isExpired = this.state.get( "isExpired" );
+	var hasFocus = this.state.get( "hasFocus" );
+	if ( activeSpanElement !== null && ! isExpired && hasFocus ) {
 		var span = activeSpanElement;
 		for ( var j = 0; j < span.mtTerms.length; j++ ) {
 			var term = span.mtTerms[j];

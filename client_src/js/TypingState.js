@@ -10,6 +10,7 @@ var TypingState = Backbone.Model.extend({
 		"selectionEndCharIndex" : 0,    // For rendering purposes: value is bounded between [ 0, userText.length ]
 		"selectionDirection" : "none",  // For rendering purposes: none, forward, or backward
 		"isGhostCaret" : false,
+		"hasFocus" : false,
 		"isExpired" : false,
 		"syncKey" : 0
 	}
@@ -33,6 +34,10 @@ TypingState.prototype.CONSOLE_LOGS = true;
  * @private
  **/
 TypingState.prototype.UI_LOGS = false;
+
+TypingState.prototype.refresh = function() {
+	this.trigger( "modified" );
+};
 
 /**
  * Initialize the TypingUI with both machine translation and user-entered text.
@@ -102,11 +107,13 @@ TypingState.prototype.updateUserText = function( userText, caretCharIndex, selec
 	this.set( "caretCharIndex", caretCharIndex );
 	this.set( "selectionCharIndex", selectionCharIndex );
 	this.__setSelectionCharIndexes();
+	
+	var isExpired = this.__checkForUpdates( allTokens );
+	if ( isExpired )
+		this.set( "isExpired", true )
 	this.trigger( "modified" );
-	if ( this.__checkForUpdates( allTokens ) ) {
-		this.set( "isExpired", true );
+	if ( isExpired )
 		this.__prepareSync();
-	}
 };
 
 /**
@@ -118,16 +125,19 @@ TypingState.prototype.updateCaret = function( caretCharIndex, selectionCharIndex
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 
 	var allTokens = this.get( "allTokens" );
+	this.__markNextTokens( allTokens );
 	this.__markActiveToken( allTokens, caretCharIndex );
 
 	this.set( "caretCharIndex", caretCharIndex );
 	this.set( "selectionCharIndex", selectionCharIndex );
 	this.__setSelectionCharIndexes();
+
+	var isExpired = this.__checkForUpdates( allTokens );
+	if ( isExpired )
+		this.set( "isExpired", true )
 	this.trigger( "modified" );
-	if ( this.__checkForUpdates( allTokens ) ) {
-		this.set( "isExpired", true );
+	if ( isExpired )
 		this.__prepareSync();
-	}
 };
 
 /** @private **/
@@ -241,6 +251,7 @@ TypingState.prototype.__markActiveToken = function( allTokens, caretCharIndex ) 
 		var token = allTokens[ n ];
 		token.isUser = ( token.userTerm !== "" );
 		
+		// TODO: Failure case when token.userTerm finishes
 		token.mtTerm = this.__getBestMtTerm( token.mtTerms, token.userTerm );
 		token.mtSep = this.__getBestMtSep( token.mtSeps, token.userSep );
 		token.term = token.userTerm + token.mtTerm.substr( token.userTerm.length );

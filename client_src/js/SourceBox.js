@@ -1,5 +1,7 @@
 // Source textbox for PTM application
-function SourceBox(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback, selectTranslationCallback) {
+SourceBox = Backbone.Model.extend();
+
+SourceBox.prototype.initialize = function(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback, selectTranslationCallback) {
   this.jsonFileName = jsonCoreNLPFile;
   this.onChangeCallback = onChangeCallback;
   this.sourceQueryCallback = sourceQueryCallback;
@@ -174,6 +176,9 @@ SourceBox.prototype.render = function(targetDiv) {
       });
       divStr += '</div>';
       $('#'+targetDiv).append(divStr);
+
+
+	  $('#'+targetDiv).append("<div class='TypingUI TypingUI"+id+"' style='margin-bottom:20px; display: none; height: 0'></div>")
       if (i == 0) {
         $('#'+id).css('margin-top','0.5em');
       }
@@ -181,7 +186,13 @@ SourceBox.prototype.render = function(targetDiv) {
 
     // Translation callback
     $('div.'+self.CSS_SEGMENT_CLASS).click(function(event) {
-      self.handleSelect(event);
+		self.handleSelect(event);
+		d3.selectAll( ".TypingUI" ).style( "height", 0 ).style( "display", "none" );
+		var elems = d3.selectAll( ".TypingUI" + self.curSegment ).style( "height", "80px" ).style( "display", null );
+		elems = elems.selectAll( "textarea" );
+		if ( ! elems.empty() ) {
+			elems[0][0].focus();
+		}
     });
     
     // Single-word query callback
@@ -211,6 +222,8 @@ SourceBox.prototype.render = function(targetDiv) {
 
     // Set the first selected segment
     $('div#'+firstSegment).trigger('click');
+
+	self.trigger( "initialized" );
   });
 };
 
