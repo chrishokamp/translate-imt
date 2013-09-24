@@ -154,10 +154,14 @@ TypingUI.prototype.__setViewDimensions = function() {
 
 TypingUI.prototype.__onCaptureFocus = function() {
 	this.view.caret.style( "opacity", 1 );
+	this.state.set( "hasFocus", true );
+	this.state.refresh();
 };
 
 TypingUI.prototype.__onCaptureBlur = function() {
 	this.view.caret.style( "opacity", 0 );
+	this.state.set( "hasFocus", false );
+	this.state.refresh();
 };
 
 TypingUI.prototype.__onCaptureResize = function() {
@@ -266,19 +270,20 @@ TypingUI.prototype.__renderTabIndicators = function() {
 	var isExpired = this.state.get( "isExpired" );
 	
 	var elems = this.view.tabs.selectAll( "span" ).data( allSpanElements );
-	elems.enter().append( "span" ).style( "display", "inline-block" ).append( "i" );
+	elems.enter().append( "span" ).append( "i" );
 	elems.exit().remove();
 	elems = this.view.tabs.selectAll( "span" );
 	
-	var tabElems = this.view.tabs.selectAll( "span" ).filter( function(d) { return d.nextToken !== null } );
-	var nonTabElems = this.view.tabs.selectAll( "span" ).filter( function(d) { return d.nextToken === null } );
+	var tabElems = this.view.tabs.selectAll( "span" ).filter( function(d) { return d.nextToken !== null && d.atOrAfterCaret } );
+	var nonTabElems = this.view.tabs.selectAll( "span" ).filter( function(d) { return !( d.nextToken !== null && d.atOrAfterCaret ) } );
 	tabElems
 		.style( "position", "absolute" )
 		.style( "left", function(d) { return ( d.nextToken.__left - 2 ) + "px" } )
 		.style( "top", function(d) { return ( d.nextToken.__top + 10 ) + "px" } )
 		.style( "width", function(d) { return d.nextToken.__width + "px" } )
 		.style( "height", this.FONT_SIZE + "px" )
-		.style( "opacity", function(d) { return d.atOrAfterCaret ? 1 : 0 } )
+		.style( "opacity", 1 )
+		.style( "display", "inline-block" )
 		.style( "font-size", "10px" )
 		.style( "color", "#333" )
 		.selectAll( "i" )
@@ -286,15 +291,17 @@ TypingUI.prototype.__renderTabIndicators = function() {
 			.style( "color", function(d) { return isExpired ? this.EXPIRED_COLOR : ( d.isActive ? this.ACTIVE_COLOR : this.MT_COLOR ) }.bind(this) );
 	nonTabElems
 		.style( "opacity", 0 )
+		.style( "display", "none" )
 };
 
 TypingUI.prototype.__renderSuggestions = function() {
+	var isExpired = this.state.get( "isExpired" );
 	var activeSpanElement = this.model.get( "activeSpanElement" );
 	var activeSuggestionElements = this.model.get( "activeSuggestionElements" );
 	var suggestionOffset = this.FONT_SIZE + 8;
 	var suggestionSpacing = this.FONT_SIZE + 6;
 
-	if ( activeSpanElement ) {
+	if ( activeSpanElement && ! isExpired ) {
 		this.view.suggestionBox
 			.style( "left", activeSpanElement.__left + "px" )
 			.style( "top", ( activeSpanElement.__top + suggestionOffset ) + "px" )
@@ -311,16 +318,22 @@ TypingUI.prototype.__renderSuggestions = function() {
 		elems.enter().append( "span" );
 		elems.exit().remove();
 		
-		this.view.suggestions.selectAll( "span" )
-			.text( function(d) { return d.term } )
-			.style( "position", "absolute" )
-			.style( "display", "inline-block" )
-			.style( "left", activeSpanElement.__left + "px" )
-			.style( "top", function(d,i) { return ( activeSpanElement.__top + suggestionOffset + i * suggestionSpacing + 2 ) + "px" }.bind(this) )
-			.style( "width", activeSpanElement.__width + "px" )
-			.style( "height", suggestionSpacing + "px" )
-			.style( "color", this.MT_COLOR )
-			.style( "border-top", function(d,i) { return (i===0) ? "none" : "1px solid #ccc" } )
+		this.view.suggestions
+			.style( "opacity", 1 )
+			.selectAll( "span" )
+				.text( function(d) { return d.term } )
+				.style( "position", "absolute" )
+				.style( "display", "inline-block" )
+				.style( "left", activeSpanElement.__left + "px" )
+				.style( "top", function(d,i) { return ( activeSpanElement.__top + suggestionOffset + i * suggestionSpacing + 2 ) + "px" }.bind(this) )
+				.style( "width", activeSpanElement.__width + "px" )
+				.style( "height", suggestionSpacing + "px" )
+				.style( "color", this.MT_COLOR )
+				.style( "border-top", function(d,i) { return (i===0) ? "none" : "1px solid #ccc" } )
+	}
+	else {
+		this.view.suggestionBox.style( "opacity", 0 )
+		this.view.suggestions.style( "opacity", 0 )
 	}
 };
 
@@ -352,7 +365,7 @@ TypingUI.prototype.__setSegmentStyles = function( elem ) {
 			.style( "background", function(d) { return d.isSelected ? this.SELECTION_BACKGROUND : null }.bind(this) );
 	};
 	var setMtStyles = function( elem ) {
-		elem.transition().style( "color", this.MT_COLOR )
+		elem.style( "color", this.MT_COLOR )
 			.style( "background", function(d) { return d.isSelected ? this.SELECTION_BACKGROUND : null }.bind(this) );
 	};
 	var setExpiredMtStyles = function( elem ) {
@@ -479,11 +492,6 @@ TypingUI.prototype.__onCaptureKeyUp = function() {
 			var substr = activeSpanElement.mtTerm.substr( caretCharIndex - spanStartCharIndex ) + activeSpanElement.mtSep;
 			if ( substr.length > 0 ) {
 				this.state.updateUserText( self.value + substr, caretCharIndex + substr.length );
-			}
-			else {
-				if ( activeSpanElement.nextToken !== null ) {
-					this.state.updateUserText( self.value + activeSpanElement.mtSep + activeSpanElement.nextToken.mtTerm, caretCharIndex + activeSpanElement.mtSep.length + activeSpanElement.nextToken.mtTerm.length );
-				}
 			}
 		}
 	}
