@@ -7,8 +7,17 @@ var TypingModel = Backbone.Model.extend({
 	}
 });
 
-/** @private **/
+/**
+ * Generate debugging message to javascript console.
+ * @private
+ **/
 TypingModel.prototype.CONSOLE_LOGS = false;
+
+/**
+ * Generate user interaction log events
+ * @private
+ **/
+TypingModel.prototype.UI_LOGS = false;
 
 TypingModel.prototype.initialize = function( options ) {
 	this.state = options.state;
@@ -90,7 +99,7 @@ TypingModel.prototype.__update = function() {
 			if ( segment.startCharIndex === caretCharIndex ) { caretSpanSegment = segment }
 		}
 	}
-
+	
 	this.set( "allSpanElements", allSpanElements );
 	this.set( "activeSpanElement", activeSpanElement );
 	this.set( "caretSpanSegment", caretSpanSegment );

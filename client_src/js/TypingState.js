@@ -22,8 +22,17 @@ TypingState.prototype.initialize = function() {
 /** @private **/
 TypingState.prototype.WHITESPACE = /([ ]+)/g;
 
-/** @private **/
-TypingState.prototype.CONSOLE_LOGS = false;
+/**
+ * Generate debugging message to javascript console.
+ * @private
+ **/
+TypingState.prototype.CONSOLE_LOGS = true;
+
+/**
+ * Generate user interaction log events
+ * @private
+ **/
+TypingState.prototype.UI_LOGS = false;
 
 /**
  * Initialize the TypingUI with both machine translation and user-entered text.
@@ -37,6 +46,7 @@ TypingState.prototype.initTranslationAndUserText = function( mtTexts, userText, 
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 	
 	var allTokens = this.__initAllTokens( mtTexts, userText );
+	this.__markNextTokens( allTokens );
 	this.__markActiveToken( allTokens, caretCharIndex );
 
 	this.set( "allTokens", allTokens );
@@ -61,6 +71,7 @@ TypingState.prototype.updateTranslation = function( mtTexts, caretCharIndex, sel
 	if ( ! selectionCharIndex ) { selectionCharIndex = caretCharIndex }
 
 	var allTokens = this.__initAllTokens( mtTexts, userText );
+	this.__markNextTokens( allTokens );
 	this.__markActiveToken( allTokens, caretCharIndex );
 
 	this.set( "allTokens", allTokens );
@@ -84,17 +95,18 @@ TypingState.prototype.updateUserText = function( userText, caretCharIndex, selec
 	
 	var allTokens = this.get( "allTokens" );
 	this.__updateAllTokens( allTokens, userText )
+	this.__markNextTokens( allTokens );
 	this.__markActiveToken( allTokens, caretCharIndex );
 
 	this.set( "userText", userText );
 	this.set( "caretCharIndex", caretCharIndex );
 	this.set( "selectionCharIndex", selectionCharIndex );
 	this.__setSelectionCharIndexes();
+	this.trigger( "modified" );
 	if ( this.__checkForUpdates( allTokens ) ) {
 		this.set( "isExpired", true );
 		this.__prepareSync();
 	}
-	this.trigger( "modified" );
 };
 
 /**
@@ -111,11 +123,11 @@ TypingState.prototype.updateCaret = function( caretCharIndex, selectionCharIndex
 	this.set( "caretCharIndex", caretCharIndex );
 	this.set( "selectionCharIndex", selectionCharIndex );
 	this.__setSelectionCharIndexes();
+	this.trigger( "modified" );
 	if ( this.__checkForUpdates( allTokens ) ) {
 		this.set( "isExpired", true );
 		this.__prepareSync();
 	}
-	this.trigger( "modified" );
 };
 
 /** @private **/
@@ -169,13 +181,21 @@ TypingState.prototype.__initAllTokens = function( mtTexts, userText ) {
 		token.userSep = userSep;
 		token.prefixTerm = userTerm;
 	}
-	
+	return allTokens;
+};
+
+TypingState.prototype.__markNextTokens = function( allTokens ) {
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[n];
-		var nextToken = ( n < allTokens.length - 1 ) ? allTokens[ n + 1 ] : allTokens[ 0 ];
-		token.nextToken = nextToken;
+		token.nextToken = null;
 	}
-	return allTokens;
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[n];
+		if ( n < allTokens.length - 1 ) {
+			var nextToken = allTokens[ n + 1 ];
+			token.nextToken = nextToken;
+		}
+	}
 };
 
 /** @private **/
@@ -230,8 +250,8 @@ TypingState.prototype.__markActiveToken = function( allTokens, caretCharIndex ) 
 		charIndex += token.term.length;
 		var endCharIndex = charIndex;
 		charIndex += token.sep.length;
-		var atOrBeforeCaret = ( caretCharIndex <= endCharIndex );
-		var atOrAfterCaret = ( startCharIndex <= caretCharIndex );
+		var atOrBeforeCaret = ( startCharIndex <= caretCharIndex );
+		var atOrAfterCaret = ( caretCharIndex <= endCharIndex );
 		var isActive = ( atOrBeforeCaret && atOrAfterCaret );
 		
 		token.startCharIndex = startCharIndex;
