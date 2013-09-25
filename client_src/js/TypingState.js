@@ -347,6 +347,8 @@ TypingState.prototype.__getBestMtSep = function( mtSeps, userSep ) {
 TypingState.prototype.__checkForUpdates = function( allTokens ) {
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
+		if ( token.isActive )
+			token.isChanged = false;
 		if ( token.prefixTerm !== token.userTerm ) {
 			if ( ! token.isActive && ! token.isChanged ) {
 				token.isChanged = true;
