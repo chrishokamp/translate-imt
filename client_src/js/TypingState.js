@@ -350,6 +350,8 @@ TypingState.prototype.__checkForUpdates = function( allTokens ) {
 		if ( token.prefixTerm !== token.userTerm ) {
 			if ( ! token.isActive && ! token.isChanged ) {
 				token.isChanged = true;
+				if ( token.mtTerms.length > 0 && token.userTerm === token.mtTerms[0] )
+					return false;
 				return true;
 			}
 		}
