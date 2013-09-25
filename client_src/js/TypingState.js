@@ -262,20 +262,50 @@ TypingState.prototype.__markActiveToken = function( allTokens, caretCharIndex ) 
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
 		token.isUser = ( token.userTerm !== "" );
-		
-		// TODO: Failure case when token.userTerm finishes
+
 		token.mtTerm = this.__getBestMtTerm( token.mtTerms, token.userTerm );
 		token.mtSep = this.__getBestMtSep( token.mtSeps, token.userSep );
-		token.term = token.userTerm + token.mtTerm.substr( token.userTerm.length );
-		token.sep = token.userSep + token.mtSep.substr( token.userSep.length );
+		if ( charIndex < caretCharIndex ) {
+			// First pass
+			token.term = token.userTerm;
+			token.sep = token.userSep;
 		
-		var startCharIndex = charIndex;
-		charIndex += token.term.length;
-		var endCharIndex = charIndex;
-		charIndex += token.sep.length;
-		var atOrBeforeCaret = ( startCharIndex <= caretCharIndex );
-		var atOrAfterCaret = ( caretCharIndex <= endCharIndex );
-		var isActive = ( atOrBeforeCaret && atOrAfterCaret );
+			var tempCharIndex = charIndex;
+			var startCharIndex = charIndex;
+			charIndex += token.term.length;
+			var endCharIndex = charIndex;
+			charIndex += token.sep.length;
+			var atOrBeforeCaret = ( startCharIndex <= caretCharIndex );
+			var atOrAfterCaret = ( caretCharIndex <= endCharIndex );
+			var isActive = ( atOrBeforeCaret && atOrAfterCaret );
+
+			// Second pass for active span element
+			if ( isActive ) {
+				token.term = token.userTerm + token.mtTerm.substr( token.userTerm.length );
+				token.sep = token.userSep + token.mtSep.substr( token.userSep.length );
+
+				charIndex = tempCharIndex;
+				var startCharIndex = charIndex;
+				charIndex += token.term.length;
+				var endCharIndex = charIndex;
+				charIndex += token.sep.length;
+				var atOrBeforeCaret = ( startCharIndex <= caretCharIndex );
+				var atOrAfterCaret = ( caretCharIndex <= endCharIndex );
+				var isActive = ( atOrBeforeCaret && atOrAfterCaret );
+			}
+		}
+		else {
+			token.term = token.userTerm + token.mtTerm.substr( token.userTerm.length );
+			token.sep = token.userSep + token.mtSep.substr( token.userSep.length );
+
+			var startCharIndex = charIndex;
+			charIndex += token.term.length;
+			var endCharIndex = charIndex;
+			charIndex += token.sep.length;
+			var atOrBeforeCaret = ( startCharIndex <= caretCharIndex );
+			var atOrAfterCaret = ( caretCharIndex <= endCharIndex );
+			var isActive = ( atOrBeforeCaret && atOrAfterCaret );
+		}
 		
 		token.startCharIndex = startCharIndex;
 		token.endCharIndex = endCharIndex;
