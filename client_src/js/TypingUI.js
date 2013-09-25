@@ -186,7 +186,6 @@ TypingUI.prototype.render = function() {
 
 TypingUI.prototype.__renderCapture = function() {
 	var isBusy = this.state.get( "isBusy" );
-	console.log( "isBusy", isBusy )
 	this.view.capture.style( "cursor", isBusy ? "wait" : "auto" );
 	
 	var userText = this.state.getUserText();
@@ -332,7 +331,7 @@ TypingUI.prototype.__renderSuggestions = function() {
 				.style( "top", function(d,i) { return ( activeSpanElement.__top + suggestionOffset + i * suggestionSpacing + 2 ) + "px" }.bind(this) )
 				.style( "width", activeSpanElement.__width + "px" )
 				.style( "height", suggestionSpacing + "px" )
-				.style( "color", this.MT_COLOR )
+				.style( "color", function(d) { return d.isMatched ? this.ACTIVE_COLOR : this.MT_COLOR }.bind(this) )
 				.style( "border-top", function(d,i) { return (i===0) ? "none" : "1px solid #ccc" } )
 	}
 	else {
