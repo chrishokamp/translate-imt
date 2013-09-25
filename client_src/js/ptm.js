@@ -1,17 +1,37 @@
-// Deployment options
-// console.log = function() {};
+var PTM = Backbone.Model.extend({
+	"defaults" : {
+		"docID" : null,
+		"segmentID" : null,
+		"segmentIDs" : {}
+	}
+});
 
-var PTM = function() {};
+PTM.prototype.initialize = function() {
+	var docId = Math.floor( Math.random() * 3 ) + 1;
+	var docPath = "data/en-source." + docId + ".json";
+	this.set({
+		"docId" : docId,
+		"docPath" : docPath
+	});
+	this.server = new TranslateServer();
+};
 
 PTM.prototype.run = function() {
-	this.server = new TranslateServer();
 
-  // TODO(spenceg): Replace with document selected by server.
-  var docId = Math.floor(Math.random() * (3 - 1 + 1)) + 1;
-  var docName = "data/en-source." + docId + ".json";
+	// TODO(spenceg): Replace with document selected by server.
+	var docPath = this.get( "docPath" );
 
-  this.sourceBox = new SourceBox( docName, function() {} , this.server.wordQuery.bind(this.server));
+	this.sourceBox = new SourceBox(docPath, this.server.wordQuery.bind(this.server));
 	this.sourceBox.render( "source" );
+	
+	this.sourceBox.on( "selectSegment", function() {
+		d3.selectAll( ".TypingUI" ).style( "height", 0 ).style( "display", "none" );
+		var elems = d3.selectAll( ".TypingUI" + this.sourceBox.curSegment ).style( "height", "80px" ).style( "display", null );
+		elems = elems.selectAll( "textarea" );
+		if ( ! elems.empty() ) {
+			elems[0][0].focus();
+		}
+	}.bind(this) );
 	
 	this.sourceBox.on( "initialized", function() {
 		this.typingStates = {};

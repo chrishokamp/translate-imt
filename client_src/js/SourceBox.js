@@ -1,9 +1,8 @@
 // Source textbox for PTM application
 SourceBox = Backbone.Model.extend();
 
-SourceBox.prototype.initialize = function(jsonCoreNLPFile, onChangeCallback, sourceQueryCallback, selectTranslationCallback) {
+SourceBox.prototype.initialize = function(jsonCoreNLPFile, sourceQueryCallback, selectTranslationCallback) {
   this.jsonFileName = jsonCoreNLPFile;
-  this.onChangeCallback = onChangeCallback;
   this.sourceQueryCallback = sourceQueryCallback;
   this.selectTranslationCallback = selectTranslationCallback;
   this.segments = {};
@@ -50,7 +49,7 @@ SourceBox.prototype.handleSelect = function(event) {
   }
   segmentDiv.attr('src-select', 'T');
   this.curSegment = segmentDiv.attr('id');
-  this.onChangeCallback();
+  this.trigger( "selectSegment" );
 };
 
 SourceBox.prototype.closeTooltip = function(target) {
@@ -187,12 +186,6 @@ SourceBox.prototype.render = function(targetDiv) {
     // Translation callback
     $('div.'+self.CSS_SEGMENT_CLASS).click(function(event) {
 		self.handleSelect(event);
-		d3.selectAll( ".TypingUI" ).style( "height", 0 ).style( "display", "none" );
-		var elems = d3.selectAll( ".TypingUI" + self.curSegment ).style( "height", "80px" ).style( "display", null );
-		elems = elems.selectAll( "textarea" );
-		if ( ! elems.empty() ) {
-			elems[0][0].focus();
-		}
     });
     
     // Single-word query callback

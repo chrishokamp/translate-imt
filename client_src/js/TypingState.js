@@ -1,3 +1,8 @@
+/**
+ * @class TypingState
+ * Fire the event "modified" when any state is changed.
+ * Fire the event "syncTranslation" when state changes require additional information from the translate server.
+ **/
 var TypingState = Backbone.Model.extend({
 	"defaults" : {
 		"allTokens" : [],
@@ -12,12 +17,13 @@ var TypingState = Backbone.Model.extend({
 		"isGhostCaret" : false,
 		"hasFocus" : false,
 		"isExpired" : false,
+		"isBusy" : false,
 		"syncKey" : 0
 	}
 });
 
 TypingState.prototype.initialize = function() {
-	this.__prepareSync = _.debounce( this.__triggerSync, 500, true );
+	this.__prepareSync = _.debounce( this.__triggerSync, 200 );
 }
 
 /** @private **/
@@ -109,11 +115,14 @@ TypingState.prototype.updateUserText = function( userText, caretCharIndex, selec
 	this.__setSelectionCharIndexes();
 	
 	var isExpired = this.__checkForUpdates( allTokens );
-	if ( isExpired )
-		this.set( "isExpired", true )
+	if ( isExpired ) {
+		this.set( "isExpired", true );
+		this.set( "isBusy", true );
+	}
 	this.trigger( "modified" );
-	if ( isExpired )
+	if ( isExpired ) {
 		this.__prepareSync();
+	}
 };
 
 /**
@@ -133,11 +142,14 @@ TypingState.prototype.updateCaret = function( caretCharIndex, selectionCharIndex
 	this.__setSelectionCharIndexes();
 
 	var isExpired = this.__checkForUpdates( allTokens );
-	if ( isExpired )
-		this.set( "isExpired", true )
+	if ( isExpired ) {
+		this.set( "isExpired", true );
+		this.set( "isBusy", true );
+	}
 	this.trigger( "modified" );
-	if ( isExpired )
+	if ( isExpired ) {
 		this.__prepareSync();
+	}
 };
 
 /** @private **/
@@ -358,6 +370,8 @@ TypingState.prototype.__triggerSync = function( syncKey ) {
 TypingState.prototype.syncTranslation = function( key, translation ) {
 	var syncKey = this.get( "syncKey" );
 	if ( syncKey === key ) {
+
+		this.set( "isBusy", false );
 		this.updateTranslation( translation );
 
 		if ( this.CONSOLE_LOGS ) {
