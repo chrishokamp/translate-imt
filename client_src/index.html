@@ -3,32 +3,34 @@
 <head>
 	<title>PTM Prototype Interface</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<link rel="stylesheet" href="css/ptm-style.css" />
 	<link rel="stylesheet" href="css/font-awesome.css" />
 	<script type="text/javascript" src="js/d3.js"></script>
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/underscore.js"></script>
 	<script type="text/javascript" src="js/backbone.js"></script>
 	<script type="text/javascript" src="js/chai.js"></script>
+	
+	<script type="text/javascript" src="js/TranslateServer.js"></script>
+	<script type="text/javascript" src="js/TooltipState.js"></script>
+	<script type="text/javascript" src="js/TooltipView.js"></script>
+	<script type="text/javascript" src="js/SourceState.js"></script>
+	<script type="text/javascript" src="js/SourceView.js"></script>
 	<script type="text/javascript" src="js/TypingState.js"></script>
 	<script type="text/javascript" src="js/TypingModel.js"></script>
 	<script type="text/javascript" src="js/TypingUI.js"></script>
-	<script type="text/javascript" src="js/TranslateServer.js"></script>
 	<script type="text/javascript" src="js/SourceBox.js"></script>
-	<script type="text/javascript" src="js/ptm.js"></script>
+	<script type="text/javascript" src="js/PTM.js"></script>
 	<script type="text/javascript">
 		var ptm;
 		$(document).ready( function() {
-			ptm = new PTM();
-			ptm.run();
+			var docId = Math.floor( Math.random() * 3 ) + 1;
+			var docURL = "data/en-doc." + docId + ".json";
+			ptm = new PTM({ "url" : docURL });
 		});
 	</script>
 </head>
 <body>
-<div id="wrapper">  
-	<div id="source"></div><br/>
-	<div class="TypingUI"></div><br/>
-	<div id="debug-output"></div>
-</div>
+<div id="tooltip" style="position: absolute; z-index: 100"></div>
+<div id="ptm" style="width: 800px; z-index: 0"></div>
 </body>
 </html>

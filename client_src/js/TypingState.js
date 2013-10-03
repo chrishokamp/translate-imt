@@ -17,14 +17,13 @@ var TypingState = Backbone.Model.extend({
 		"isGhostCaret" : false,
 		"hasFocus" : false,
 		"isExpired" : false,
-		"isBusy" : false,
-		"syncKey" : 0
+		"isBusy" : false
 	}
 });
 
 TypingState.prototype.initialize = function() {
 	this.__prepareSync = _.debounce( this.__triggerSync, 200 );
-}
+};
 
 /** @private **/
 TypingState.prototype.WHITESPACE = /([ ]+)/g;
@@ -390,32 +389,30 @@ TypingState.prototype.__setSelectionCharIndexes = function() {
 };
 
 /** @private **/
-TypingState.prototype.__triggerSync = function( syncKey ) {
+TypingState.prototype.__triggerSync = function() {
 	this.__incrementSyncKey();
-	var syncKey = this.get( "syncKey" );
-	this.trigger( "syncTranslation", syncKey );
+	this.trigger( "syncTranslation", this.__syncKey );
 	
 	if ( this.CONSOLE_LOGS ) {
-		console.log( "Sent HTTP request (key=" + syncKey + ")" );
+		console.log( "Sent HTTP request (key=" + this.__syncKey + ")" );
 	}
 }
 
 /** @private **/
-TypingState.prototype.syncTranslation = function( key, translation ) {
-	var syncKey = this.get( "syncKey" );
-	if ( syncKey === key ) {
+TypingState.prototype.syncTranslation = function( syncKey, translation ) {
+	if ( this.__syncKey === syncKey ) {
 
 		this.set( "isBusy", false );
 		this.updateTranslation( translation );
 
 		if ( this.CONSOLE_LOGS ) {
-			console.log( "Received HTTP response (key=" + key + ")" );
+			console.log( "Received HTTP response (key=" + syncKey + ")" );
 		}
 		return true;
 	}
 	else {
 		if ( this.CONSOLE_LOGS ) {
-			console.log( "Discarded outdated HTTP response (key=" + key + ")" );
+			console.log( "Discarded outdated HTTP response (key=" + syncKey + ")" );
 		}
 		return false;
 	}
@@ -423,7 +420,7 @@ TypingState.prototype.syncTranslation = function( key, translation ) {
 
 /** @private **/
 TypingState.prototype.__incrementSyncKey = function() {
-	this.set( "syncKey", this.get( "syncKey" ) + 1 );
+	this.__syncKey ++;
 };
 
 /**

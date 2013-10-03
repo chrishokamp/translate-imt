@@ -1,9 +1,3 @@
-/**
- * By default, the visualization will be rendered in HTML element "div.TypingUI"
- * Pass a selector as the first argument, i.e. { "el" : selector }, to change the default behavior.
- * @param {Object} options Backbone view options.
- * @constructor
- **/
 var TypingUI = Backbone.View.extend({
 	el : "div.TypingUI"
 });

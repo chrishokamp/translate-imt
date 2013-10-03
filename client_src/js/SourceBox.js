@@ -1,11 +1,10 @@
 // Source textbox for PTM application
 SourceBox = Backbone.Model.extend();
 
-SourceBox.prototype.initialize = function(jsonCoreNLPFile, sourceQueryCallback, selectTranslationCallback) {
-  this.jsonFileName = jsonCoreNLPFile;
+SourceBox.prototype.initialize = function( segments, sourceQueryCallback, selectTranslationCallback) {
   this.sourceQueryCallback = sourceQueryCallback;
   this.selectTranslationCallback = selectTranslationCallback;
-  this.segments = {};
+  this.segments = segments;
   this.curSegment = 0;
 
   this.ruleQueryCache = {};

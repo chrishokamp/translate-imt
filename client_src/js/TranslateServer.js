@@ -4,18 +4,20 @@ TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
 
 // Debug settings
 //TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8017/t";
-TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
-//TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
+//TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
+TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
 TranslateServer.prototype.SRC_LANG = "EN";
 TranslateServer.prototype.TGT_LANG = "DE";
 
 TranslateServer.prototype.TRANSLATE_LIMIT = 10;
 TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
 
+TranslateServer.prototype.CONSOLE_LOG = false;
+
 /**
  * Make a word query.
  * @param {string} word Word in the source language.
- * @param {function} f Callback function that takes up to 2 arguments: responseData, requestData.
+ * @param {function} f Callback function that takes up to 3 arguments: rules, responseData, requestData.
  **/
 
 TranslateServer.prototype.wordQuery = function( word, callback ) {
@@ -41,9 +43,12 @@ TranslateServer.prototype.wordQuery = function( word, callback ) {
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		console.log( "[rqReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
+		var rules = responseData.rules;
+		if ( this.CONSOLE_LOG ) {
+			console.log( "[rqReq] [success] [" + duration.toFixed(2) + " seconds]", rules, requestData, responseData, responseObject, responseMessage );
+		}
 		if ( callback !== undefined ) {
-			callback( responseData, requestData );
+			callback( rules, responseData, requestData );
 		}
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
@@ -55,9 +60,11 @@ TranslateServer.prototype.wordQuery = function( word, callback ) {
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		console.log( "[rqReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
+		if ( this.CONSOLE_LOG ) {
+			console.log( "[rqReq] [error] [" + duration.toFixed(2) + " seconds]", [], requestData, responseData, responseObject, responseMessage );
+		}
 		if ( callback !== undefined ) {
-			callback( responseData, requestData );
+			callback( [], responseData, requestData );
 		}
 	}.bind(this);
 	var requestMessage = {
@@ -111,7 +118,9 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 		};
 		responseData.timing = timing;
 		var translations = responseData.tgtList;
-		console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", translations, requestData, responseData, responseObject, responseMessage );
+		if ( this.CONSOLE_LOG ) {
+			console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", translations, requestData, responseData, responseObject, responseMessage );
+		}
 		if ( callback !== undefined ) {
 			callback( translations, requestData, responseData );
 		}
@@ -125,9 +134,11 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", "", requestData, responseData, responseObject, responseMessage );
+		if ( this.CONSOLE_LOG ) {
+			console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", [], requestData, responseData, responseObject, responseMessage );
+		}
 		if ( callback !== undefined ) {
-			callback( "", requestData, responseData );
+			callback( [], requestData, responseData );
 		}
 	}.bind(this);
 	
