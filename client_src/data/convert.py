@@ -23,5 +23,3 @@ for filename in filenames:
 					'segments' : segments
 				}
 				json.dump( data, g, encoding = 'utf-8', indent = 2, sort_keys = True )
-		
-		
