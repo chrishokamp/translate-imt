@@ -6,7 +6,7 @@ import json
 
 filenames = glob.glob( '*source*.json' )
 for filename in filenames:
-	m = re.search( r'^(.*)source(.*)\.json$', filename )
+	m = re.search( r'^(.+)source(.+)\.json$', filename )
 	if m is not None:
 		docPrefix = m.group(1)
 		docSuffix = m.group(2)
