@@ -46,7 +46,6 @@ TypingUI.prototype.__initViews = function() {
 	this.view.container = d3.select( this.el );
 	this.view.canvas = this.view.container.append( "div" );
 	this.view.capture = this.view.canvas.append( "textarea" ).attr( "class", "Capture" );
-	this.view.dimensions = this.view.canvas.append( "div" ).attr( "class", "Dimensions" );
 	this.view.overlay = this.view.canvas.append( "div" ).attr( "class", "Overlay" );
 	this.view.tabs = this.view.canvas.append( "div" ).attr( "class", "TabIndicators" );
 	this.view.suggestionBox = this.view.canvas.append( "div" ).attr( "class", "SuggestionBox" );
@@ -69,10 +68,6 @@ TypingUI.prototype.__setViewAttributes = function() {
 		.on( "keydown", this.__onCaptureKeyDown.bind(this) )
 		.on( "keypress", this.__onCaptureKeyPress.bind(this) )
 		.on( "keyup", this.__onCaptureKeyUp.bind(this) );
-	this.view.dimensions
-		.style( "position", "absolute" )
-		.style( "pointer-events", "none" )
-		.call( this.__setFontStyles.bind(this) );
 	this.view.overlay
 		.style( "position", "absolute" )
 		.style( "pointer-events", "none" )
@@ -123,7 +118,7 @@ TypingUI.prototype.__setViewDimensions = function() {
 	
 	this.view.container
 		.style( "width", this.__width + "px" )
-		.style( "height", ( this.DEBUG ? this.__height * 3 : this.__height ) + "px" );
+		.style( "height", ( this.DEBUG ? this.__height * 2 : this.__height ) + "px" );
 	this.view.capture
 		.style( "top", ( this.DEBUG ? this.__height * 1 : 0 ) + "px" )
 		.style( "width", ( this.__width - 6 ) + "px" )
@@ -136,10 +131,6 @@ TypingUI.prototype.__setViewDimensions = function() {
 		.attr( "autocorrect", "off" )
 		.attr( "tabindex", 0 )
 		.attr( "wrap", "soft" );
-	this.view.dimensions
-		.call( overlayDimensions )
-		.style( "top", ( this.DEBUG ? this.__height * 2 : 0 ) + "px" )
-		.style( "opacity", this.DEBUG ? 1 : 0 );
 	this.view.overlay
 		.call( overlayDimensions );
 	this.view.tabs
@@ -171,7 +162,6 @@ TypingUI.prototype.resize = function( debug ) {
 
 TypingUI.prototype.render = function() {
 	this.__renderCapture();
-	this.__renderDimensions();
 	this.__renderOverlay();
 	this.__renderTabIndicators();
 	this.__renderSuggestions();
@@ -201,46 +191,9 @@ TypingUI.prototype.__renderCapture = function() {
 	}
 };
 
-TypingUI.prototype.__renderDimensions = function() {
-	var allSpanElements = this.model.get( "allSpanElements" );
-	var activeSpanElement = this.model.get( "activeSpanElement" );
-	var activeSuggestionElements = this.model.get( "activeSuggestionElements" );
-	
-	for ( var i = 0; i < allSpanElements.length; i++ ) {
-		var span = allSpanElements[i];
-		delete span.__left;
-		delete span.__top;
-		delete span.__width;
-	}
-	// Render active span element and all translation suggetions
-	if ( activeSpanElement ) {
-		// Duplicate code from below -->
-		var elems = this.view.dimensions.selectAll( "span.wordSpan" ).data( [ activeSpanElement ].concat( activeSuggestionElements ) );
-		var enterElems = elems.enter().append( "span" ).attr( "class", "wordSpan" ).style( "vertical-align", "top" ).style( "color", "#d9d9d9" );
-		enterElems.append( "span" ).attr( "class", "termSpan" ).style( "vertical-align", "top" );
-		enterElems.append( "span" ).attr( "class", "sepSpan" ).style( "vertical-align", "top" );
-		elems.exit().remove();
-		elems = this.view.dimensions.selectAll( "span.wordSpan" );
-		
-		var termElems = elems.select( "span.termSpan" ).selectAll( "span.termSegment" ).data( function(d) { return d.termSegments } );
-		termElems.enter().append( "span" ).attr( "class", "termSegment segmentSpan" ).style( "vertical-align", "top" ).style( "white-space", "pre-wrap" );
-		termElems.exit().remove();
-		var sepElems = elems.select( "span.sepSpan" ).selectAll( "span.sepSegment" ).data( function(d) { return d.sepSegments } );
-		sepElems.enter().append( "span" ).attr( "class", "sepSegment segmentSpan" ).style( "vertical-align", "top" ).style( "white-space", "pre-wrap" );
-		sepElems.exit().remove();
-		
-		this.view.dimensions.selectAll( "span.segmentSpan" ).text( function(d) { return d.text } );
-		this.view.dimensions.selectAll( "span.segmentSpan" ).call( this.__setSegmentStyles.bind(this) );
-		this.view.dimensions.selectAll( "span.wordSpan" ).call( this.__setWordStyles.bind(this) );
-		// <-- Duplicate code from below
-		this.view.dimensions.selectAll( "span.wordSpan" ).call( this.__getActiveSpanWidth.bind(this) );
-	}
-};
-
 TypingUI.prototype.__renderOverlay = function() {
 	var allSpanElements = this.model.get( "allSpanElements" );
 
-	// Duplicate code above (dimensions:overlay, activeSpanElement:allSpanElements) -->
 	var elems = this.view.overlay.selectAll( "span.wordSpan" ).data( allSpanElements );
 	var enterElems = elems.enter().append( "span" ).attr( "class", "wordSpan" ).style( "vertical-align", "top" ).style( "color", "#d9d9d9" );
 	enterElems.append( "span" ).attr( "class", "termSpan" ).style( "vertical-align", "top" );
@@ -257,7 +210,7 @@ TypingUI.prototype.__renderOverlay = function() {
 	this.view.overlay.selectAll( "span.segmentSpan" ).text( function(d) { return d.text } );
 	this.view.overlay.selectAll( "span.segmentSpan" ).call( this.__setSegmentStyles.bind(this) );
 	this.view.overlay.selectAll( "span.wordSpan" ).call( this.__setWordStyles.bind(this) );
-	// <-- Duplicate code above
+
 	this.view.overlay.selectAll( "span.segmentSpan" ).call( this.__getSpanCoords.bind(this) );
 	this.view.overlay.selectAll( "span.wordSpan" ).call( this.__getSpanCoords.bind(this) );
 };
@@ -400,40 +353,14 @@ TypingUI.prototype.__setWordStyles = function( elem ) {
 	elem.filter( function(d) { return ! d.isUser && ! isExpired && ! d.isActive } ).call( setMtStyles.bind(this) );
 };
 
-TypingUI.prototype.__getActiveSpanWidth = function( elem ) {
-	var widths = [];
-	elem.each( function(d) {
-		var self = d3.select(this)[0][0];
-		widths.push( self.offsetWidth );
-	});
-	elem.each( function(d) {
-		d.__width = Math.max.apply( Math, widths );
-	});
-};
-
 TypingUI.prototype.__getSpanCoords = function( elem ) {
 	elem.each( function(d) {
 		var self = d3.select(this)[0][0];
-		if ( d.hasOwnProperty( "__width" ) ) {
-			d3.select(this).style( "display", "inline-block" ).style( "width", d.__width + "px" );
-			d.__left = self.offsetLeft;
-			d.__top = self.offsetTop;
-		}
-		else {
-			d3.select(this).style( "display", null ).style( "width", null );
-			d.__left = self.offsetLeft;
-			d.__top = self.offsetTop;
-			d.__width = self.offsetWidth;
-		}
+		d3.select(this).style( "display", null ).style( "width", null );
+		d.__left = self.offsetLeft;
+		d.__top = self.offsetTop;
+		d.__width = self.offsetWidth;
 	});
-};
-
-TypingUI.prototype.__setSpanCoords = function( elem ) {
-	var height = this.FONT_SIZE;
-	elem.style( "left", function(d) { return d.__left + "px" } )
-		.style( "top", function(d) { return d.__top + "px" } )
-		.style( "width", function(d) { return d.__width + "px" } )
-		.style( "height", height + "px" )
 };
 
 TypingUI.prototype.KEY = {

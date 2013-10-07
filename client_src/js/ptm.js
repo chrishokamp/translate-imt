@@ -4,18 +4,18 @@ var PTM = Backbone.Model.extend({
 		"docId" : null,           // Load from disk
 		"segmentIds" : [],        // Load from disk
 		"segments" : {},          // Load from disk
-		"highlightSegmentId" : null,  // Pass onto TooltipState: null or one of segmentIds
-		"highlightTokenIndex" : null, // Pass onto TooltipState: null or an integer index >= 0
-		"highlightSource" : "",       // Pass onto TooltipState: (possibly empty) string
-		"highlightTargets" : [],      // Pass onto TooltipState: (possibly empty) list of strings
-		"highlightXCoord" : 0,        // Pass onto TooltipState
-		"highlightYCoord" : 0,        // Pass onto TooltipState
-		"typingPrefix" : {},          // Pass onto TypingUIs (indexed by segmentId): (possibly empty) string
-		"typingTranslations" : {},    // Pass onto TypingUIs (indexed by segmentId): (possibly) empty list of strings
-		"typingCaretIndex" : {},      // Pass onto TypingUIs (indexed by segmentId): an integer index >= 0
-		"typingFocus" : null,         // Pass onto TypingUIs: null or one of segmentIds
-		"xMouse" : 0,
-		"yMouse" : 0
+		"highlightSegmentId" : null,   // Pass onto TooltipState: null or one of segmentIds
+		"highlightTokenIndex" : null,  // Pass onto TooltipState: null or an integer index >= 0
+		"highlightSource" : "",        // Pass onto TooltipState: (possibly empty) string
+		"highlightTargets" : [],       // Pass onto TooltipState: (possibly empty) list of strings
+		"highlightXCoord" : 0,         // Pass onto TooltipState
+		"highlightYCoord" : 0,         // Pass onto TooltipState
+		"typingPrefix" : {},        // Pass onto TypingUIs (indexed by segmentId): (possibly empty) string
+		"typingTranslations" : {},  // Pass onto TypingUIs (indexed by segmentId): (possibly empty) list of strings
+		"typingCaretIndex" : {},    // Pass onto TypingUIs (indexed by segmentId): an integer index >= 0
+		"typingFocus" : null,       // Pass onto TypingUIs: null or one of segmentIds
+		"mouseXCoord" : 0,
+		"mouseYCoord" : 0
 	},
 	"url" : function() {
 		return this.get( "url" );
@@ -100,7 +100,6 @@ PTM.prototype.__highlightToken = function( highlightSegmentId, highlightTokenInd
 	var segmentIds = this.get( "segmentIds" );
 	var segments = this.get( "segments" );
 	var highlightSource = ( highlightSegmentId !== null && highlightTokenIndex !== null ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex ] : "";
-	var highlightEmptyTargets = [];
 	var onMouseOver = function() { this.highlightToken( highlightSegmentId, highlightTokenIndex, highlightXCoord, highlightYCoord ) }.bind(this);
 	var onMouseOut = function() { this.highlightToken( null, null ) }.bind(this);
 	var onMouseClick = function( highlightTarget ) { this.insertToken( highlightSegmentId, highlightTarget ) }.bind(this);
@@ -110,7 +109,7 @@ PTM.prototype.__highlightToken = function( highlightSegmentId, highlightTokenInd
 		"highlightSegmentId" : highlightSegmentId,
 		"highlightTokenIndex" : highlightTokenIndex,
 		"highlightSource" : highlightSource,
-		"highlightTargets" : highlightEmptyTargets,
+		"highlightTargets" : [],
 		"highlightXCoord" : highlightXCoord,
 		"highlightYCoord" : highlightYCoord
 	});
@@ -126,7 +125,7 @@ PTM.prototype.__highlightToken = function( highlightSegmentId, highlightTokenInd
 	// Propagate states to tooltip object
 	this.tooltipState.set({
 		"source" : highlightSource,
-		"targets" : highlightEmptyTargets,
+		"targets" : [],
 		"xCoord" : highlightXCoord,
 		"yCoord" : highlightYCoord + 12,
 		"onMouseOver" : onMouseOver,
