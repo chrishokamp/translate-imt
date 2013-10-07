@@ -100,14 +100,17 @@ PTM.prototype.__highlightToken = function( highlightSegmentId, highlightTokenInd
 	var segmentIds = this.get( "segmentIds" );
 	var segments = this.get( "segments" );
 	var highlightSource = ( highlightSegmentId !== null && highlightTokenIndex !== null ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex ] : "";
-	var highlightTargets = [];
+	var highlightEmptyTargets = [];
+	var onMouseOver = function() { this.highlightToken( highlightSegmentId, highlightTokenIndex, highlightXCoord, highlightYCoord ) }.bind(this);
+	var onMouseOut = function() { this.highlightToken( null, null ) }.bind(this);
+	var onMouseClick = function( highlightTarget ) { this.insertToken( highlightSegmentId, highlightTarget ) }.bind(this);
 	
 	// Update PTM states
 	this.set({
 		"highlightSegmentId" : highlightSegmentId,
 		"highlightTokenIndex" : highlightTokenIndex,
 		"highlightSource" : highlightSource,
-		"highlightTargets" : highlightTargets,
+		"highlightTargets" : highlightEmptyTargets,
 		"highlightXCoord" : highlightXCoord,
 		"highlightYCoord" : highlightYCoord
 	});
@@ -122,16 +125,21 @@ PTM.prototype.__highlightToken = function( highlightSegmentId, highlightTokenInd
 	
 	// Propagate states to tooltip object
 	this.tooltipState.set({
-		"segmentId" : highlightSegmentId,
-		"tokenIndex" : highlightTokenIndex,
 		"source" : highlightSource,
-		"targets" : highlightTargets,
+		"targets" : highlightEmptyTargets,
 		"xCoord" : highlightXCoord,
-		"yCoord" : highlightYCoord + 15
+		"yCoord" : highlightYCoord + 12,
+		"onMouseOver" : onMouseOver,
+		"onMouseOut" : onMouseOut,
+		"onMouseClick" : onMouseClick
 	});
 	
 	// Make word query request (if necessary) and asynchronously update tooltip object
 	this.updateTooltip( highlightSource )
+};
+
+PTM.prototype.insertToken = function( segmentId, token ) {
+	console.log( "[click-and-insert]", segmentId, token );
 };
 
 PTM.prototype.updateTooltip = function( source ) {
