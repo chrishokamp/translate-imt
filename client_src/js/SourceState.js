@@ -1,11 +1,12 @@
 var SourceState = Backbone.Model.extend({
 	defaults : {
-		"segmentId" : null,            // A string identifying the source text segment. Constant.
-		"tokens" : [],                 // A list of strings, representing tokens in the source text. Constant.
-		"highlightTokenIndex" : null   // Integer or null, pointing to any highlighted token.
+		/** @type {string} A string identify the source text segment. Initialized once by PTM **/
+		"segmentId" : null,
+		
+		/** @type {string[]} A list of strings representings tokens in the source text. Initialized once by PTM. **/
+		"tokens" : [],
+		
+		/** @type {string|null} Index of the token under a mouse hover. **/
+		"highlightTokenIndex" : null
 	}
 });
-
-SourceState.prototype.initialize = function( options ) {
-	this.ptm = options.ptm;
-};

@@ -17,7 +17,7 @@ TranslateServer.prototype.CONSOLE_LOG = true;
 /**
  * Make a word query.
  * @param {string} word Word in the source language.
- * @param {function} f Callback function that takes up to 3 arguments: rules, responseData, requestData.
+ * @param {function} f Callback function that takes up to 2 arguments: responseData, requestData.
  **/
 
 TranslateServer.prototype.wordQuery = function( word, callback ) {
@@ -43,12 +43,11 @@ TranslateServer.prototype.wordQuery = function( word, callback ) {
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		var rules = responseData.rules;
 		if ( this.CONSOLE_LOG ) {
-			console.log( "[rqReq] [success] [" + duration.toFixed(2) + " seconds]", rules, requestData, responseData, responseObject, responseMessage );
+			console.log( "[rqReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
 		if ( callback !== undefined ) {
-			callback( rules, responseData, requestData );
+			callback( responseData, requestData );
 		}
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
@@ -61,10 +60,10 @@ TranslateServer.prototype.wordQuery = function( word, callback ) {
 		};
 		responseData.timing = timing;
 		if ( this.CONSOLE_LOG ) {
-			console.log( "[rqReq] [error] [" + duration.toFixed(2) + " seconds]", [], requestData, responseData, responseObject, responseMessage );
+			console.log( "[rqReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
 		if ( callback !== undefined ) {
-			callback( [], responseData, requestData );
+			callback( responseData, requestData );
 		}
 	}.bind(this);
 	var requestMessage = {
@@ -81,7 +80,7 @@ TranslateServer.prototype.wordQuery = function( word, callback ) {
  * Make a translate request.
  * @param {string} sourceText Sentence in source language.
  * @param {string} targetPrefix Partially translated sentence in target language.
- * @param {function} f Callback function that takes up to 3 arguments: translations, responseData, requestData.
+ * @param {function} f Callback function that takes up to 2 arguments: responseData, requestData.
  **/
 TranslateServer.prototype.translate = function( sourceText, targetPrefix, callback ) {
 	if ( sourceText === undefined || sourceText === "" ) {
@@ -117,12 +116,11 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 			"duration" : duration
 		};
 		responseData.timing = timing;
-		var translations = responseData.tgtList;
 		if ( this.CONSOLE_LOG ) {
-			console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", translations, requestData, responseData, responseObject, responseMessage );
+			console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
 		if ( callback !== undefined ) {
-			callback( translations, requestData, responseData );
+			callback( responseData, requestData );
 		}
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
@@ -135,10 +133,10 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 		};
 		responseData.timing = timing;
 		if ( this.CONSOLE_LOG ) {
-			console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", [], requestData, responseData, responseObject, responseMessage );
+			console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
 		if ( callback !== undefined ) {
-			callback( [], requestData, responseData );
+			callback( responseData, requestData );
 		}
 	}.bind(this);
 	
