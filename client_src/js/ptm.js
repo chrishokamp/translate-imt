@@ -10,10 +10,11 @@ var PTM = Backbone.Model.extend({
 		"highlightTargets" : [],       // Pass onto TooltipState: (possibly empty) list of strings
 		"highlightXCoord" : 0,         // Pass onto TooltipState
 		"highlightYCoord" : 0,         // Pass onto TooltipState
-		"typingPrefix" : {},        // Pass onto TypingUIs (indexed by segmentId): (possibly empty) string
-		"typingTranslations" : {},  // Pass onto TypingUIs (indexed by segmentId): (possibly empty) list of strings
-		"typingCaretIndex" : {},    // Pass onto TypingUIs (indexed by segmentId): an integer index >= 0
-		"typingFocus" : null,       // Pass onto TypingUIs: null or one of segmentIds
+		"typingUserText" : {},      // Pass onto TargetStates (indexed by segmentId): (possibly empty) string
+		"typingPrefix" : {},        // Pass onto TargetStates (indexed by segmentId): (possibly empty) string
+		"typingTranslations" : {},  // Pass onto TargetStates (indexed by segmentId): (possibly empty) list of strings
+		"typingCaretIndex" : {},    // Pass onto TargetStates (indexed by segmentId): an integer index >= 0
+		"typingFocus" : null,       // Pass onto TargetStates: null or one of segmentIds
 		"mouseXCoord" : 0,
 		"mouseYCoord" : 0
 	},
@@ -31,11 +32,10 @@ PTM.prototype.initialize = function( options ) {
 	this.tooltipView = null;
 	this.sourceStates = {};
 	this.sourceViews = {};
-	this.typingStates = {};
-	this.typingModels = {};
-	this.typingUIs = {};
+	this.targetStates = {};
+	this.targetViews = {};
 	this.cache = {};
-	this.cache.wordQueries = { "" : [] };
+	this.cache.wordQueries = {};
 	this.cache.translations = {};
 	this.highlightToken = _.debounce( this.__highlightToken, 10 );
 	this.fetch({ success : this.loaded.bind(this) });
@@ -54,19 +54,21 @@ PTM.prototype.loaded = function() {
 	this.tooltipState = tooltipState;
 	this.tooltipView = tooltipView;
 	
+	// Initialize word query cache
+	this.cache.wordQueries[ "" ] = [];
+	
 	for ( var i = 0; i < segmentIds.length; i++ ) {
 		var segmentId = segmentIds[ i ];
 
 		// Generate HTML DOM elements
 		container.append( "div" ).attr( "class", "SourceView SourceView" + segmentId );
-		container.append( "div" ).attr( "class", "TypingUI TypingUI" + segmentId );
+		container.append( "div" ).attr( "class", "TargetView TargetView" + segmentId );
 		
 		// Create state, model, and view objects
 		var sourceState = new SourceState({ "ptm" : this });
 		var sourceView = new SourceView({ "model" : sourceState, "el" : ".SourceView" + segmentId });
-		var typingState = new TypingState({ "ptm" : this });
-		var typingModel = new TypingModel({ "state" : typingState });
-		var typingUI = new TypingUI({ "model" : typingModel, "el" : ".TypingUI" + segmentId });
+		var targetState = new TargetState({ "ptm" : this });
+		var targetView = new TargetView({ "model" : targetState, "el" : ".TypingUI" + segmentId });
 		
 		// Populate source text
 		sourceState.set({
@@ -74,7 +76,7 @@ PTM.prototype.loaded = function() {
 			"tokens" : segments[ segmentId ].tokens
 		});
 		
-		// Make translation requests and asynchronously initialize typingUIs
+		// Initialize translations
 		this.get( "typingPrefix" )[ segmentId ] = "";
 		this.get( "typingTranslations" )[ segmentId ] = [];
 		this.get( "typingCaretIndex" )[ segmentId ] = 0;
@@ -84,9 +86,8 @@ PTM.prototype.loaded = function() {
 		// Save results in PTM object
 		this.sourceStates[segmentId] = sourceState;
 		this.sourceViews[segmentId] = sourceView;
-		this.typingStates[segmentId] = typingState;
-		this.typingModels[segmentId] = typingModel;
-		this.typingUIs[segmentId] = typingUI;
+		this.targetStates[segmentId] = targetState;
+		this.targetViews[segmentId] = targetView;
 	}
 	
 	this.set( "typingFocus", 0 );
@@ -144,8 +145,13 @@ PTM.prototype.insertToken = function( segmentId, token ) {
 PTM.prototype.updateTooltip = function( source ) {
 	var update = function( rules ) {
 		if ( this.get( "highlightSource" ) === source ) {
-			this.set( "highlightTargets", rules.map( function(d) { return d.tgt } ) );
-			this.tooltipState.set( "targets", rules.map( function(d) { return d.tgt } ) );
+			var targets = rules.map( function(d) { return d.tgt } );
+			this.set({
+				"highlightTargets" : targets
+			});
+			this.tooltipState.set({
+				"targets" : targets
+			});
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( rules, response, request ) {
@@ -164,7 +170,10 @@ PTM.prototype.updateTranslations = function( segmentId, prefix ) {
 	var update = function( translations ) {
 		if ( this.get( "typingPrefix" )[ segmentId ] === prefix ) {
 			this.set( "typingTranslations" )[ segmentId ] = translations;
-			this.typingStates[ segmentId ].updateTranslation( translations );
+			this.targetStates[ segmentId ].set({
+				"prefix" : prefix,
+				"translations" : translations
+			});
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( translations, reseponse, request ) {
@@ -172,11 +181,17 @@ PTM.prototype.updateTranslations = function( segmentId, prefix ) {
 		update( translations );
 	}.bind(this);
 	if ( this.cache.translations[ segmentId ].hasOwnProperty( prefix ) ) {
-		update( this.cache.translations[ segmentId ][ prefix ] );
+		if ( this.cache.translations[ segmentId ][ prefix ] !== null ) {
+			update( this.cache.translations[ segmentId ][ prefix ] );
+		}
+		else {
+			// Otherwise request has already been sent
+		}
 	}
 	else {
 		var segments = this.get( "segments" );
 		var source = segments[ segmentId ].tokens.join( " " );
+		this.cache.translations[ segmentId ][ prefix ] = null;
 		this.server.translate( source, prefix, cacheAndUpdate );
 	}
 };

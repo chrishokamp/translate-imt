@@ -12,7 +12,7 @@ TranslateServer.prototype.TGT_LANG = "DE";
 TranslateServer.prototype.TRANSLATE_LIMIT = 10;
 TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
 
-TranslateServer.prototype.CONSOLE_LOG = false;
+TranslateServer.prototype.CONSOLE_LOG = true;
 
 /**
  * Make a word query.
