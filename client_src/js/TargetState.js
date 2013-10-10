@@ -1,14 +1,20 @@
 var TargetState = Backbone.Model.extend({
 	defaults : {
+		// Initialized once by PTM...
 		"segmentId" : null,
+		
+		// States based on user inputs...
 		"userText" : "",
 		"caretIndex" : 0,
+		
+		// States based on machine translations...
 		"prefix" : "",
 		"translationList" : [],
 		"alignIndexList" : [],
 		"chunkIndexList" : [],
 		"hasFocus" : null,
-							    // Derived states
+		
+		// Derived states...
 		"allTokens" : [],
 		"caretToken" : null,
 		"activeTokens" : [],
@@ -16,10 +22,11 @@ var TargetState = Backbone.Model.extend({
 		"activeXCoord" : null,
 		"activeYCoord" : null,
 		"matchingTranslations" : [],
-		"matchedSourceTokens" : {},
-		"hadFocus" : null,      // Previous value of hasFocus
-		"isChanged" : false,    // User-entered text changed from prefix used to generate the current list of translations
-		"isExpired" : false     // Expired if user-entered text differs from prefix or the current best translation
+		"matchedTokens" : [],
+		"matchedSourceTokenIndexes" : {},
+		"hadFocus" : null,      // Previous value of hasFocus, for triggering a focus() event on the underlying textarea
+		"isChanged" : false,    // Whether user-entered text has changed from the prefix used to generate the current list of translations
+		"isExpired" : false     // Whether user-entered text has changed from the prefix AND is also different from the current best translation
 	}
 });
 
@@ -28,8 +35,8 @@ TargetState.prototype.WHITESPACE = /([ ]+)/g;
 TargetState.prototype.postProcess = function() {
 	var segmentId = this.get( "segmentId" );
 	
-	var matchedSourceTokens = this.get( "matchedSourceTokens" );
-	this.trigger( "updateMatchedSourceTokens", segmentId, matchedSourceTokens );
+	var matchedSourceTokenIndexes = this.get( "matchedSourceTokenIndexes" );
+	this.trigger( "updateMatchedSourceTokens", segmentId, matchedSourceTokenIndexes );
 	
 	var activeChunkIndex = this.get( "activeChunkIndex" );
 	if ( activeChunkIndex !== null ) {
@@ -41,6 +48,9 @@ TargetState.prototype.postProcess = function() {
 	else {
 		this.trigger( "updateAutocompleteCandidates", null, null );
 	}
+	
+	var isChanged = this.get( "isChanged" );
+	// No actions
 
 	var isExpired = this.get( "isExpired" );
 	if ( isExpired ) {
@@ -63,8 +73,8 @@ TargetState.prototype.setTranslations = function( prefix, translationList, align
 	this.__updateTokensFromUserText();
 	this.__updateCaretToken();
 	this.__updateActiveTokens();
-	this.__updateAutocompleteCandidates();
-	this.__updateMatchedSourceTokens();
+	this.__updateMatchingTranslations();
+	this.__updateMatchedTokens();
 	this.__checkForChangedTokens();
 	this.__checkForExpiredTokens();
 	this.__checkFocus();
@@ -79,8 +89,8 @@ TargetState.prototype.setUserText = function( userText, caretIndex ) {
 	this.__updateTokensFromUserText();
 	this.__updateCaretToken();
 	this.__updateActiveTokens();
-	this.__updateAutocompleteCandidates();
-	this.__updateMatchedSourceTokens();
+	this.__updateMatchingTranslations();
+	this.__updateMatchedTokens();
 	this.__checkForChangedTokens();
 	this.__checkForExpiredTokens();
 	this.__checkFocus();
@@ -110,7 +120,7 @@ TargetState.prototype.__newToken = function() {
 		"sourceTokenIndexes" : [], // Set by __updateTokensFromBestTranslation()
 		"chunkIndex" : null,       // Set by __updateTokensFromBestTranslation()
 		"firstTerm" : "",          // Set by __updateCaretToken()
-		"secondTerm" : "",         // Set by __updateCaretToken() and may be modified by __postProcessActiveToken()
+		"secondTerm" : "",         // Set by __updateCaretToken() and may be modified by __updateMatchingTranslations()
 		"sep" : "",                // Set by __updateCaretToken()
 		"hasCaret" : false,        // Set by __updateCaretToken()
 		"isActive" : false,        // Set by __updateActiveTokens()
@@ -251,7 +261,7 @@ TargetState.prototype.__updateActiveTokens = function() {
 	});
 };
 
-TargetState.prototype.__updateAutocompleteCandidates = function() {
+TargetState.prototype.__updateMatchingTranslations = function() {
 	var activeTokens = this.get( "activeTokens" );
 	var matchingTranslations = [];
 	for ( var i = 0; i < activeTokens.length; i++ ) {
@@ -260,18 +270,23 @@ TargetState.prototype.__updateAutocompleteCandidates = function() {
 	this.set( "matchingTranslations", matchingTranslations );
 };
 
-TargetState.prototype.__updateMatchedSourceTokens = function() {
-	var matchedSourceTokens = {};
+TargetState.prototype.__updateMatchedTokens = function() {
+	var matchedTokens = [];
+	var matchedSourceTokenIndexes = {};
 	var allTokens = this.get( "allTokens" );
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
-		if ( token.userWord === token.translationWord ) {
-			for ( var i = 0; i < token.sourceTokenIndexes.length; i++ ) {
-				matchedSourceTokens[ token.sourceTokenIndexes[i] ] = true;
-			}
+	}
+	for ( var i = 0; i < matchedTokens.length; i++ ) {
+		var token = matchedTokens[i];
+		for ( var i = 0; i < token.sourceTokenIndexes.length; i++ ) {
+			matchedSourceTokenIndexes[ token.sourceTokenIndexes[i] ] = true;
 		}
 	}
-	this.set( "matchedSourceTokens", matchedSourceTokens );
+	this.set({
+		"matchedTokens" : matchedTokens,
+		"matchedSourceTokenIndexes" : matchedSourceTokenIndexes
+	});
 };
 
 TargetState.prototype.__checkForChangedTokens = function() {
