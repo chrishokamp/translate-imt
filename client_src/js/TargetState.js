@@ -1,18 +1,21 @@
 var TargetState = Backbone.Model.extend({
 	defaults : {
-						     	// Initialized once
 		"segmentId" : null,
-		                        // Updated by user
-		"userText" : "",        // User-entered text in target language
-		"prefix" : "",          // User-entered text, excluding word currently being edited
+		"userText" : "",
+		"caretIndex" : 0,
+		"prefix" : "",
 		"translationList" : [],
 		"alignIndexList" : [],
 		"chunkIndexList" : [],
-		"caretIndex" : 0,
-		"hasFocus" : false,
+		"hasFocus" : null,
 							    // Derived states
 		"allTokens" : [],
-		"activeToken" : null,
+		"caretToken" : null,
+		"activeTokens" : [],
+		"activeChunkIndex" : null,
+		"matchingTranslations" : [],
+		"matchedSourceTokens" : {},
+		"hadFocus" : null,      // Previous value of hasFocus
 		"isChanged" : false,    // User-entered text changed from prefix used to generate the current list of translations
 		"isExpired" : false     // Expired if user-entered text differs from prefix or the current best translation
 	}
@@ -20,7 +23,7 @@ var TargetState = Backbone.Model.extend({
 
 TargetState.prototype.WHITESPACE = /([ ]+)/g;
 
-TargetState.prototype.updateTranslations = function( prefix, translationList, alignIndexList, chunkIndexList ) {
+TargetState.prototype.setTranslations = function( prefix, translationList, alignIndexList, chunkIndexList ) {
 	this.set({
 		"prefix" : prefix,
 		"translationList" : translationList,
@@ -31,30 +34,32 @@ TargetState.prototype.updateTranslations = function( prefix, translationList, al
 	this.__updateTokensFromPrefix();
 	this.__updateTokensFromBestTranslation();
 	this.__updateTokensFromUserText();
-	this.__updateTokensFromCaretIndex();
-	this.__updateActiveToken();
+	this.__updateCaretToken();
+	this.__updateActiveTokens();
+	this.__updateMatchedSourceTokens();
 	this.__checkForChangedTokens();
 	this.__checkForExpiredTokens();
+	this.__checkFocus();
 	this.trigger( "modified" );
 };
 
-TargetState.prototype.updateUserText = function( userText, caretIndex ) {
+TargetState.prototype.setUserText = function( userText, caretIndex ) {
 	this.set({
 		"userText" : userText,
 		"caretIndex" : caretIndex
 	});
 	this.__updateTokensFromUserText();
-	this.__updateTokensFromCaretIndex();
-	this.__updateActiveToken();
+	this.__updateCaretToken();
+	this.__updateActiveTokens();
+	this.__updateMatchedSourceTokens();
 	this.__checkForChangedTokens();
 	this.__checkForExpiredTokens();
+	this.__checkFocus();
 	this.trigger( "modified" );
 };
 
-TargetState.prototype.updateFocus = function( hasFocus ) {
-	this.set({
-		"hasFocus" : hasFocus
-	});
+TargetState.prototype.setFocus = function( hasFocus ) {
+	this.__checkFocus( hasFocus );
 	this.trigger( "modified" );
 };
 
@@ -64,6 +69,26 @@ TargetState.prototype.__resetTokens = function() {
 		"isChanged" : false,
 		"isExpired" : false
 	});
+};
+
+TargetState.prototype.__newToken = function() {
+	var token = {
+		"hasUser" : false,         // Set by __updateTokensFromUserText()
+		"userWord" : "",           // Set by __updateTokensFromUserText()
+		"userSep" : "",            // Set by __updateTokensFromUserText()
+		"prefixWord" : "",         // Set by __updateTokensFromPrefix()
+		"translationWord" : "",    // Set by __updateTokensFromBestTranslation()
+		"sourceTokenIndexes" : [], // Set by __updateTokensFromBestTranslation()
+		"chunkIndex" : null,       // Set by __updateTokensFromBestTranslation()
+		"firstTerm" : "",          // Set by __updateCaretToken()
+		"secondTerm" : "",         // Set by __updateCaretToken() and may be modified by __postProcessActiveToken()
+		"sep" : "",                // Set by __updateCaretToken()
+		"hasCaret" : false,        // Set by __updateCaretToken()
+		"isActive" : false,        // Set by __updateActiveTokens()
+		"isChanged" : false,
+		"isExpired" : false
+	};
+	return token;
 };
 
 TargetState.prototype.__updateTokensFromUserText = function() {
@@ -142,14 +167,14 @@ TargetState.prototype.__updateTokensFromBestTranslation = function() {
 			var token = allTokens[ alignIndex.targetIndex ];
 			token.sourceTokenIndexes.push( alignIndex.sourceIndex );
 		}
+		this.set( "allTokens", allTokens );
 	}
-	this.set( "allTokens", allTokens );
 };
 
-TargetState.prototype.__updateTokensFromCaretIndex = function() {
+TargetState.prototype.__updateCaretToken = function() {
 	var allTokens = this.get( "allTokens" );
 	var caretIndex = this.get( "caretIndex" );
-	var activeToken = null;
+	var caretToken = null;
 	var tokenIndex = 0;
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
@@ -167,36 +192,64 @@ TargetState.prototype.__updateTokensFromCaretIndex = function() {
 		var hasCaret = ( startTokenIndex <= caretIndex ) && ( caretIndex <= endTokenIndex );
 		token.hasCaret = hasCaret;
 		if ( hasCaret ) {
-			activeToken = token;
+			caretToken = token;
 		}
 	}
 	this.set({
 		"allTokens" : allTokens,
-		"activeToken" : activeToken
+		"caretToken" : caretToken
 	});
 };
 
-TargetState.prototype.__updateActiveToken = function() {
+TargetState.prototype.__updateActiveTokens = function() {
 	var allTokens = this.get( "allTokens" );
-	var activeToken = this.get( "activeToken" );
-	if ( activeToken !== null ) {
-		var chunkIndex = activeToken.chunkIndex;
-		if ( chunkIndex !== null ) {
-			for ( var n = 0; n < allTokens.length; n++ ) {
-				var token = allTokens[ n ];
-				token.isActive = token.hasCaret || ( token.chunkIndex === chunkIndex );
-			}
-		}
-		else {
-			for ( var n = 0; n < allTokens.length; n++ ) {
-				var token = allTokens[ n ];
-				token.isActive = token.hasCaret;
+	var caretToken = this.get( "caretToken" );
+	var activeTokens = [];
+	var activeChunkIndex = null;
+	if ( caretToken !== null ) {
+		var activeChunkIndex = caretToken.chunkIndex;
+		for ( var n = 0; n < allTokens.length; n++ ) {
+			var token = allTokens[ n ];
+			token.isActive = token.hasCaret  ||  ( activeChunkIndex !== null && token.chunkIndex === activeChunkIndex );
+			if ( token.isActive ) {
+				activeTokens.push( token );
 			}
 		}
 	}
 	this.set({
-		"allTokens" : allTokens
+		"activeTokens" : activeTokens,
+		"activeChunkIndex" : activeChunkIndex
 	});
+
+	var matchingTranslations = []; // [ "Alice", "Bob", "Candice" ]; // TODO: Identify all matching translations. Need to determine (x, y) coordinate of the first active token.
+	for ( var i = 0; i < activeTokens.length; i++ ) {
+	}
+	this.set( "matchingTranslations", matchingTranslations );
+
+	var segmentId = this.get( "segmentId" );
+	if ( activeChunkIndex !== null ) {
+		this.trigger( "updateAutocompleteCandidates", segmentId, activeChunkIndex, matchingTranslations, 10, 20 );
+	}
+	else {
+		this.trigger( "updateAutocompleteCandidates", null, null );
+	}
+};
+
+TargetState.prototype.__updateMatchedSourceTokens = function() {
+	var matchedSourceTokens = {};
+	var allTokens = this.get( "allTokens" );
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		if ( token.userWord === token.translationWord ) {
+			for ( var i = 0; i < token.sourceTokenIndexes.length; i++ ) {
+				matchedSourceTokens[ token.sourceTokenIndexes[i] ] = true;
+			}
+		}
+	}
+	this.set( "matchedSourceTokens", matchedSourceTokens );
+
+	var segmentId = this.get( "segmentId" );
+	this.trigger( "updateMatchedSourceTokens", segmentId, matchedSourceTokens );
 };
 
 TargetState.prototype.__checkForChangedTokens = function() {
@@ -223,21 +276,12 @@ TargetState.prototype.__checkForExpiredTokens = function() {
 	this.set( "isExpired", isExpired );
 };
 
-TargetState.prototype.__newToken = function() {
-	var token = {
-		"hasUser" : false,
-		"userWord" : "",
-		"userSep" : "",
-		"prefixWord" : "",
-		"translationWord" : "",
-		"sourceTokenIndexes" : [],
-		"chunkIndex" : null,
-		"term" : "",
-		"sep" : "",
-		"hasCaret" : false,
-		"isActive" : false,
-		"isChanged" : false,
-		"isExpired" : false
-	};
-	return token;
+TargetState.prototype.__checkFocus = function( hasFocus ) {
+	if ( hasFocus === undefined ) { hasFocus = this.get( "hasFocus" ) }
+	var hadFocus = ( this.get( "hasFocus" ) === true );
+	this.set({
+		"hasFocus" : hasFocus,
+		"hadFocus" : hadFocus
+	});
 };
+

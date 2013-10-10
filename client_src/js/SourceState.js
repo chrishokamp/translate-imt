@@ -6,7 +6,10 @@ var SourceState = Backbone.Model.extend({
 		/** @type {string[]} A list of strings representings tokens in the source text. Initialized once by PTM. **/
 		"tokens" : [],
 		
-		/** @type {string|null} Index of the token under a mouse hover. **/
-		"highlightTokenIndex" : null
+		/** @type {integer|null} Index of the token under mouse hover. **/
+		"hoverTokenIndex" : null,
+		
+		/** @type {{integer:true}} Indexes of tokens that have a corresponding term in the typing UI. **/
+		"matchedTokenIndexes" : {}
 	}
 });
