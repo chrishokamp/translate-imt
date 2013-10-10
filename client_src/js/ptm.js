@@ -112,7 +112,7 @@ PTM.prototype.loaded = function() {
 		var targetView = new TargetView({ "model" : targetState, "el" : ".TargetView" + segmentId });
 		this.targetStates[segmentId] = targetState;
 		this.targetViews[segmentId] = targetView;
-		this.listenTo( targetState, "loadTranslations", this.loadTranslations );
+		this.listenTo( targetState, "updateTranslations", this.loadTranslations );
 		this.listenTo( targetState, "updateMatchedSourceTokens", this.updateMatchedSourceTokens );
 		this.listenTo( targetState, "updateAutocompleteCandidates", this.showTargetSuggestions );
 		this.listenTo( targetView, "keyPress:enter", this.focusOnNextSegment );
@@ -308,6 +308,7 @@ PTM.prototype.loadWordQueries = function( source ) {
 };
 
 PTM.prototype.loadTranslations = function( segmentId, prefix ) {
+	this.get( "typingPrefix" )[ segmentId ] = prefix;
 	var getTranslationList = function( response ) {
 		if ( response.hasOwnProperty( "translationList" ) ) {
 			return response.translationList;

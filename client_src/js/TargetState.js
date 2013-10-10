@@ -13,6 +13,8 @@ var TargetState = Backbone.Model.extend({
 		"caretToken" : null,
 		"activeTokens" : [],
 		"activeChunkIndex" : null,
+		"activeXCoord" : null,
+		"activeYCoord" : null,
 		"matchingTranslations" : [],
 		"matchedSourceTokens" : {},
 		"hadFocus" : null,      // Previous value of hasFocus
@@ -22,6 +24,31 @@ var TargetState = Backbone.Model.extend({
 });
 
 TargetState.prototype.WHITESPACE = /([ ]+)/g;
+
+TargetState.prototype.postProcess = function() {
+	var segmentId = this.get( "segmentId" );
+	
+	var matchedSourceTokens = this.get( "matchedSourceTokens" );
+	this.trigger( "updateMatchedSourceTokens", segmentId, matchedSourceTokens );
+	
+	var activeChunkIndex = this.get( "activeChunkIndex" );
+	if ( activeChunkIndex !== null ) {
+		var matchingTranslations = this.get( "matchingTranslations" );
+		var activeXCoord = this.get( "activeXCoord" );
+		var activeYCoord = this.get( "activeYCoord" );
+		this.trigger( "updateAutocompleteCandidates", segmentId, activeChunkIndex, matchingTranslations, activeXCoord, activeYCoord );
+	}
+	else {
+		this.trigger( "updateAutocompleteCandidates", null, null );
+	}
+
+	var isExpired = this.get( "isExpired" );
+	if ( isExpired ) {
+		var userText = this.get( "userText" );  //TODO determine prefix
+		console.log( "Will send updateTranslations event.", segmentId, userText );
+		this.trigger( "updateTranslations", segmentId, userText );
+	}
+};
 
 TargetState.prototype.setTranslations = function( prefix, translationList, alignIndexList, chunkIndexList ) {
 	this.set({
@@ -36,6 +63,7 @@ TargetState.prototype.setTranslations = function( prefix, translationList, align
 	this.__updateTokensFromUserText();
 	this.__updateCaretToken();
 	this.__updateActiveTokens();
+	this.__updateAutocompleteCandidates();
 	this.__updateMatchedSourceTokens();
 	this.__checkForChangedTokens();
 	this.__checkForExpiredTokens();
@@ -51,6 +79,7 @@ TargetState.prototype.setUserText = function( userText, caretIndex ) {
 	this.__updateTokensFromUserText();
 	this.__updateCaretToken();
 	this.__updateActiveTokens();
+	this.__updateAutocompleteCandidates();
 	this.__updateMatchedSourceTokens();
 	this.__checkForChangedTokens();
 	this.__checkForExpiredTokens();
@@ -73,9 +102,9 @@ TargetState.prototype.__resetTokens = function() {
 
 TargetState.prototype.__newToken = function() {
 	var token = {
-		"hasUser" : false,         // Set by __updateTokensFromUserText()
 		"userWord" : "",           // Set by __updateTokensFromUserText()
 		"userSep" : "",            // Set by __updateTokensFromUserText()
+		"hasUser" : false,         // Set by __updateTokensFromPrefix()
 		"prefixWord" : "",         // Set by __updateTokensFromPrefix()
 		"translationWord" : "",    // Set by __updateTokensFromBestTranslation()
 		"sourceTokenIndexes" : [], // Set by __updateTokensFromBestTranslation()
@@ -220,19 +249,15 @@ TargetState.prototype.__updateActiveTokens = function() {
 		"activeTokens" : activeTokens,
 		"activeChunkIndex" : activeChunkIndex
 	});
+};
 
-	var matchingTranslations = []; // [ "Alice", "Bob", "Candice" ]; // TODO: Identify all matching translations. Need to determine (x, y) coordinate of the first active token.
+TargetState.prototype.__updateAutocompleteCandidates = function() {
+	var activeTokens = this.get( "activeTokens" );
+	var matchingTranslations = [];
 	for ( var i = 0; i < activeTokens.length; i++ ) {
+		//TODO: Identify all matching translations
 	}
 	this.set( "matchingTranslations", matchingTranslations );
-
-	var segmentId = this.get( "segmentId" );
-	if ( activeChunkIndex !== null ) {
-		this.trigger( "updateAutocompleteCandidates", segmentId, activeChunkIndex, matchingTranslations, 10, 20 );
-	}
-	else {
-		this.trigger( "updateAutocompleteCandidates", null, null );
-	}
 };
 
 TargetState.prototype.__updateMatchedSourceTokens = function() {
@@ -247,9 +272,6 @@ TargetState.prototype.__updateMatchedSourceTokens = function() {
 		}
 	}
 	this.set( "matchedSourceTokens", matchedSourceTokens );
-
-	var segmentId = this.get( "segmentId" );
-	this.trigger( "updateMatchedSourceTokens", segmentId, matchedSourceTokens );
 };
 
 TargetState.prototype.__checkForChangedTokens = function() {

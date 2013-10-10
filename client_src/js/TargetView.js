@@ -37,6 +37,7 @@ TargetView.prototype.render = function() {
 	this.views.overlay.selectAll( "span.Token" ).select( "span.TokenFirstTerm" ).call( this.__tokenFirstTermRenderAlways.bind(this) );
 	this.views.overlay.selectAll( "span.Token" ).select( "span.TokenSecondTerm" ).call( this.__tokenSecondTermRenderAlways.bind(this) );
 	this.views.overlay.selectAll( "span.Token" ).select( "span.TokenSep" ).call( this.__tokenSepRenderAlways.bind(this) );
+	this.model.postProcess();
 };
 
 TargetView.prototype.__captureRenderOnce = function( elem ) {
