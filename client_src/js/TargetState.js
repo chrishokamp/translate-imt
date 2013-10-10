@@ -14,17 +14,24 @@ var TargetState = Backbone.Model.extend({
 		"chunkIndexList" : [],
 		"hasFocus" : null,
 		
-		// Derived states...
+		// Derived internal states...
+		"bestTranslation" : [],
+		"bestAlignIndexes" : [],
+		"bestChunkIndexes" : [],
+		"suggestionsByChunk" : {},
+
 		"allTokens" : [],
 		"caretToken" : null,
 		"activeTokens" : [],
 		"activeChunkIndex" : null,
 		"activeXCoord" : null,
 		"activeYCoord" : null,
-		"matchingTranslations" : [],
 		"matchedTokens" : [],
-		"matchedSourceTokenIndexes" : {},
 		"hadFocus" : null,      // Previous value of hasFocus, for triggering a focus() event on the underlying textarea
+		
+		// Derived external states...
+		"matchingTranslations" : [],
+		"matchedSourceTokenIndexes" : {},
 		"isChanged" : false,    // Whether user-entered text has changed from the prefix used to generate the current list of translations
 		"isExpired" : false     // Whether user-entered text has changed from the prefix AND is also different from the current best translation
 	}
@@ -70,6 +77,7 @@ TargetState.prototype.setTranslations = function( prefix, translationList, align
 	this.__resetTokens();
 	this.__updateTokensFromPrefix();
 	this.__updateTokensFromBestTranslation();
+	this.__updateSuggestionsFromAllTranslations();
 	this.__updateTokensFromUserText();
 	this.__updateCaretToken();
 	this.__updateActiveTokens();
@@ -114,7 +122,6 @@ TargetState.prototype.__newToken = function() {
 	var token = {
 		"userWord" : "",           // Set by __updateTokensFromUserText()
 		"userSep" : "",            // Set by __updateTokensFromUserText()
-		"hasUser" : false,         // Set by __updateTokensFromPrefix()
 		"prefixWord" : "",         // Set by __updateTokensFromPrefix()
 		"translationWord" : "",    // Set by __updateTokensFromBestTranslation()
 		"sourceTokenIndexes" : [], // Set by __updateTokensFromBestTranslation()
@@ -124,6 +131,8 @@ TargetState.prototype.__newToken = function() {
 		"sep" : "",                // Set by __updateCaretToken()
 		"hasCaret" : false,        // Set by __updateCaretToken()
 		"isActive" : false,        // Set by __updateActiveTokens()
+		"isFirstActive" : false,   // Set by __updateActiveTokens()
+		"isLastActive" : false,    // Set by __updateActiveTokens()
 		"isChanged" : false,
 		"isExpired" : false
 	};
@@ -177,37 +186,72 @@ TargetState.prototype.__updateTokensFromPrefix = function() {
 
 TargetState.prototype.__updateTokensFromBestTranslation = function() {
 	var translationList = this.get( "translationList" );
+	var alignIndexList = this.get( "alignIndexList" );
+	var chunkIndexList = this.get( "chunkIndexList" );
+	var bestTranslation = [];
+	var bestAlignIndexes = [];
+	var bestChunkIndexes = [];
 	if ( translationList.length > 0 ) {
-		var allTokens = this.get( "allTokens" );
-		var alignIndexList = this.get( "alignIndexList" );
-		var chunkIndexList = this.get( "chunkIndexList" );
-		var bestTranslation = translationList[ 0 ];
-		var bestAlignIndexes = alignIndexList[ 0 ];
-		var bestChunkIndexes = chunkIndexList[ 0 ];
-		while ( allTokens.length < bestTranslation.length ) {
-			allTokens.push( this.__newToken() );
-		}
-		for ( var n = 0; n < allTokens.length; n++ ) {
-			var token = allTokens[ n ];
-			if ( n < bestTranslation.length ) {
-				var translationWord = bestTranslation[ n ];
-				var chunkIndex = bestChunkIndexes[ n ];
-				token.translationWord = translationWord;
-				token.chunkIndex = chunkIndex;
-			}
-			else {
-				token.translationWord = "";
-				token.chunkIndex = null;
-			}
-			token.sourceTokenIndexes = [];
-		}
-		for ( var i = 0; i < bestAlignIndexes.length; i++ ) {
-			var alignIndex = bestAlignIndexes[i];
-			var token = allTokens[ alignIndex.targetIndex ];
-			token.sourceTokenIndexes.push( alignIndex.sourceIndex );
-		}
-		this.set( "allTokens", allTokens );
+		bestTranslation = translationList[0];
+		bestAlignIndexes = alignIndexList[0];
+		bestChunkIndexes = chunkIndexList[0];
 	}
+
+	var allTokens = this.get( "allTokens" );
+	while ( allTokens.length < bestTranslation.length ) {
+		allTokens.push( this.__newToken() );
+	}
+	for ( var n = 0; n < allTokens.length; n++ ) {
+		var token = allTokens[ n ];
+		if ( n < bestTranslation.length ) {
+			var translationWord = bestTranslation[ n ];
+			var chunkIndex = bestChunkIndexes[ n ];
+			token.translationWord = translationWord;
+			token.chunkIndex = chunkIndex;
+		}
+		else {
+			token.translationWord = "";
+			token.chunkIndex = null;
+		}
+		token.sourceTokenIndexes = [];
+	}
+	for ( var i = 0; i < bestAlignIndexes.length; i++ ) {
+		var alignIndex = bestAlignIndexes[i];
+		var token = allTokens[ alignIndex.targetIndex ];
+		token.sourceTokenIndexes.push( alignIndex.sourceIndex );
+	}
+	this.set({
+		"allTokens" : allTokens,
+		"bestTranslation" : bestTranslation,
+		"bestAlignIndexes" : bestAlignIndexes,
+		"bestChunkIndexes" : bestChunkIndexes
+	});
+};
+
+TargetState.prototype.__updateSuggestionsFromAllTranslations = function() {
+	var suggestionsByChunk = {};
+	var translationList = this.get( "translationList" );
+	var chunkIndexList = this.get( "chunkIndexList" );
+	for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
+		var translation = translationList[ translationIndex ];
+		var chunkIndexes = chunkIndexList[ translationIndex ];
+		for ( var n = 0; n < translation.length; n++ ) {
+			var token = translation[n];
+			var chunkIndex = chunkIndexes[n];
+			if ( chunkIndex !== null ) {
+				if ( !suggestionsByChunk.hasOwnProperty( chunkIndex ) ) {
+					suggestionsByChunk[ chunkIndex ] = _.range( translationList.length ).map( function(d) { return [] } );
+				}
+				suggestionsByChunk[ chunkIndex ][ translationIndex ].push( token );
+			}
+		}
+	}
+	for ( var chunkIndex in suggestionsByChunk ) {
+		for ( var translationIndex = 0; translationIndex < suggestionsByChunk[ chunkIndex ].length; translationIndex++ ) {
+			suggestionsByChunk[ chunkIndex ][ translationIndex ] = suggestionsByChunk[ chunkIndex ][ translationIndex ].join( " " );
+		}
+	}
+	this.set( "suggestionsByChunk", suggestionsByChunk );
 };
 
 TargetState.prototype.__updateCaretToken = function() {
@@ -244,16 +288,28 @@ TargetState.prototype.__updateActiveTokens = function() {
 	var allTokens = this.get( "allTokens" );
 	var caretToken = this.get( "caretToken" );
 	var activeTokens = [];
+	var firstActiveToken = null;
+	var lastActiveToken = null;
 	var activeChunkIndex = null;
 	if ( caretToken !== null ) {
 		var activeChunkIndex = caretToken.chunkIndex;
 		for ( var n = 0; n < allTokens.length; n++ ) {
 			var token = allTokens[ n ];
 			token.isActive = token.hasCaret  ||  ( activeChunkIndex !== null && token.chunkIndex === activeChunkIndex );
+			token.isFirstActive = false;
+			token.isLastActive = false;
 			if ( token.isActive ) {
 				activeTokens.push( token );
+				if ( firstActiveToken === null ) { firstActiveToken = token }
+				lastActiveToken = token;
 			}
 		}
+	}
+	if ( firstActiveToken !== null ) {
+		firstActiveToken.isFirstActive = true;
+	}
+	if ( lastActiveToken !== null ) {
+		lastActiveToken.isLastActive = true;
 	}
 	this.set({
 		"activeTokens" : activeTokens,
@@ -262,10 +318,11 @@ TargetState.prototype.__updateActiveTokens = function() {
 };
 
 TargetState.prototype.__updateMatchingTranslations = function() {
-	var activeTokens = this.get( "activeTokens" );
+	var activeChunkIndex = this.get( "activeChunkIndex" );
+	var suggestionsByChunk = this.get( "suggestionsByChunk" );
 	var matchingTranslations = [];
-	for ( var i = 0; i < activeTokens.length; i++ ) {
-		//TODO: Identify all matching translations
+	if ( activeChunkIndex !== null ) {
+		matchingTranslations = suggestionsByChunk[ activeChunkIndex ];
 	}
 	this.set( "matchingTranslations", matchingTranslations );
 };
