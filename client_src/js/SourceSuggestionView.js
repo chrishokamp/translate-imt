@@ -5,13 +5,14 @@ var SourceSuggestionView = Backbone.View.extend({
 SourceSuggestionView.prototype.X_OFFSET = 0;
 SourceSuggestionView.prototype.Y_OFFSET = 12;
 SourceSuggestionView.prototype.CATCHER_PADDING = 4;
+SourceSuggestionView.prototype.MT_COLOR = "#4292C6";
 
 SourceSuggestionView.prototype.initialize = function() {
 	this.views = {};
 	this.views.container = d3.select( this.el ).style( "pointer-events", "none" ).style( "position", "absolute" );
 	this.views.catcher = this.views.container.append( "div" ).attr( "class", "Catcher" ).call( this.__catcherRenderOnce.bind(this) );
 	this.views.overlay = this.views.container.append( "div" ).attr( "class", "Overlay" ).call( this.__overlayRenderOnce.bind(this) );
-	this.listenTo( this.model, "change reset", this.render );
+	this.listenTo( this.model, "change", this.render );
 };
 
 SourceSuggestionView.prototype.render = function() {
@@ -54,7 +55,7 @@ SourceSuggestionView.prototype.__overlayRenderOnce = function( elem ) {
 	elem.classed( "TargetLang", true )
 		.style( "position", "absolute" )
 		.style( "background", "#fff" )
-		.style( "border", "1px solid #9cf" );
+		.style( "border", "1px solid #69c" );
 };
 SourceSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 	var targets = this.model.get( "targets" );
@@ -76,6 +77,7 @@ SourceSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
 		.style( "white-space", "nowrap" )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "pointer" )
+		.style( "color", this.MT_COLOR )
 		.on( "mouseover", this.__onMouseOverOption.bind(this) )
 		.on( "mouseout", this.__onMouseOutOption.bind(this) )
 		.on( "mouseup", this.__onMouseClickOption.bind(this) );
@@ -87,23 +89,24 @@ SourceSuggestionView.prototype.__onMouseOver = function() {
 	var tokenIndex = this.model.get( "tokenIndex" );
 	var xCoord = this.model.get( "xCoord" );
 	var yCoord = this.model.get( "yCoord" );
-	this.trigger( "mouseOver", segmentId, tokenIndex, xCoord, yCoord );
+	this.trigger( "mouseOver:*", segmentId, tokenIndex, xCoord, yCoord );
 };
 SourceSuggestionView.prototype.__onMouseOverOption = function() {
 	var segmentId = this.model.get( "segmentId" );
 	var tokenIndex = this.model.get( "tokenIndex" );
 	var xCoord = this.model.get( "xCoord" );
 	var yCoord = this.model.get( "yCoord" );
-	this.trigger( "mouseOver", segmentId, tokenIndex, xCoord, yCoord );
-	this.trigger( "mouseOverOption" );
+	this.trigger( "mouseOver:*", segmentId, tokenIndex, xCoord, yCoord );
+	this.trigger( "mouseOver:option" );
 };
 SourceSuggestionView.prototype.__onMouseOut = function() {
-	this.trigger( "mouseOut" );
+	this.trigger( "mouseOut:*" );
 };
 SourceSuggestionView.prototype.__onMouseOutOption = function() {
-	this.trigger( "mouseOut" );
-	this.trigger( "mouseOutOption" );
+	this.trigger( "mouseOut:*" );
+	this.trigger( "mouseOut:option" );
 };
-SourceSuggestionView.prototype.__onMouseClickOption = function() {
-	this.trigger( "mouseClickOption" );
+SourceSuggestionView.prototype.__onMouseClickOption = function( text ) {
+	var segmentId = this.model.get( "segmentId" )
+	this.trigger( "mouseClick:option", segmentId, text );
 };

@@ -12,12 +12,12 @@
 	
 	<link rel="stylesheet" href="css/PTM.css" />
 	<script type="text/javascript" src="js/TranslateServer.js"></script>
-	<script type="text/javascript" src="js/SourceState.js"></script>
-	<script type="text/javascript" src="js/SourceView.js"></script>
+	<script type="text/javascript" src="js/SourceBoxState.js"></script>
+	<script type="text/javascript" src="js/SourceBoxView.js"></script>
 	<script type="text/javascript" src="js/SourceSuggestionState.js"></script>
 	<script type="text/javascript" src="js/SourceSuggestionView.js"></script>
-	<script type="text/javascript" src="js/TargetState.js"></script>
-	<script type="text/javascript" src="js/TargetView.js"></script>
+	<script type="text/javascript" src="js/TargetTypingState.js"></script>
+	<script type="text/javascript" src="js/TargetTypingView.js"></script>
 	<script type="text/javascript" src="js/TargetSuggestionState.js"></script>
 	<script type="text/javascript" src="js/TargetSuggestionView.js"></script>
 	<script type="text/javascript" src="js/PTM.js"></script>
@@ -35,9 +35,9 @@
 		});
 	</script>
 </head>
-<body>
-<div id="SourceSuggestions" style="position: absolute; z-index: 100"></div>
-<div id="TargetSuggestions" style="position: absolute; z-index: 100"></div>
-<div id="PTM" style="display: inline-block; width: 800px; z-index: 0"></div>
+<body style="background: #ccc">
+<div id="SourceSuggestions" style="position: absolute; z-index: 1000"></div>
+<div id="TargetSuggestions" style="position: absolute; z-index: 1000"></div>
+<div id="PTM" style="display: inline-block; width: 800px; z-index: 0; background: #eee; padding: 20px 20px; border: 1px solid #999; box-shadow: 0 0 5px #999"></div>
 </body>
 </html>

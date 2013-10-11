@@ -1,4 +1,4 @@
-var SourceState = Backbone.Model.extend({
+var SourceBoxState = Backbone.Model.extend({
 	defaults : {
 		/** @type {string} A string identify the source text segment. Initialized once by PTM **/
 		"segmentId" : null,
@@ -10,6 +10,9 @@ var SourceState = Backbone.Model.extend({
 		"hoverTokenIndex" : null,
 		
 		/** @type {{integer:true}} Indexes of tokens that have a corresponding term in the typing UI. **/
-		"matchedTokenIndexes" : {}
+		"matchedTokenIndexes" : {},
+		
+		/** @type {boolean} **/
+		"hasFocus" : false,
 	}
 });
