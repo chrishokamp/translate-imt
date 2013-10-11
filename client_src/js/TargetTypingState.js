@@ -29,6 +29,7 @@ var TargetTypingState = Backbone.Model.extend({
 		"activeChunkIndex" : null,
 		"activeXCoord" : null,
 		"activeYCoord" : null,
+		"previousCaretIndex" : null,
 		"hadFocus" : null,      // Previous value of hasFocus; needed to determine when to trigger a focus call on the underlying textarea
 		
 		// Derived external states...
@@ -350,7 +351,7 @@ TargetTypingState.prototype.__updateActiveTokens = function() {
 		var activeChunkIndex = caretToken.chunkIndex;
 		for ( var n = 0; n < allTokens.length; n++ ) {
 			var token = allTokens[ n ];
-			token.isActive = token.hasCaret  ||  ( activeChunkIndex !== null && token.chunkIndex === activeChunkIndex );
+			token.isActive = ( activeChunkIndex !== null && token.chunkIndex === activeChunkIndex );
 			token.isFirstActive = false;
 			token.isLastActive = false;
 			if ( token.isActive ) {
@@ -416,9 +417,11 @@ TargetTypingState.prototype.__updateMatchedTokens = function() {
 TargetTypingState.prototype.__checkForChangedTokens = function() {
 	var allTokens = this.get( "allTokens" );
 	var isChanged = this.get( "isChanged" );
+	var caretIndex = this.get( "caretIndex" );
+	var previousCaretIndex = this.get( "previousCaretIndex" );
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
-		var isTokenChanged = ( token.userWord !== token.prefixWord  &&  ! token.hasCaret );
+		var isTokenChanged = ( ( token.userWord !== token.prefixWord )  &&  ! token.hasCaret );
 		token.isChanged = isTokenChanged;
 		isChanged = isChanged || isTokenChanged;
 	}
@@ -428,12 +431,15 @@ TargetTypingState.prototype.__checkForChangedTokens = function() {
 TargetTypingState.prototype.__checkForExpiredTokens = function() {
 	var allTokens = this.get( "allTokens" );
 	var isExpired = this.get( "isExpired" );
+	var caretIndex = this.get( "caretIndex" );
+	var previousCaretIndex = this.get( "previousCaretIndex" );
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
-		var isTokenExpired = ( token.userWord !== token.prefixWord  &&  token.userWord !== token.translationWord  &&  ! token.hasCaret );
+		var isTokenExpired = ( ( token.userWord !== token.prefixWord )  &&  token.userWord !== token.translationWord  &&  ! token.hasCaret );
 		token.isExpired = isTokenExpired;
 		isExpired = isExpired || isTokenExpired;
 	}
+	this.set( "previousCaretIndex", caretIndex );
 	this.set( "isExpired", isExpired );
 };
 

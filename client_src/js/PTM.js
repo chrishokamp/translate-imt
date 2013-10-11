@@ -246,7 +246,6 @@ PTM.prototype.__showTargetSuggestions = function( suggestionSegmentId, suggestio
 	if ( suggestionCandidates === undefined ) { suggestionCandidates = [] }
 	if ( suggestionXCoord === undefined ) { suggestionXCoord = 0 }
 	if ( suggestionYCoord === undefined ) { suggestionYCoord = 0 }
-	console.log( suggestionSegmentId, suggestionChunkIndex, suggestionCandidates, suggestionXCoord, suggestionYCoord )
 	
 	// Update PTM states
 	this.set({
@@ -268,7 +267,6 @@ PTM.prototype.__showTargetSuggestions = function( suggestionSegmentId, suggestio
 };
 
 PTM.prototype.updateMatchedSourceTokens = function( segmentId, matchedTokenIndexes ) {
-	console.log( "updateMatchedSourceTokens", segmentId, matchedTokenIndexes );
 	this.get( "sourceMatchedTokens" )[ segmentId ] = matchedTokenIndexes;
 	this.sourceBoxStates[ segmentId ].set( "matchedTokenIndexes", matchedTokenIndexes );
 };

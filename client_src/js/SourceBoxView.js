@@ -58,6 +58,7 @@ SourceBoxView.prototype.__tokenOnMouseOut = function() {
 SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "white-space", "pre-wrap" )
+		.style( "vertical-align", "top" )
 		.text( function(d) { return d } );
 };
 SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
@@ -76,6 +77,7 @@ SourceBoxView.prototype.__tokenTermBackground = function( _, tokenIndex ) {
 SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "white-space", "pre-wrap" )
+		.style( "vertical-align", "top" )
 		.text( " " );
 };
 SourceBoxView.prototype.__tokenSepRenderAlways = function() {};
