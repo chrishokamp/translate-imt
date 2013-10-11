@@ -9,7 +9,7 @@ TargetSuggestionView.prototype.MT_COLOR = "#4292C6";
 
 TargetSuggestionView.prototype.initialize = function() {
 	this.views = {};
-	this.views.container = d3.select( this.el ).style( "pointer-events", "none" ).style( "position", "absolute" );
+	this.views.container = d3.select( this.el ).style( "pointer-events", "none" ).style( "position", "absolute" ).style( "opacity", 0 );
 	this.views.catcher = this.views.container.append( "div" ).attr( "class", "Catcher" ).call( this.__catcherRenderOnce.bind(this) );
 	this.views.overlay = this.views.container.append( "div" ).attr( "class", "Overlay" ).call( this.__overlayRenderOnce.bind(this) );
 	this.listenTo( this.model, "change", this.render );
@@ -21,6 +21,7 @@ TargetSuggestionView.prototype.render = function() {
 	elems.enter().append( "div" ).attr( "class", "token" ).call( this.__tokenRenderOnce.bind(this) );
 	elems.exit().remove();
 	
+	this.views.container.style( "opacity", function() { return candidates.length === 0 ? 0 : 1 } )
 	this.views.overlay.call( this.__overlayRenderAlways.bind(this) )
 	this.views.overlay.selectAll( "div.token" ).call( this.__tokenRenderAlways.bind(this) );
 	this.views.catcher.call( this.__catcherRenderAlways.bind(this) );
@@ -55,7 +56,9 @@ TargetSuggestionView.prototype.__overlayRenderOnce = function( elem ) {
 	elem.classed( "TargetLang", true )
 		.style( "position", "absolute" )
 		.style( "background", "#fff" )
-		.style( "border", "1px solid #9cf" );
+		.style( "border", "1px solid " + this.MT_COLOR )
+		.style( "box-shadow", "0 0 5px " + this.MT_COLOR )
+		.style( "padding", "2px 0 0 0" )
 };
 TargetSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 	var candidates = this.model.get( "candidates" );
@@ -73,6 +76,8 @@ TargetSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 TargetSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
 	elem.style( "position", "static" )
 		.style( "display", "block" )
+		.style( "padding", "0 2px 2px 2px" )
+		.style( "border-top", function(d,i) { return i===0 ? null : "1px dotted " + this.MT_COLOR }.bind(this) )
 		.style( "white-space", "nowrap" )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "pointer" )
