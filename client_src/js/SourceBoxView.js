@@ -71,7 +71,7 @@ SourceBoxView.prototype.__tokenTermForeground = function( _, tokenIndex ) {
 };
 SourceBoxView.prototype.__tokenTermBackground = function( _, tokenIndex ) {
 	var hoverTokenIndex = this.model.get( "hoverTokenIndex" );
-	return ( tokenIndex === hoverTokenIndex ) ? "1px solid " + this.MT_COLOR : null;
+	return ( tokenIndex === hoverTokenIndex ) ? "1px solid " + this.MT_COLOR : "1px solid #eee";
 };
 
 SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
