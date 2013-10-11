@@ -74,7 +74,7 @@ TranslateServer.prototype.wordQuery = function( word, callback ) {
 		"error" : errorHandler
 	};
 	$.ajax( requestMessage );
-}
+};
 
 /**
  * Make a translate request.

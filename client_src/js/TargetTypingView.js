@@ -86,10 +86,18 @@ TargetTypingView.prototype.__onKeyDown = function() {
 		d3.event.preventDefault();
 		d3.event.cancelBubble = true;
 	}
+	else {
+		if ( this.__isContinuousKeyPress === true ) {
+			var segmentId = this.model.get( "segmentId" );
+			this.trigger( "keyPress:*", segmentId, d3.event.srcElement.value, d3.event.srcElement.selectionStart );
+		}
+	}
+	this.__isContinuousKeyPress = true;
 };
 TargetTypingView.prototype.__onKeyUp = function() {
 	var segmentId = this.model.get( "segmentId" );
 	var keyCode = d3.event.keyCode;
+	this.__isContinuousKeyPress = false;
 	if ( keyCode === this.KEY.ENTER ) {
 		if ( d3.event.shiftKey ) {
 			this.trigger( "keyPress:enter+shift", segmentId )
