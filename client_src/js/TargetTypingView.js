@@ -11,12 +11,13 @@ TargetTypingView.prototype.KEY = {
 	RIGHT_ARROW : 39,
 	LEFT_ARROW : 37
 };
-TargetTypingView.prototype.WIDTH = 750;
+TargetTypingView.prototype.WIDTH = 700;
 TargetTypingView.prototype.HEIGHT = 100;
-TargetTypingView.prototype.USER_COLOR = "#08519C";
+TargetTypingView.prototype.USER_COLOR = "#4292C6";
 TargetTypingView.prototype.MT_COLOR = "#4292C6";
-TargetTypingView.prototype.INACIVE_COLOR = "#C6DBEF";
+TargetTypingView.prototype.DIM_COLOR = "#C6DBEF";
 TargetTypingView.prototype.BLINK_CYCLE = 500; // Duration of a caret blink in milliseconds
+TargetTypingView.prototype.ANIMATION_DURATION = 120;
 
 TargetTypingView.prototype.initialize = function( options ) {
 	this.views = {};
@@ -61,9 +62,10 @@ TargetTypingView.prototype.__captureRenderOnce = function( elem ) {
 		.style( "height", this.HEIGHT + "px" )
 		.append( "textarea" )
 			.classed( "TargetLang", true )
-			.style( "padding", 9 + "px" )
+			.style( "padding", "5px 60px 20px 15px" )
 			.style( "width", (this.WIDTH-20) + "px" )
 			.style( "height", (this.HEIGHT-20) + "px" )
+			.style( "border", "none" )
 			.style( "word-spacing", "0.1em" )
 			.style( "pointer-events", "auto" )
 			.on( "mousedown", this.__onCaptureMouseDown.bind(this) )
@@ -129,7 +131,7 @@ TargetTypingView.prototype.__onKeyUp = function() {
 
 TargetTypingView.prototype.__overlayRenderOnce = function( elem ) {
 	elem.style( "z-index", 50 )
-		.style( "padding", "10px" )
+		.style( "padding", "2.5px 60px 15px 15px" )
 		.style( "width", this.WIDTH + "px" )
 		.style( "min-height", this.HEIGHT + "px" )
 		.classed( "TargetLang", true )
@@ -142,15 +144,19 @@ TargetTypingView.prototype.__overlayRenderAlways = function( elem ) {
 	var hadFocus = this.model.get( "hadFocus" );
 	var hasFocus = this.model.get( "hasFocus" );
 	elem.style( "background", hasFocus ? "#fff" : "#eee" )
-		.style( "border", hasFocus ? "1px solid #ccc" : "1px solid #eee" )
+//		.style( "border", hasFocus ? "1px solid #ccc" : "1px solid #eee" )
 	if ( hadFocus !== hasFocus ) {
 		if ( hasFocus ) {
-			elem//.transition().ease( "linear" ).duration( 125 )
-				.style( "min-height", this.HEIGHT + "px" );
+			elem.transition().ease( "linear" ).duration( this.ANIMATION_DURATION )
+				.style( "min-height", this.HEIGHT + "px" )
+				.style( "padding-top", "12.5px" )
+				.style( "padding-bottom", "30px" )
 		}
 		else {
-			elem//.transition().ease( "linear" ).duration( 125 )
-				.style( "min-height", 0 + "px" );
+			elem.transition().ease( "linear" ).duration( this.ANIMATION_DURATION )
+				.style( "min-height", 0 + "px" )
+				.style( "padding-top", "2.5px" )
+				.style( "padding-bottom", "15px" )
 		}
 	}
 };
@@ -201,12 +207,21 @@ TargetTypingView.prototype.__tokenFirstTermRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "white-space", "pre-wrap" )
 		.style( "vertical-align", "top" )
+		.style( "font-family", "NeutraBold" )
 		.style( "color", this.USER_COLOR )
 };
 TargetTypingView.prototype.__tokenFirstTermRenderAlways = function( elem ) {
-	var hasFocus = this.model.get( "hasFocus" );
+	var firstTermBorderBottom = function(d) {
+		var hasFocus = this.model.get( "hasFocus" );
+		return ( hasFocus && d.isActive ) ? "1px solid " + this.USER_COLOR : null;
+	}.bind(this);
+	var firstTermColor = function() {
+		var hasFocus = this.model.get( "hasFocus" );
+		return hasFocus ? this.USER_COLOR : this.DIM_COLOR;
+	}.bind(this);
 	elem.text( function(d) { return d.firstTerm } )
-		.style( "border-bottom", function(d) { return ( hasFocus && d.isActive ) ? "1px solid " + this.USER_COLOR : null }.bind(this) )
+		.style( "border-bottom", firstTermBorderBottom )
+		.style( "color", firstTermColor )
 };
 
 TargetTypingView.prototype.__tokenSecondTermRenderOnce = function( elem ) {
@@ -215,10 +230,17 @@ TargetTypingView.prototype.__tokenSecondTermRenderOnce = function( elem ) {
 		.style( "vertical-align", "top" )
 };
 TargetTypingView.prototype.__tokenSecondTermRenderAlways = function( elem ) {
-	var hasFocus = this.model.get( "hasFocus" );
+	var secondTermBorderBottom = function(d) {
+		var hasFocus = this.model.get( "hasFocus" );
+		return ( hasFocus && d.isActive ) ? "1px solid " + this.MT_COLOR : null;
+	}.bind(this);
+	var secondTermColor = function() {
+		var hasFocus = this.model.get( "hasFocus" );
+		return hasFocus ? this.MT_COLOR : this.DIM_COLOR;
+	}.bind(this);
 	elem.text( function(d) { return d.secondTerm } )
-		.style( "border-bottom", function(d) { return ( hasFocus && d.isActive ) ? "1px solid " + this.MT_COLOR : null }.bind(this) )
-		.style( "color", function() { return hasFocus ? this.MT_COLOR : this.INACIVE_COLOR }.bind(this) )
+		.style( "border-bottom", function(d) {  }.bind(this) )
+		.style( "color", secondTermColor )
 };
 TargetTypingView.prototype.__recordCaretTokenCoords = function( elem ) {
 	var thisModel = this.model;

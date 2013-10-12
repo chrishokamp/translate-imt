@@ -41,6 +41,8 @@ PTM.prototype.initialize = function( options ) {
 	// Define or create a stub for all models and views.
 	/** @param {TranslateServer} **/
 	this.server = new TranslateServer();
+	/** @param {DocumentView} **/
+	this.documentView = null;
 	/** @param {{segmentId:SourceBoxState}} **/
 	this.sourceBoxStates = {};
 	/** @param {{segmentId:SourceBoxView}} **/
@@ -112,20 +114,24 @@ PTM.prototype.setup = function() {
 	var segmentIds = this.get( "segmentIds" );
 	var segments = this.get( "segments" );
 	
+	// Create a visualization for the entire document
+	this.documentView = new DocumentView({ "model" : this });
+	
 	// Create source boxes and typing UIs
 	var container = d3.select( "#PTM" );
 	for ( var i = 0; i < segmentIds.length; i++ ) {
 		var segmentId = segmentIds[i];
 
 		// Generate HTML DOM elements
-		container.append( "div" ).attr( "class", "SourceBoxView SourceBoxView" + segmentId );
-		container.append( "div" ).attr( "class", "TargetTypingView TargetTypingView" + segmentId );
+		var segmentBand = this.documentView.addSegment( segmentId );
+		this.listenTo( segmentBand, "mouseClick", this.focusOnSegment );
 		
 		// Create a SourceBox (matching pair of state and view) for each segment
 		var sourceBoxState = new SourceBoxState();
 		var sourceBoxView = new SourceBoxView({ "model" : sourceBoxState, "el" : ".SourceBoxView" + segmentId });
 		this.sourceBoxStates[segmentId] = sourceBoxState;
 		this.sourceBoxViews[segmentId] = sourceBoxView;
+		this.listenTo( sourceBoxView, "mouseClick:*", this.focusOnSegment );
 		this.listenTo( sourceBoxView, "mouseOver:token", this.showSourceSuggestions );
 		this.listenTo( sourceBoxView, "mouseOut:token", this.showSourceSuggestions );
 		this.get( "sourceMatchedTokens" )[ segmentId ] = {};
@@ -159,6 +165,7 @@ PTM.prototype.setup = function() {
 		this.updateUserText( segmentId, "", 0 );
 		this.loadTranslations( segmentId, "" );
 	}
+	this.documentView.addSegment( null );
 
 	// Create highlight object (i.e., floating menu showing word query results when a user hovers over a word in the source language)
 	this.sourceSuggestionState = new SourceSuggestionState();
@@ -303,19 +310,25 @@ PTM.prototype.focusOnSegment = function( typingFocus ) {
 		this.sourceBoxStates[ segmentId ].set({ "hasFocus" : typingFocus === segmentId });
 		this.targetTypingStates[ segmentId ].setFocus( typingFocus === segmentId );
 	}
+	window.setTimeout( function(f){f()}, 200, function() {
+		this.documentView.renderFocusBand();
+		this.documentView.resize();
+	}.bind(this) );
 };
 
 PTM.prototype.focusOnNextSegment = function( typingFocus ) {
 	var segmentIds = this.get( "segmentIds" );
-	var index = segmentIds.indexOf( typingFocus );
-	var typingNewFocus = segmentIds[ ( index + 1 ) % segmentIds.length ];
+//	var index = segmentIds.indexOf( typingFocus ) + 1;
+	var index = ( segmentIds.indexOf( typingFocus ) + 1 ) % segmentIds.length;
+	var typingNewFocus = ( index >= segmentIds.length ) ? null : segmentIds[ index ];
 	this.focusOnSegment( typingNewFocus );
 };
 
 PTM.prototype.focusOnPreviousSegment = function( typingFocus ) {
 	var segmentIds = this.get( "segmentIds" );
-	var index = segmentIds.indexOf( typingFocus );
-	var typingNewFocus = segmentIds[ ( index + segmentIds.length - 1 ) % segmentIds.length ];
+//	var index = segmentIds.indexOf( typingFocus ) - 1;
+	var index = ( segmentIds.indexOf( typingFocus ) + segmentIds.length - 1 ) % segmentIds.length;
+	var typingNewFocus = ( index < 0 ) ? null : segmentIds[ index ];
 	this.focusOnSegment( typingNewFocus );
 };
 
@@ -422,6 +435,7 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 			this.set( "typingAlignIndexList" )[ segmentId ] = alignIndexList;
 			this.set( "typingChunkIndexList" )[ segmentId ] = chunkIndexList;
 			this.targetTypingStates[ segmentId ].setTranslations( prefix, translationList, alignIndexList, chunkIndexList );
+			this.documentView.resize();
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( response, request ) {

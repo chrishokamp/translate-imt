@@ -2,8 +2,9 @@ var SourceBoxView = Backbone.View.extend({
 	el : ".SourceBoxView"
 });
 
-SourceBoxView.prototype.DEFAULT_COLOR = "#000";
-SourceBoxView.prototype.MATCHED_COLOR = "#999";
+SourceBoxView.prototype.UNMATCHED_COLOR = "#000";
+SourceBoxView.prototype.MATCHED_COLOR = "#4292C6";
+SourceBoxView.prototype.DIM_COLOR = "#aaa";
 SourceBoxView.prototype.MT_COLOR = "#4292C6";
 
 SourceBoxView.prototype.initialize = function() {
@@ -29,31 +30,26 @@ SourceBoxView.prototype.render = function() {
 
 SourceBoxView.prototype.__overlayRenderOnce = function( elem ) {
 	elem.classed( "SourceLang", true )
-		.style( "padding", "25px 10px 5px 10px" )
-		.style( "word-spacing", "0.1em" );
+		.style( "padding", "10px 60px 2.5px 15px" )
+		.style( "word-spacing", "0.1em" )
+		.style( "pointer-events", "auto" )
+		.style( "cursor", "default" )
+		.on( "click", this.__mouseClick.bind(this) );
 };
-SourceBoxView.prototype.__overlayRenderAlways = function() {};
+SourceBoxView.prototype.__overlayRenderAlways = function( elem ) {
+	var overlayPaddingBottom = function() {
+		var hasFocus = this.model.get( "hasFocus" );
+		return hasFocus ? "7.5px" : "2.5px";
+	}.bind(this);
+	elem.style( "padding-bottom", overlayPaddingBottom );
+};
 
 SourceBoxView.prototype.__tokenRenderOnce = function( elem ) {
-	elem.style( "pointer-events", "auto" )
-		.style( "cursor", "default" )
-		.on( "mouseover", this.__tokenOnMouseOver.bind(this) )
-		.on( "mouseout", this.__tokenOnMouseOut.bind(this) );
+	elem.on( "mouseover", this.__mouseOverToken.bind(this) )
+		.on( "mouseout", this.__mouseOutToken.bind(this) )
+		.on( "click", this.__mouseClick.bind(this) );
 };
-SourceBoxView.prototype.__tokenRenderAlways = function( elem ) {};
-SourceBoxView.prototype.__tokenOnMouseOver = function( _, tokenIndex ) {
-	var hasFocus = this.model.get( "hasFocus" );
-	var segmentId = this.model.get( "segmentId" );
-	if ( hasFocus ) {
-		this.trigger( "mouseOver:token", segmentId, tokenIndex, d3.event.srcElement.offsetLeft, d3.event.srcElement.offsetTop );
-	}
-};
-SourceBoxView.prototype.__tokenOnMouseOut = function() {
-	var hasFocus = this.model.get( "hasFocus" );
-	if ( hasFocus ) {
-		this.trigger( "mouseOut:token", null, null );
-	}
-};
+SourceBoxView.prototype.__tokenRenderAlways = function() {};
 
 SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
@@ -62,16 +58,32 @@ SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
 		.text( function(d) { return d } );
 };
 SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
-	elem.style( "color", this.__tokenTermForeground.bind(this) )
-		.style( "border-bottom", this.__tokenTermBackground.bind(this) );
-};
-SourceBoxView.prototype.__tokenTermForeground = function( _, tokenIndex ) {
-	var matchedTokenIndexes = this.model.get( "matchedTokenIndexes" );
-	return ( matchedTokenIndexes[tokenIndex] === true ) ? this.MATCHED_COLOR : this.DEFAULT_COLOR;
-};
-SourceBoxView.prototype.__tokenTermBackground = function( _, tokenIndex ) {
-	var hoverTokenIndex = this.model.get( "hoverTokenIndex" );
-	return ( tokenIndex === hoverTokenIndex ) ? "1px solid " + this.MT_COLOR : "1px solid #eee";
+	var tokenTermColor = function( _, tokenIndex ) {
+		var hasFocus = this.model.get( "hasFocus" );
+		var hoverTokenIndex = this.model.get( "hoverTokenIndex" );
+		var matchedTokenIndexes = this.model.get( "matchedTokenIndexes" );
+		if ( ! hasFocus )
+			return this.DIM_COLOR;
+		else if ( tokenIndex === hoverTokenIndex ) 
+			return this.MT_COLOR;
+		else if ( matchedTokenIndexes[tokenIndex] === true ) 
+		 	return this.MATCHED_COLOR
+		else
+			return this.UNMATCHED_COLOR;
+	}.bind(this);
+	var tokenTermBorderBottom = function( _, tokenIndex ) {
+		var hasFocus = this.model.get( "hasFocus" );
+		var hoverTokenIndex = this.model.get( "hoverTokenIndex" );
+		return ( hasFocus && tokenIndex === hoverTokenIndex ) ? "1px solid " + this.MT_COLOR : "none";
+	}.bind(this);
+	var tokenTermPaddingBottom = function( _, tokenIndex ) {
+		var hasFocus = this.model.get( "hasFocus" );
+		var hoverTokenIndex = this.model.get( "hoverTokenIndex" );
+		return ( hasFocus && tokenIndex === hoverTokenIndex ) ? "1px" : "2px";
+	}.bind(this);
+	elem.style( "color", tokenTermColor )
+		.style( "border-bottom", tokenTermBorderBottom )
+		.style( "padding-bottom", tokenTermPaddingBottom )
 };
 
 SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
@@ -81,3 +93,21 @@ SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
 		.text( " " );
 };
 SourceBoxView.prototype.__tokenSepRenderAlways = function() {};
+
+SourceBoxView.prototype.__mouseOverToken = function( _, tokenIndex ) {
+	var hasFocus = this.model.get( "hasFocus" );
+	var segmentId = this.model.get( "segmentId" );
+	if ( hasFocus ) {
+		this.trigger( "mouseOver:token", segmentId, tokenIndex, d3.event.srcElement.offsetLeft, d3.event.srcElement.offsetTop );
+	}
+};
+SourceBoxView.prototype.__mouseOutToken = function() {
+	var hasFocus = this.model.get( "hasFocus" );
+	if ( hasFocus ) {
+		this.trigger( "mouseOut:token", null, null );
+	}
+};
+SourceBoxView.prototype.__mouseClick = function() {
+	var segmentId = this.model.get( "segmentId" );
+	this.trigger( "mouseClick:*", segmentId );
+};

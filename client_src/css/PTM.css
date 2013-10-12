@@ -1,11 +1,28 @@
+@font-face
+{
+  font-family: NeutraLight;
+  src: url( "../font/NeutraText-Light.otf" ); 
+}
+@font-face
+{
+  font-family: NeutraBold;
+  src: url( "../font/NeutraText-Bold.otf" ); 
+}
+
+.UI {
+	font-family: Georgia, Palatino Linotype, serif;
+	font-size: 12pt;
+	color: #000;
+}
+
 .SourceLang {
 	font-family: Georgia, Palatino Linotype, serif;
 	font-size: 10.5pt;
-	color: #333;
+	color: #000;
 }
 
 .TargetLang {
-	font-family: Verdana, Gill Sans, Helvetica, sans-serif;
+	font-family: NeutraLight, Gill Sans, Helvetica, sans-serif;
 	font-size: 11pt;
-	color: #000;
+	color: #4292C6;
 }
