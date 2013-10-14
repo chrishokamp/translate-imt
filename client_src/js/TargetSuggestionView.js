@@ -3,7 +3,7 @@ var TargetSuggestionView = Backbone.View.extend({
 });
 
 TargetSuggestionView.prototype.X_OFFSET = 0;
-TargetSuggestionView.prototype.Y_OFFSET = 12 + 5;
+TargetSuggestionView.prototype.Y_OFFSET = 12 + 7;
 TargetSuggestionView.prototype.CATCHER_PADDING = 4;
 TargetSuggestionView.prototype.MT_COLOR = "#4292C6";
 
