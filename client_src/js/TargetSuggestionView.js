@@ -3,15 +3,16 @@ var TargetSuggestionView = Backbone.View.extend({
 });
 
 TargetSuggestionView.prototype.X_OFFSET = 0;
-TargetSuggestionView.prototype.Y_OFFSET = 12;
+TargetSuggestionView.prototype.Y_OFFSET = 12 + 5;
 TargetSuggestionView.prototype.CATCHER_PADDING = 4;
 TargetSuggestionView.prototype.MT_COLOR = "#4292C6";
 
 TargetSuggestionView.prototype.initialize = function() {
 	this.views = {};
-	this.views.container = d3.select( this.el ).style( "pointer-events", "none" ).style( "position", "absolute" ).style( "opacity", 0 );
-	this.views.catcher = this.views.container.append( "div" ).attr( "class", "Catcher" ).call( this.__catcherRenderOnce.bind(this) );
-	this.views.overlay = this.views.container.append( "div" ).attr( "class", "Overlay" ).call( this.__overlayRenderOnce.bind(this) );
+	this.views.container = d3.select( this.el ).style( "pointer-events", "none" ).style( "opacity", 0 );
+	this.views.canvas = this.views.container.style( "position", "absolute" );
+	this.views.catcher = this.views.canvas.append( "div" ).attr( "class", "Catcher" ).call( this.__catcherRenderOnce.bind(this) );
+	this.views.overlay = this.views.canvas.append( "div" ).attr( "class", "Overlay" ).call( this.__overlayRenderOnce.bind(this) );
 	this.listenTo( this.model, "change", this.render );
 };
 
