@@ -34,6 +34,8 @@ var TargetTypingState = Backbone.Model.extend({
 		
 		// Derived external states...
 		"matchingTranslations" : [],
+		"caretSourceTokenIndexes" : {},
+		"chunkSourceTokenIndexes" : {},
 		"matchedSourceTokenIndexes" : {},
 		"isChanged" : false,    // Whether user-entered text has changed from the prefix used to generate the current list of translations
 		"isExpired" : false     // Whether user-entered text has changed from the prefix AND is also different from the current best translation
@@ -45,8 +47,7 @@ TargetTypingState.prototype.WHITESPACE = /([ ]+)/g;
 TargetTypingState.prototype.postProcess = function() {
 	var segmentId = this.get( "segmentId" );
 	
-	var matchedSourceTokenIndexes = this.get( "matchedSourceTokenIndexes" );
-	this.trigger( "updateMatchedSourceTokens", segmentId, matchedSourceTokenIndexes );
+	this.trigger( "updateSourceTokens", segmentId );
 	
 	var hasFocus = this.get( "hasFocus" );
 	if ( hasFocus ) {
@@ -86,7 +87,7 @@ TargetTypingState.prototype.setTranslations = function( prefix, translationList,
 	this.__updateCaretToken();
 	this.__updateActiveTokens();
 	this.__updateMatchingTranslations();
-	this.__updateMatchedTokens();
+	this.__updateSourceTokens();
 	this.__checkForChangedTokens();
 	this.__checkForExpiredTokens();
 	this.__checkFocus();
@@ -102,7 +103,7 @@ TargetTypingState.prototype.setUserText = function( userText, caretIndex ) {
 	this.__updateCaretToken();
 	this.__updateActiveTokens();
 	this.__updateMatchingTranslations();
-	this.__updateMatchedTokens();
+	this.__updateSourceTokens();
 	this.__checkForChangedTokens();
 	this.__checkForExpiredTokens();
 	this.__checkFocus();
@@ -398,11 +399,23 @@ TargetTypingState.prototype.__updateMatchingTranslations = function() {
 	this.set( "matchingTranslations", matchingTranslations );
 };
 
-TargetTypingState.prototype.__updateMatchedTokens = function() {
+TargetTypingState.prototype.__updateSourceTokens = function() {
+	var caretSourceTokenIndexes = {};
+	var chunkSourceTokenIndexes = {};
 	var matchedSourceTokenIndexes = {};
 	var allTokens = this.get( "allTokens" );
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
+		if ( token.hasCaret ) {
+			for ( var i = 0; i < token.sourceTokenIndexes.length; i++ ) {
+				caretSourceTokenIndexes[ token.sourceTokenIndexes[i] ] = true;
+			}
+		}
+		if ( token.isActive ) {
+			for ( var i = 0; i < token.sourceTokenIndexes.length; i++ ) {
+				chunkSourceTokenIndexes[ token.sourceTokenIndexes[i] ] = true;
+			}
+		}
 		if ( token.userWord === token.translationWord ) {
 			for ( var i = 0; i < token.sourceTokenIndexes.length; i++ ) {
 				matchedSourceTokenIndexes[ token.sourceTokenIndexes[i] ] = true;
@@ -410,6 +423,8 @@ TargetTypingState.prototype.__updateMatchedTokens = function() {
 		}
 	}
 	this.set({
+		"caretSourceTokenIndexes" : caretSourceTokenIndexes,
+		"chunkSourceTokenIndexes" : chunkSourceTokenIndexes,
 		"matchedSourceTokenIndexes" : matchedSourceTokenIndexes
 	});
 };

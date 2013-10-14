@@ -60,26 +60,34 @@ SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
 SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 	var tokenTermColor = function( _, tokenIndex ) {
 		var hasFocus = this.model.get( "hasFocus" );
-		var hoverTokenIndex = this.model.get( "hoverTokenIndex" );
-		var matchedTokenIndexes = this.model.get( "matchedTokenIndexes" );
+		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
+		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
+		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
+		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		if ( ! hasFocus )
 			return this.DIM_COLOR;
-		else if ( tokenIndex === hoverTokenIndex ) 
+		else if ( isHovered ) 
 			return this.MT_COLOR;
-		else if ( matchedTokenIndexes[tokenIndex] === true ) 
+		else if ( isMatched ) 
 		 	return this.MATCHED_COLOR
 		else
 			return this.UNMATCHED_COLOR;
 	}.bind(this);
 	var tokenTermBorderBottom = function( _, tokenIndex ) {
 		var hasFocus = this.model.get( "hasFocus" );
-		var hoverTokenIndex = this.model.get( "hoverTokenIndex" );
-		return ( hasFocus && tokenIndex === hoverTokenIndex ) ? "1px solid " + this.MT_COLOR : "none";
+		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
+		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
+		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
+		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
+		return ( hasFocus && hasChunk ) ? "1px solid " + this.UNMATCHED_COLOR : "none";
 	}.bind(this);
 	var tokenTermPaddingBottom = function( _, tokenIndex ) {
 		var hasFocus = this.model.get( "hasFocus" );
-		var hoverTokenIndex = this.model.get( "hoverTokenIndex" );
-		return ( hasFocus && tokenIndex === hoverTokenIndex ) ? "1px" : "2px";
+		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
+		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
+		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
+		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
+		return ( hasFocus && hasChunk ) ? "1px" : "2px";
 	}.bind(this);
 	elem.style( "color", tokenTermColor )
 		.style( "border-bottom", tokenTermBorderBottom )

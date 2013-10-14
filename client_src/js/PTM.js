@@ -4,7 +4,9 @@ var PTM = Backbone.Model.extend({
 		"docId" : null,
 		"segmentIds" : [],
 		"segments" : {},
-		"sourceMatchedTokens" : {},    // @value {{segmentId:{number:true}}} Can be modified by SourceBoxState on a "updateMatchedSourceTokens" event.
+		"sourceCaretTokens" : {},      // @value {{segmentId:{number:true}}} Can be modified by SourceBoxState on a "updateSourceTokens" event.
+		"sourceChunkTokens" : {},      // @value {{segmentId:{number:true}}} Can be modified by SourceBoxState on a "updateSourceTokens" event.
+		"sourceMatchedTokens" : {},    // @value {{segmentId:{number:true}}} Can be modified by SourceBoxState on a "updateSourceTokens" event.
 		"highlightSegmentId" : null,   // @value {segmentId|null} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
 		"highlightTokenIndex" : null,  // @value {integer|null} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
 		"highlightSource" : "",        // @value {string} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
@@ -134,6 +136,8 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceBoxView, "mouseClick:*", this.focusOnSegment );
 		this.listenTo( sourceBoxView, "mouseOver:token", this.showSourceSuggestions );
 		this.listenTo( sourceBoxView, "mouseOut:token", this.showSourceSuggestions );
+		this.get( "sourceCaretTokens" )[ segmentId ] = {};
+		this.get( "sourceChunkTokens" )[ segmentId ] = {};
 		this.get( "sourceMatchedTokens" )[ segmentId ] = {};
 		sourceBoxState.set({
 			"segmentId" : segmentId,
@@ -146,7 +150,7 @@ PTM.prototype.setup = function() {
 		this.targetTypingStates[segmentId] = targetTypingState;
 		this.targetTypingViews[segmentId] = targetTypingView;
 		this.listenTo( targetTypingState, "updateTranslations", this.loadTranslations );
-		this.listenTo( targetTypingState, "updateMatchedSourceTokens", this.updateMatchedSourceTokens );
+		this.listenTo( targetTypingState, "updateSourceTokens", this.updateSourceTokens );
 		this.listenTo( targetTypingState, "updateAutocompleteCandidates", this.showTargetSuggestions );
 		this.listenTo( targetTypingView, "mouseDown:*", this.focusOnSegment );
 		this.listenTo( targetTypingView, "keyPress:enter", this.focusOnNextSegment );
@@ -273,9 +277,19 @@ PTM.prototype.__showTargetSuggestions = function( suggestionSegmentId, suggestio
 	}, {trigger:true});
 };
 
-PTM.prototype.updateMatchedSourceTokens = function( segmentId, matchedTokenIndexes ) {
+PTM.prototype.updateSourceTokens = function( segmentId ) {
+	var targetTypingState = this.targetTypingStates[ segmentId ];
+	var caretTokenIndexes = targetTypingState.get( "caretSourceTokenIndexes" );
+	var chunkTokenIndexes = targetTypingState.get( "chunkSourceTokenIndexes" );
+	var matchedTokenIndexes = targetTypingState.get( "matchedSourceTokenIndexes" )
+	this.get( "sourceCaretTokens" )[ segmentId ] = caretTokenIndexes;
+	this.get( "sourceChunkTokens" )[ segmentId ] = chunkTokenIndexes;
 	this.get( "sourceMatchedTokens" )[ segmentId ] = matchedTokenIndexes;
-	this.sourceBoxStates[ segmentId ].set( "matchedTokenIndexes", matchedTokenIndexes );
+	this.sourceBoxStates[ segmentId ].set({
+		"caretTokenIndexes" : caretTokenIndexes,
+		"chunkTokenIndexes" : chunkTokenIndexes,
+		"matchedTokenIndexes" : matchedTokenIndexes,
+	});
 };
 
 PTM.prototype.updateUserText = function( segmentId, userText, caretIndex ) {

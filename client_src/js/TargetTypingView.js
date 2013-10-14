@@ -239,7 +239,7 @@ TargetTypingView.prototype.__tokenSecondTermRenderAlways = function( elem ) {
 		return hasFocus ? this.MT_COLOR : this.DIM_COLOR;
 	}.bind(this);
 	elem.text( function(d) { return d.secondTerm } )
-		.style( "border-bottom", function(d) {  }.bind(this) )
+		.style( "border-bottom", secondTermBorderBottom )
 		.style( "color", secondTermColor )
 };
 TargetTypingView.prototype.__recordCaretTokenCoords = function( elem ) {
