@@ -262,7 +262,7 @@ TargetTypingView.prototype.__recordFirstActiveTokenCoords = function() {
 	var activeLeft = 0;
 	var activeTop = 0;
 	this.views.overlay.selectAll( "span.Token" )
-		.filter( function(d) { return d.isFirstActive } )
+		.filter( function(d) { return d.isFirstActive || d.hasCaret } )
 			.each( function(d) {
 				activeLeft = d3.select(this)[0][0].offsetLeft;
 				activeTop = d3.select(this)[0][0].offsetTop;

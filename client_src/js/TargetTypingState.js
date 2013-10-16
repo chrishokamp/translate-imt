@@ -51,9 +51,9 @@ TargetTypingState.prototype.postProcess = function() {
 	
 	var hasFocus = this.get( "hasFocus" );
 	if ( hasFocus ) {
-		var activeChunkIndex = this.get( "activeChunkIndex" );
-		if ( activeChunkIndex !== null ) {
-			var matchingTranslations = this.get( "matchingTranslations" );
+		var matchingTranslations = this.get( "matchingTranslations" );
+		if ( matchingTranslations.length > 0 ) {
+			var activeChunkIndex = this.get( "activeChunkIndex" );
 			var activeXCoord = this.get( "activeXCoord" );
 			var activeYCoord = this.get( "activeYCoord" );
 			this.trigger( "updateAutocompleteCandidates", segmentId, activeChunkIndex, matchingTranslations, activeXCoord, activeYCoord );
@@ -138,14 +138,28 @@ TargetTypingState.prototype.replaceCaretToken = function( text ) {
 
 TargetTypingState.prototype.replaceActiveTokens = function( text ) {
 	var allTokens = this.get( "allTokens" );
+	var activeChunkIndex = this.get( "activeChunkIndex" );
 	var userText = "";
-	for ( var n = 0; n < allTokens.length; n++ ) {
-		var token = allTokens[n];
-		if ( ! token.isActive ) {
-			userText += token.userWord + token.userSep;
+	if ( activeChunkIndex === null ) {
+		for ( var n = 0; n < allTokens.length; n++ ) {
+			var token = allTokens[n];
+			if ( ! token.hasCaret ) {
+				userText += token.userWord + token.userSep;
+			}
+			else if ( token.hasCaret ) {
+				userText += text + " ";
+			}
 		}
-		else if ( token.isFirstActive ) {
-			userText += text + " ";
+	}
+	else {
+		for ( var n = 0; n < allTokens.length; n++ ) {
+			var token = allTokens[n];
+			if ( ! token.isActive ) {
+				userText += token.userWord + token.userSep;
+			}
+			else if ( token.isFirstActive ) {
+				userText += text + " ";
+			}
 		}
 	}
 	return userText;
@@ -392,12 +406,24 @@ TargetTypingState.prototype.__updateMatchingTranslations = function() {
 	var suggestionsByChunk = this.get( "suggestionsByChunk" );
 	var activeTokens = this.get( "activeTokens" );
 	var matchingTranslations = [];
+	var caretToken = this.get( "caretToken" );
 	if ( activeChunkIndex !== null ) {
 		var suggestions = suggestionsByChunk[ activeChunkIndex ];
 		for ( var i = 0; i < suggestions.length; i++ ) {
 			var suggestion = suggestions[i];
 			if ( suggestion.substr( 0, activeText.length ) === activeText ) {
 				matchingTranslations.push( suggestion );
+			}
+		}
+	}
+	if ( caretToken !== null ) {
+		var userText = caretToken.userWord;
+		var suggestion = caretToken.translationWord;
+		if ( suggestion.length > 0 ) {
+			if ( suggestion.substr( 0, userText.length ) === userText ) {
+				if ( matchingTranslations.indexOf( suggestion ) === -1 ) {
+					matchingTranslations.push( suggestion );
+				}
 			}
 		}
 	}
