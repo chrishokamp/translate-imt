@@ -26,17 +26,27 @@ $(document).ready( function() {
 	server = new TranslateServer();
 	server.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py"
 	logger = new EventLogger( "TranslateServer" );
-	var translateHandler = function( targetTranslation, requestData, responseData ) {
-		logger.log( "translation = " + targetTranslation );
-		logger.log( "request = " + JSON.stringify( requestData ) );
-		logger.log( "response = " + JSON.stringify( responseData ) );
-		d3.select( ".SetTargetTranslation" ).text( targetTranslation ).transition().style( "color", "#666" );
+	var translateHandler = function( responseData, requestData ) {
+		logger.log( "tReq = " + JSON.stringify( requestData ) );
+		logger.log( "Response = " + JSON.stringify( responseData ) );
+		d3.select( ".TargetTranslationOutput" ).text( responseData.result.map( function(d) { return d.tgt.join(" ") }).join("\n") ).transition().style( "color", "#666" );
 	};
+	var wordQueryHandler = function( responseData, requestData ) {
+		logger.log( "rqReq = " + JSON.stringify( requestData ) );
+		logger.log( "Response = " + JSON.stringify( responseData ) );
+		d3.select( ".RulesOutput" ).text( responseData.result.map( function(d) { return d.tgt.join(" ") }).join("\n") ).transition().style( "color", "#666" );
+	}
 	d3.select( ".TranslateRequest" ).on( "click", function() {
-		var sourceText = d3.select( ".GetSourceText" )[0][0].value;
-		var targetPrefix = d3.select( ".GetTargetPrefix" )[0][0].value;
-		d3.select( ".SetTargetTranslation" ).style( "color", "#999" );
-		server.translate( translateHandler, sourceText, targetPrefix );
+		var sourceText = d3.select( ".SourceTextInput" )[0][0].value;
+		var targetPrefix = d3.select( ".TargetPrefixInput" )[0][0].value;
+		d3.select( ".TargetTranslationOutput" ).style( "color", "#ccc" );
+		server.translate( sourceText, targetPrefix, translateHandler );
+	});
+	d3.select( ".WordQueryRequest" ).on( "click", function() {
+		var word = d3.select( ".WordInput" )[0][0].value;
+		var leftContext = d3.select( ".LeftContextInput" )[0][0].value;
+		d3.select( "RulesOutput" ).transition().style( "color", "#ccc" );
+		server.wordQuery( word, leftContext, wordQueryHandler );
 	});
 });
 </script>
@@ -61,21 +71,39 @@ div.container {
 <div class="container" style="width: 640px">
 	<p>
 		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Source Text: </span>
-		<textarea class="GetSourceText" style="width: 400px; height: 80px"></textarea>
+		<textarea class="SourceTextInput" style="width: 400px; height: 80px"></textarea>
 	</p>
 	<p>
 		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Target Prefix: </span>
-		<textarea class="GetTargetPrefix" style="width: 400px; height: 80px"></textarea>
+		<textarea class="TargetPrefixInput" style="width: 400px; height: 80px"></textarea>
 	</p>
 	<p>
-		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Translation: </span>
-		<textarea class="SetTargetTranslation" style="width: 400px; height: 80px; background: #eee" disabled></textarea>
+		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Translations: </span>
+		<textarea class="TargetTranslationOutput" style="width: 400px; height: 80px; background: #eee" disabled></textarea>
 	</p>
 	<p>
 		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
 		<input type="button" class="TranslateRequest" value="Submit HTTP Request"></input>
 	</p>
 </div><br/>
-<div class="EventLogger container" style="width: 640px; height: 480px; overflow-y: scroll"></div><br/>
+<div class="container" style="width: 640px">
+	<p>
+		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Word Query: </span>
+		<textarea class="WordInput" style="width: 400px; height: 40px"></textarea>
+	</p>
+	<p>
+		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Left Context: </span>
+		<textarea class="LeftContextInput" style="width: 400px; height: 40px"></textarea>
+	</p>
+	<p>
+		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top">Suggestions: </span>
+		<textarea class="RulesOutput" style="width: 400px; height: 80px; background: #eee" disabled></textarea>
+	</p>
+	<p>
+		<span style="display: inline-block; width: 100px; padding-right: 5px; text-align: right; vertical-align: top"></span>
+		<input type="button" class="WordQueryRequest" value="Submit HTTP Request"></input>
+	</p>
+</div><br/>
+<div class="EventLogger container" style="width: 640px; height: 200px; overflow-y: scroll"></div><br/>
 </body>
 </html>
