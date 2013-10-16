@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<title>Test Page: TargetTypingState and TargetTypingView</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<script type="text/javascript" src="js/d3.js"></script>
+	<script type="text/javascript" src="js/underscore.js"></script>
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/backbone.js"></script>
+
+	<link rel="stylesheet" href="css/PTM.css" />
+	<script type="text/javascript" src="js/TargetTypingState.js"></script>
+	<script type="text/javascript" src="js/TargetTypingView.js"></script>
+
+<script type="text/javascript">
+var EventLogger = function( prefix, logElement ) {
+	this.prefix = prefix;
+	if ( logElement === undefined )
+		this.logElement = d3.select( "div.EventLogger" );
+	else
+		this.logElement = d3.select( logElement );
+};
+EventLogger.prototype.log = function( message ) {
+	this.logElement.append( "div" ).attr( "class", "event" ).text( "[" + this.prefix + "] " + message );
+	this.logElement[0][0].scrollTop = this.logElement[0][0].scrollHeight;
+};
+</script>
+
+<script type="text/javascript">
+$(document).ready( function() {
+	state = new TargetTypingState();
+	view = new TargetTypingView({ model: state });
+	logger = new EventLogger( "TranslateServer" );
+	state.on( "all", function(e) { logger.log(e) });
+	view.on( "all", function(e) { logger.log(e) });
+
+	state.on( "updateTranslations", function( segmentId ) {
+		var userText = state.get( "userText" );
+		var translation = userText.split(/[ ]+/g).concat( userText.split(/[ ]+/g) );
+		var alignIndexes = [];
+		var chunkIndexes = _.range( translation.length )
+		state.setTranslations( userText, [ translation ], [ alignIndexes ], [ chunkIndexes ] );
+	});
+	view.on( "mouseDown:*", function( segmentId ) {
+		state.setFocus( true );
+	});
+	view.on( "keyPress:*", function( segmentId, userText, caretIndex ) {
+		state.setUserText( userText, caretIndex );
+	});
+	
+	state.set( "segmentId", "TestSentence" );
+	state.setUserText( "", 0 );
+	state.setFocus( true );
+});
+</script>
+<style type="text/css">
+div.container {
+	display: inline-block;
+	vertical-align: top;
+	margin: 10px;
+	padding: 10px;
+	border: 1px solid #999;
+
+	font-family: Gill Sans;
+	font-size: 10pt;
+	color: #666;
+	box-shadow: 2px 2px 15px #ccc;
+	background: #eee;
+}
+</style>
+</head>
+
+<body>
+<div class="container TargetTypingView" style="width: 720px"></div><br/>
+<div class="container" style="width: 720px"><textarea onfocus=""></textarea></div><br/>
+<div class="EventLogger container" style="width: 720px; height: 480px; overflow-y: scroll"></div><br/>
+</body>
+</html>

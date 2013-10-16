@@ -72,6 +72,12 @@ TargetTypingState.prototype.postProcess = function() {
 	}
 };
 
+/**
+ * @param {string} prefix Prefix used to generate the translations.
+ * @param {string[][]} translationList A list of translations. For each translation: a list of tokens represented as a string.
+ * @param {Object[][]} alignIndexList A list of alignment indexes. For each translation: a list of objects {sourceIndex: number, targetIndex: number}.
+ * @param {integer[][]} chunkIndexList A list of chunk indexes. For each translation: a list of chunk indexes.
+ **/
 TargetTypingState.prototype.setTranslations = function( prefix, translationList, alignIndexList, chunkIndexList ) {
 	this.set({
 		"prefix" : prefix,
@@ -231,7 +237,6 @@ TargetTypingState.prototype.__updateTokensFromBestTranslation = function() {
 		bestAlignIndexes = alignIndexList[0];
 		bestChunkIndexes = chunkIndexList[0];
 	}
-
 	var allTokens = this.get( "allTokens" );
 	while ( allTokens.length < bestTranslation.length ) {
 		allTokens.push( this.__newToken() );
@@ -309,7 +314,7 @@ TargetTypingState.prototype.__updateCaretToken = function() {
 	var allTokens = this.get( "allTokens" );
 	var caretIndex = this.get( "caretIndex" );
 	var caretToken = null;
-	var tokenIndex = 0;
+	var charIndex = 0;
 	for ( var n = 0; n < allTokens.length; n++ ) {
 		var token = allTokens[ n ];
 		var firstTerm = ( token.userWord !== "" ) ? token.userWord : "";
@@ -318,25 +323,27 @@ TargetTypingState.prototype.__updateCaretToken = function() {
 		token.firstTerm = firstTerm;
 		token.secondTerm = secondTerm;
 		token.sep = sep;
-		var startTokenIndex = tokenIndex;
-		tokenIndex += firstTerm.length;
-		tokenIndex += secondTerm.length;
-		var endTokenIndex = tokenIndex;
-		tokenIndex += sep.length;
-		var hasCaret = ( startTokenIndex <= caretIndex ) && ( caretIndex <= endTokenIndex );
+		var startCharIndex = charIndex;
+		charIndex += firstTerm.length;
+		charIndex += secondTerm.length;
+		var endCharIndex = charIndex;
+		charIndex += sep.length;
+		var hasCaret = ( startCharIndex <= caretIndex ) && ( caretIndex <= endCharIndex );
+		token.startCharIndex = startCharIndex;
+		token.endCharIndex = endCharIndex;
 		token.hasCaret = hasCaret;
 		if ( hasCaret ) {
 			caretToken = token;
 			if ( token.translationWord.substr( 0, token.userWord.length ) === token.userWord ) {
 				token.secondTerm = token.translationWord.substr( token.userWord.length );
+				charIndex += token.secondTerm.length;
+				token.endCharIndex += token.secondTerm.length;
 			}
 		}
 	}
 	this.set({
 		"allTokens" : allTokens,
-		"caretToken" : caretToken,
-		"caretXCoord" : null,
-		"caretYCoord" : null
+		"caretToken" : caretToken
 	});
 };
 
@@ -375,9 +382,7 @@ TargetTypingState.prototype.__updateActiveTokens = function() {
 	this.set({
 		"activeTokens" : activeTokens,
 		"activeText" : activeText,
-		"activeChunkIndex" : activeChunkIndex,
-		"activeXCoord" : null,
-		"activeYCoord" : null
+		"activeChunkIndex" : activeChunkIndex
 	});
 };
 
