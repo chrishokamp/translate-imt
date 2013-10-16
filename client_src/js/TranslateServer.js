@@ -17,10 +17,11 @@ TranslateServer.prototype.CONSOLE_LOG = true;
 /**
  * Make a word query.
  * @param {string} word Word in the source language.
+ * @param {string} leftContext The white-space delimited left context of word.
  * @param {function} f Callback function that takes up to 2 arguments: responseData, requestData.
  **/
 
-TranslateServer.prototype.wordQuery = function( word, callback ) {
+TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
 	if ( word === undefined ) {
 		return [];
 	}
@@ -28,7 +29,8 @@ TranslateServer.prototype.wordQuery = function( word, callback ) {
 		"src" : this.SRC_LANG,
 		"tgt" : this.TGT_LANG,
 		"spanLimit" : this.WORD_QUERY_LIMIT,
-		"text" : word
+		"text" : word,
+    "leftContext" : leftContext
 	};
 	var requestData = {
 		"rqReq" : JSON.stringify( rqReqData )
