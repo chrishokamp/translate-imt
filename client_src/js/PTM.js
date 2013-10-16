@@ -348,8 +348,8 @@ PTM.prototype.focusOnPreviousSegment = function( typingFocus ) {
 
 PTM.prototype.loadWordQueries = function( source ) {
 	var getTargetTerms = function( response ) {
-		if ( response.hasOwnProperty( "rules" ) ) {
-			return response.rules.map( function(d) { return d.tgt } );
+		if ( response.hasOwnProperty( "result" ) ) {
+			return response.result.map( function(d) { return d.tgt.join(' '); } );
 		}
 		return [];
 	}.bind(this);
@@ -381,15 +381,13 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	
 	/**
 	 * Convert machine translation from a string to a list of tokens.
-	 * TODO: Push post-processing onto server?
 	 * @private
 	 **/
 	var amendTranslationTokens = function( response ) {
-		if ( response.hasOwnProperty( "tgtList" ) ) {
+		if ( response.hasOwnProperty( "result" ) ) {
 			var translationList = [];
-			for ( var n = 0; n < response.tgtList.length; n++ ) {
-				var translationTokens = response.tgtList[n].split( /[ ]+/g );
-				translationList.push( translationTokens );
+			for ( var n = 0; n < response.result.length; n++ ) {
+				translationList.push( response.result[n].tgt );
 			}
 			response.translationList = translationList;
 		}
@@ -397,14 +395,13 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	}.bind(this);
 	/**
 	 * Convert alignment indexes ("alignList") from a string to a list of {sourceIndex:number, targetIndex:number} entries ("alignIndexList").
-	 * TODO: Push post-processing onto server?
 	 * @private
 	 **/
 	var amendAlignIndexes = function( response ) {
-		if ( response.hasOwnProperty( "alignList" ) ) {
+		if ( response.hasOwnProperty( "result" ) ) {
 			var alignIndexList = [];
-			for ( var n = 0; n < response.alignList.length; n++ ) {
-				var alignStrs = response.alignList[n].split(" ");
+			for ( var n = 0; n < response.result.length; n++ ) {
+				var alignStrs = response.result[n].align;
 				var alignIndexes = alignStrs.map( function(d) { 
 					var st = d.split("-").map( function(d) { return parseInt(d) } );
 					return { "sourceIndex" : st[0], "targetIndex" : st[1] };
