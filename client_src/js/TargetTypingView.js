@@ -146,13 +146,13 @@ TargetTypingView.prototype.__overlayRenderAlways = function( elem ) {
 	elem.style( "background", hasFocus ? "#fff" : "#eee" )
 	if ( hadFocus !== hasFocus ) {
 		if ( hasFocus ) {
-			elem.transition().ease( "linear" ).duration( this.ANIMATION_DURATION )
+			elem//.transition().ease( "linear" ).duration( this.ANIMATION_DURATION )
 				.style( "min-height", this.EXPANDED_HEIGHT + "px" )
 				.style( "padding-top", "12.5px" )
 				.style( "padding-bottom", "30px" )
 		}
 		else {
-			elem.transition().ease( "linear" ).duration( this.ANIMATION_DURATION )
+			elem//.transition().ease( "linear" ).duration( this.ANIMATION_DURATION )
 				.style( "min-height", 0 + "px" )
 				.style( "padding-top", "2.5px" )
 				.style( "padding-bottom", "15px" )
