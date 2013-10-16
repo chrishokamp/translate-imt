@@ -86,25 +86,26 @@ PTM.prototype.initialize = function( options ) {
 PTM.prototype.loaded = function() {
 	/**
 	 * Combine consecutive tokens marked as 'isBaseNP' into a chunk.
-	 * Assigned a unique index to each chunk.
+	 * Assign a unique index to each chunk.
 	 * @prviate
 	 **/
 	var amendSegmentChunkIndexes = function( segment ) {
 		var chunkIndexes = [];
-		var chunkIndex = 0;
-		var baseNP = null;
+		var chunkIndex = -1;
+		var prevBaseNP = null;
 		for ( var i = 0; i < segment.isBaseNP.length; i++ ) {
-			chunkIndexes.push( chunkIndex );
-			if ( baseNP !== segment.isBaseNP[i] || baseNP === false || segment.isBaseNP[i] === false ) {
-				baseNP = segment.isBaseNP[i];
+			if ( prevBaseNP !== segment.isBaseNP[i] || prevBaseNP === false || segment.isBaseNP[i] === false ) {
+				prevBaseNP = segment.isBaseNP[i];
 				chunkIndex++;
 			}
+			chunkIndexes.push( chunkIndex );
 		}
 		segment.chunkIndexes = chunkIndexes;
 	}.bind(this);
+	
 	var segments = this.get( "segments" );
 	for ( var segmentId in segments ) {
-		segment = amendSegmentChunkIndexes( segments[segmentId] );
+		amendSegmentChunkIndexes( segments[segmentId] );
 	}
 	this.setup();
 };
