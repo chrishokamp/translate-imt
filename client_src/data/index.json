@@ -1,7 +1,14 @@
 {
 	"datasets" : [
-		{ "url" : "data/en-doc.1.json", "label" : "Doc #1" },
-		{ "url" : "data/en-doc.2.json", "label" : "Doc #2" },
-		{ "url" : "data/en-doc.3.json", "label" : "Doc #3" }
+		{ "url" : "data/en.1.txt.ser.gz.json", "label" : "Doc #1" },
+		{ "url" : "data/en.2.txt.ser.gz.json", "label" : "Doc #2" },
+		{ "url" : "data/en.3.txt.ser.gz.json", "label" : "Doc #3" },
+		{ "url" : "data/en.4.txt.ser.gz.json", "label" : "Doc #4" },
+		{ "url" : "data/en.5.txt.ser.gz.json", "label" : "Doc #5" },
+		{ "url" : "data/en.6.txt.ser.gz.json", "label" : "Doc #6" },
+		{ "url" : "data/en.7.txt.ser.gz.json", "label" : "Doc #7" },
+		{ "url" : "data/en.2009.1.txt.ser.gz.json", "label" : "Doc #8" },
+		{ "url" : "data/en.2009.2.txt.ser.gz.json", "label" : "Doc #9" },
+		{ "url" : "data/en.2009.3.txt.ser.gz.json", "label" : "Doc #10" },
 	]
 }

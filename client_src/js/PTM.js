@@ -85,19 +85,22 @@ PTM.prototype.reset = function() {
  **/
 PTM.prototype.loaded = function() {
 	/**
-	 * Combine consecutive tokens marked as 'isBaseNP' into a chunk.
+	 * Combine consecutive tokens marked as 'chunkIOB' into a chunk.
 	 * Assign a unique index to each chunk.
-	 * @prviate
+	 * @private
 	 **/
 	var amendSegmentChunkIndexes = function( segment ) {
 		var chunkIndexes = [];
-		var chunkIndex = -1;
-		var prevBaseNP = null;
-		for ( var i = 0; i < segment.isBaseNP.length; i++ ) {
-			if ( prevBaseNP !== segment.isBaseNP[i] || prevBaseNP === false || segment.isBaseNP[i] === false ) {
-				prevBaseNP = segment.isBaseNP[i];
-				chunkIndex++;
-			}
+		var chunkIndex = 0;
+		var insideChunk = false;
+		for ( var i = 0; i < segment.chunkIOB.length; i++ ) {
+      if (segment.chunkIOB[i] === "B") {
+        chunkIndex++;
+        insideChunk = true;
+      } else if (segment.chunkIOB[i] === "O" && insideChunk) {
+        chunkIndex++;
+        insideChunk = false;
+      }
 			chunkIndexes.push( chunkIndex );
 		}
 		segment.chunkIndexes = chunkIndexes;
@@ -117,8 +120,8 @@ PTM.prototype.setup = function() {
 	var container = d3.select( "#PTM" );
 	container.selectAll( "*" ).remove();
 	
-	var segmentIds = this.get( "segmentIds" );
 	var segments = this.get( "segments" );
+	var segmentIds = Object.keys(segments);
 	
 	// Create a visualization for the entire document
 	this.documentView = new DocumentView({ "model" : this });
@@ -216,8 +219,9 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
 	if ( highlightTokenIndex === undefined ) { highlightTokenIndex = null }
 	if ( highlightXCoord === undefined ) { highlightXCoord = 0 }
 	if ( highlightYCoord === undefined ) { highlightYCoord = 0 }
-	var segmentIds = this.get( "segmentIds" );
 	var segments = this.get( "segments" );
+	var segmentIds = Object.keys(segments);
+
 	var highlightSource = ( highlightSegmentId !== null && highlightTokenIndex !== null ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex ] : "";
 	var highlightLeftContext = ( highlightSource !== "" && highlightTokenIndex > 0 ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex-1 ] : "";
 	
@@ -327,7 +331,8 @@ PTM.prototype.replaceActiveTokens = function( segmentId, text ) {
 
 PTM.prototype.focusOnSegment = function( typingFocus ) {
 	this.set( "typingFocus", typingFocus );
-	var segmentIds = this.get( "segmentIds" );
+  var segments = this.get( "segments" );
+  var segmentIds = Object.keys(segments);
 	for ( var i = 0; i < segmentIds.length; i++ ) {
 		var segmentId = segmentIds[i];
 		this.sourceBoxStates[ segmentId ].set({ "hasFocus" : typingFocus === segmentId });
@@ -340,7 +345,8 @@ PTM.prototype.focusOnSegment = function( typingFocus ) {
 };
 
 PTM.prototype.focusOnNextSegment = function( typingFocus ) {
-	var segmentIds = this.get( "segmentIds" );
+  var segments = this.get( "segments" );
+  var segmentIds = Object.keys(segments);
 //	var index = segmentIds.indexOf( typingFocus ) + 1;
 	var index = ( segmentIds.indexOf( typingFocus ) + 1 ) % segmentIds.length;
 	var typingNewFocus = ( index >= segmentIds.length ) ? null : segmentIds[ index ];
@@ -348,7 +354,8 @@ PTM.prototype.focusOnNextSegment = function( typingFocus ) {
 };
 
 PTM.prototype.focusOnPreviousSegment = function( typingFocus ) {
-	var segmentIds = this.get( "segmentIds" );
+  var segments = this.get( "segments" );
+  var segmentIds = Object.keys(segments);
 //	var index = segmentIds.indexOf( typingFocus ) - 1;
 	var index = ( segmentIds.indexOf( typingFocus ) + segmentIds.length - 1 ) % segmentIds.length;
 	var typingNewFocus = ( index < 0 ) ? null : segmentIds[ index ];
