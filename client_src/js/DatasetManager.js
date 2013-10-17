@@ -12,15 +12,7 @@ DatasetManager.prototype.initialize = function() {
 	this.view = new DatasetManagerUI({ "model" : this });
 	this.on( "change:datasets", this.view.render, this.view );
 	this.on( "change:datasetURL", this.saveQueryString );
-	this.fetch({ "success" : this.loadQueryString.bind(this),
-               "error" : this.debug.bind(this)});
-};
-
-// TODO(spenceg): Error appears here.
-DatasetManager.prototype.debug = function(model,response,options) {
-  console.log(response);
-  console.log(options);
-  console.log(model);
+	this.fetch({ "success" : this.loadQueryString.bind(this)});
 };
 
 /**

@@ -9,6 +9,6 @@
 		{ "url" : "data/en.7.txt.ser.gz.json", "label" : "Doc #7" },
 		{ "url" : "data/en.2009.1.txt.ser.gz.json", "label" : "Doc #8" },
 		{ "url" : "data/en.2009.2.txt.ser.gz.json", "label" : "Doc #9" },
-		{ "url" : "data/en.2009.3.txt.ser.gz.json", "label" : "Doc #10" },
+		{ "url" : "data/en.2009.3.txt.ser.gz.json", "label" : "Doc #10" }
 	]
 }
