@@ -187,9 +187,9 @@ PTM.prototype.setup = function() {
 		this.listenTo( targetBoxState, "updateTranslations", this.loadTranslations );
 		this.listenTo( targetBoxState, "updateSuggestions", this.showTargetSuggestions );
 		this.listenTo( targetBoxState, "updateMatchingTokens", this.updateMatchingTokens );
+		this.listenTo( targetBoxState, "updateEditCoords", this.showTargetSuggestions );
 		this.listenTo( targetTextareaView, "keyPress:enter", this.focusOnNextSegment );
 		this.listenTo( targetTextareaView, "keyPress:enter+shift", this.focusOnPreviousSegment );
-		this.listenTo( targetTextareaView, "keyPress:*", this.updateUserText );
 		this.targetBoxStates[segmentId] = targetBoxState;
 		this.targetBoxViews[segmentId] = targetBoxView;
 		this.targetTextareaViews[segmentId] = targetTextareaView;
@@ -288,33 +288,43 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
  * @param {number} [suggestionYCoord]
  * @private
  **/
-PTM.prototype.__showTargetSuggestions = function( suggestionSegmentId, suggestionCandidates, suggestionXCoord, suggestionYCoord ) {
-	if ( suggestionSegmentId === undefined ) { suggestionSegmentId = null }
-	if ( suggestionCandidates === undefined ) { suggestionCandidates = [] }
-	if ( suggestionXCoord === undefined ) { suggestionXCoord = 0 }
-	if ( suggestionYCoord === undefined ) { suggestionYCoord = 0 }
-
-	//debug
-	suggestionSegmentId = null;
-	suggestionCandidates = [];
-	
-	var targetFocus = this.get( "targetFocus" );
-	if ( suggestionSegmentId === null || targetFocus === suggestionSegmentId ) {
-		// Update PTM states
+PTM.prototype.__showTargetSuggestions = function( segmentId ) {
+	if ( segmentId === undefined ) { segmentId = null }
+	if ( segmentId === null ) {
 		this.set({
-			"suggestionSegmentId" : suggestionSegmentId,
-			"suggestionCandidates" : suggestionCandidates,
-			"suggestionXCoord" : suggestionXCoord,
-			"suggestionYCoord" : suggestionYCoord
+			"suggestionSegmentId" : segmentId,
+			"suggestionCandidates" : [],
+			"suggestionXCoord" : 0,
+			"suggestionYCoord" : 0
 		}, {trigger:true});
-	
-		// Propagate states to TargetSuggestions
 		this.targetSuggestionState.set({
-			"segmentId" : suggestionSegmentId,
-			"candidates" : suggestionCandidates,
-			"xCoord" : suggestionXCoord,
-			"yCoord" : suggestionYCoord
+			"segmentId" : segmentId,
+			"candidates" : [],
+			"xCoord" : 0,
+			"yCoord" : 0
 		}, {trigger:true});
+		return;
+	}
+
+	var targetFocus = this.get( "targetFocus" );
+	if ( targetFocus === segmentId ) {
+		var targetBoxState = this.targetBoxStates[segmentId];
+		var suggestions = targetBox.get( "suggestions" );
+		var xCoord = targetBox.get( "editXCoord" );
+		var yCoord = targetBox.get( "editYCoord" );
+		this.set({
+			"suggestionSegmentId" : segmentId,
+			"suggestionCandidates" : suggestions,
+			"suggestionXCoord" : xCoord,
+			"suggestionYCoord" : yCoord
+		}, {trigger:true});
+		this.targetSuggestionState.set({
+			"segmentId" : segmentId,
+			"candidates" : suggestions,
+			"xCoord" : xCoord,
+			"yCoord" : yCoord
+		}, {trigger:true});
+		return;
 	}
 };
 
