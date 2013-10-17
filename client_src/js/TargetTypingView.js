@@ -259,14 +259,20 @@ TargetTypingView.prototype.__onKeyUp = function() {
 };
 
 TargetTypingView.prototype.__recordFirstActiveTokenCoords = function() {
-	var activeLeft = 0;
-	var activeTop = 0;
+	var activeLeft = null;
+	var activeTop = null;
 	this.views.overlay.selectAll( "span.Token" )
 		.filter( function(d) { return d.isFirstActive || d.hasCaret } )
 			.each( function(d) {
-				activeLeft = d3.select(this)[0][0].offsetLeft;
-				activeTop = d3.select(this)[0][0].offsetTop;
+				if ( activeLeft === null && activeTop === null ) {
+					activeLeft = d3.select(this)[0][0].offsetLeft;
+					activeTop = d3.select(this)[0][0].offsetTop;
+				}
 			});
+	if ( activeLeft === null && activeTop === null ) {
+		activeLeft = 0;
+		activeTop = 0;
+	}
 	this.model.set({
 		"activeXCoord" : activeLeft,
 		"activeYCoord" : activeTop
