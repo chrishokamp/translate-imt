@@ -3,7 +3,7 @@ var TargetTextareaView = Backbone.View.extend({
 });
 
 TargetTextareaView.prototype.WIDTH = 775;
-TargetTextareaView.prototype.MIN_HEIGHT = 20;
+TargetTextareaView.prototype.MIN_HEIGHT = 30;
 TargetTextareaView.prototype.ANIMATION_DURATION = 120;
 TargetTextareaView.prototype.KEY = {
 	TAB : 9,
@@ -18,11 +18,11 @@ TargetTextareaView.prototype.initialize = function() {
 };
 
 TargetTextareaView.prototype.render = function() {
-	this.textarea.call( this.__renderAlways.bind(this) );
 	var userText = this.model.get( "userText" );
 	if ( userText !== this.textarea[0][0].value ) {
 		this.textarea[0][0].value = userText;
 	}
+	this.textarea.call( this.__renderAlways.bind(this) );
 };
 
 TargetTextareaView.prototype.focus = function() {
@@ -30,14 +30,8 @@ TargetTextareaView.prototype.focus = function() {
 };
 
 TargetTextareaView.prototype.__renderOnce = function( elem ) {
-	var setFocus = function( hasFocus ) {
-		this.model.set({
-			"hasFocus" : hasFocus
-		})
-	}.bind(this);
-	var setFocusDebounced = _.debounce( setFocus, 100 ); 
-	var onFocus = function() { setFocusDebounced( true ) }.bind(this);
-	var onBlur = function() { setFocusDebounced( false ) }.bind(this);
+	var onFocus = function() { this.model.set( "hasFocus", true ) }.bind(this);
+	var onBlur = function() { this.model.set( "hasFocus", false ) }.bind(this);
 	var onKeyDown = function() {
 		var keyCode = d3.event.keyCode;
 		if ( keyCode === this.KEY.ENTER || keyCode === this.KEY.TAB ) {
@@ -71,6 +65,8 @@ TargetTextareaView.prototype.__renderOnce = function( elem ) {
 			var segmentId = this.model.get( "segmentId" );
 			this.trigger( "keyPress:*", segmentId, d3.event.srcElement.value, d3.event.srcElement.selectionStart );
 		}
+		var caretIndex = this.textarea[0][0].selectionEnd;
+		this.model.set( "caretIndex", caretIndex );
 	}.bind(this);
 	var onMouseDown = function() {
 		var segmentId = this.model.get( "segmentId" );
@@ -78,9 +74,9 @@ TargetTextareaView.prototype.__renderOnce = function( elem ) {
 	}.bind(this);
 	elem.style( "width", (this.WIDTH-75) + "px" )
 		.style( "min-height", this.MIN_HEIGHT + "px" )
+		.style( "padding", "2.5px 60px 15px 15px" )
 		.style( "border", "none" )
 		.style( "outline", "none" )
-		.style( "padding", "2.5px 60px 15px 15px" )
 		.style( "background", "#eee" )
 		.style( "resize", "none" )
 		.classed( "UserText", true )

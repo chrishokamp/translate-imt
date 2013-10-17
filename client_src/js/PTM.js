@@ -113,7 +113,7 @@ PTM.prototype.loaded = function() {
 	}.bind(this);
 	
 	var segments = this.get( "segments" );
-	var segmentIds = _.uniq( _.keys( segments ) );
+	var segmentIds = _.keys( segments ).sort( function(a,b) { return parseInt(a) - parseInt(b) } );
 	segmentIds.forEach( function(segmentId) {
 		amendSegmentChunkIndexes( segments[segmentId] );
 	}.bind(this) );
@@ -183,7 +183,9 @@ PTM.prototype.setup = function() {
 		var targetBoxView = new TargetBoxView({ "model" : targetBoxState, "el" : ".TargetBoxView" + segmentId });
 		var targetTextareaView = new TargetTextareaView({ "model" : targetBoxState, "el" : ".TargetTextareaView" + segmentId });
 		var targetOverlayView = new TargetOverlayView({ "model" : targetBoxState, "el" : ".TargetOverlayView" + segmentId });
+		this.listenTo( targetBoxState, "updateFocus", this.updateFocus );
 		this.listenTo( targetBoxState, "updateTranslations", this.loadTranslations );
+		this.listenTo( targetBoxState, "updateSuggestions", this.showTargetSuggestions );
 		this.listenTo( targetBoxState, "updateMatchingTokens", this.updateMatchingTokens );
 		this.listenTo( targetTextareaView, "keyPress:enter", this.focusOnNextSegment );
 		this.listenTo( targetTextareaView, "keyPress:enter+shift", this.focusOnPreviousSegment );
@@ -194,8 +196,8 @@ PTM.prototype.setup = function() {
 		this.targetOverlayViews[segmentId] = targetOverlayView;
 		targetBoxState.set({
 			"segmentId" : segmentId,
-			"userText" : "",
-			"caretIndex" : 0
+			"chunkIndexes" : segments[segmentId].chunkIndexes,
+			"userText" : ""
 		});
 	}.bind(this) );
 	this.documentView.addSegment( null );
@@ -223,7 +225,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( this.targetSuggestionView, "mouseOut:option", function(){} );
 		this.listenTo( this.targetSuggestionView, "mouseClick:option", this.replaceActiveTokens );
 //	}
-	this.showTargetSuggestions( null, null );
+	this.showTargetSuggestions( null );
 
 	// Focus on the first segment
 	var targetFocus = segmentIds[0];
@@ -286,30 +288,34 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
  * @param {number} [suggestionYCoord]
  * @private
  **/
-PTM.prototype.__showTargetSuggestions = function( suggestionSegmentId, suggestionChunkIndex, suggestionCandidates, suggestionXCoord, suggestionYCoord ) {
+PTM.prototype.__showTargetSuggestions = function( suggestionSegmentId, suggestionCandidates, suggestionXCoord, suggestionYCoord ) {
 	if ( suggestionSegmentId === undefined ) { suggestionSegmentId = null }
-	if ( suggestionChunkIndex === undefined ) { suggestionChunkIndex = null }
 	if ( suggestionCandidates === undefined ) { suggestionCandidates = [] }
 	if ( suggestionXCoord === undefined ) { suggestionXCoord = 0 }
 	if ( suggestionYCoord === undefined ) { suggestionYCoord = 0 }
+
+	//debug
+	suggestionSegmentId = null;
+	suggestionCandidates = [];
 	
-	// Update PTM states
-	this.set({
-		"suggestionSegmentId" : suggestionSegmentId,
-		"suggestionChunkIndex" : suggestionChunkIndex,
-		"suggestionCandidates" : suggestionCandidates,
-		"suggestionXCoord" : suggestionXCoord,
-		"suggestionYCoord" : suggestionYCoord
-	}, {trigger:true});
+	var targetFocus = this.get( "targetFocus" );
+	if ( suggestionSegmentId === null || targetFocus === suggestionSegmentId ) {
+		// Update PTM states
+		this.set({
+			"suggestionSegmentId" : suggestionSegmentId,
+			"suggestionCandidates" : suggestionCandidates,
+			"suggestionXCoord" : suggestionXCoord,
+			"suggestionYCoord" : suggestionYCoord
+		}, {trigger:true});
 	
-	// Propagate states to TargetSuggestions
-	this.targetSuggestionState.set({
-		"segmentId" : suggestionSegmentId,
-		"chunkIndex" : suggestionChunkIndex,
-		"candidates" : suggestionCandidates,
-		"xCoord" : suggestionXCoord,
-		"yCoord" : suggestionYCoord
-	}, {trigger:true});
+		// Propagate states to TargetSuggestions
+		this.targetSuggestionState.set({
+			"segmentId" : suggestionSegmentId,
+			"candidates" : suggestionCandidates,
+			"xCoord" : suggestionXCoord,
+			"yCoord" : suggestionYCoord
+		}, {trigger:true});
+	}
 };
 
 PTM.prototype.updateSourceTokens = function( segmentId ) {
@@ -325,6 +331,12 @@ PTM.prototype.updateSourceTokens = function( segmentId ) {
 //		"chunkTokenIndexes" : chunkTokenIndexes,
 //		"matchedTokenIndexes" : matchedTokenIndexes,
 //	});
+};
+
+PTM.prototype.updateFocus = function( segmentId, hasFocus ) {
+	if ( hasFocus === undefined ) { hasFocus = false }
+	this.set( "targetFocus", hasFocus ? segmentId : null );
+	this.focusOnSegment( segmentId );
 };
 
 PTM.prototype.updateMatchingTokens = function( segmentId, matchingTokens ) {
@@ -364,18 +376,8 @@ PTM.prototype.replaceActiveTokens = function( segmentId, text ) {
 };
 
 PTM.prototype.focusOnSegment = function( targetFocus ) {
-	this.set( "targetFocus", targetFocus );
-	var segments = this.get( "segments" );
-	var segmentIds = this.get( "segmentIds" );
-	segmentIds.forEach( function( segmentId ) {
-		if ( targetFocus === segmentId ) {
-			this.targetTextareaViews[ segmentId ].focus();
-		}
-	}.bind(this) );
-	window.setTimeout( function(f){f()}, 200, function() {
-		this.documentView.renderFocusBand();
-		this.documentView.resize();
-	}.bind(this) );
+	this.documentView.renderFocusBand();
+	this.documentView.resize();
 };
 
 PTM.prototype.focusOnNextSegment = function( targetFocus ) {
@@ -384,7 +386,9 @@ PTM.prototype.focusOnNextSegment = function( targetFocus ) {
 //	var index = segmentIds.indexOf( targetFocus ) + 1;
 	var index = ( segmentIds.indexOf( targetFocus ) + 1 ) % segmentIds.length;
 	var typingNewFocus = ( index >= segmentIds.length ) ? null : segmentIds[ index ];
-	this.focusOnSegment( typingNewFocus );
+	this.targetTextareaViews[ typingNewFocus ].focus();
+//	this.updateFocus( typingNewFocus, true );
+//	this.focusOnSegment( typingNewFocus );
 };
 
 PTM.prototype.focusOnPreviousSegment = function( targetFocus ) {
@@ -393,7 +397,9 @@ PTM.prototype.focusOnPreviousSegment = function( targetFocus ) {
 //	var index = segmentIds.indexOf( targetFocus ) - 1;
 	var index = ( segmentIds.indexOf( targetFocus ) + segmentIds.length - 1 ) % segmentIds.length;
 	var typingNewFocus = ( index < 0 ) ? null : segmentIds[ index ];
-	this.focusOnSegment( typingNewFocus );
+	this.targetTextareaViews[ typingNewFocus ].focus();
+//	this.updateFocus( typingNewFocus, true );
+//	this.focusOnSegment( typingNewFocus );
 };
 
 PTM.prototype.loadWordQueries = function( source, leftContext ) {

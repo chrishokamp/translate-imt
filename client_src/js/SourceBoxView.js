@@ -62,9 +62,10 @@ SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		if ( ! hasFocus )
-			return this.UNMATCHED_COLOR;
-		else if ( isHovered ) 
+//		if ( ! hasFocus )
+//			return this.UNMATCHED_COLOR;
+//		else 
+		if ( isHovered ) 
 			return this.MT_COLOR;
 		else if ( isMatched ) 
 		 	return this.MATCHED_COLOR
