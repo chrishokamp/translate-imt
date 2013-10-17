@@ -15,17 +15,24 @@ DatasetManager.prototype.initialize = function() {
 	this.fetch({ "success" : this.loadQueryString.bind(this) });
 };
 
+/**
+ * Save the value of "datasetURL" as "url" in the query string.
+ **/
 DatasetManager.prototype.saveQueryString = function() {
 	var datasetURL = this.get( "datasetURL" );
-	var states = { "url" : datasetURL }
+	var qsState = { "url" : datasetURL }
 	if ( datasetURL !== null ) {
-		this.qs.write(states);
+		this.qs.write( qsState );
 	}
 };
 
+/**
+ * Read the value of "datasetURL" from the "url" field in the query string.
+ * If not defined, use the value of "url" in the first record in index.json.
+ **/
 DatasetManager.prototype.loadQueryString = function() {
-	var states = this.qs.read();
-	var datasetURL = states["url"];
+	var qsState = this.qs.read();
+	var datasetURL = qsState[ "url" ];
 	if ( datasetURL === undefined || datasetURL === null ) {
 		datasetURL = this.get( "datasets" )[0].url;
 	}
@@ -33,7 +40,7 @@ DatasetManager.prototype.loadQueryString = function() {
 };
 
 var DatasetManagerUI = Backbone.View.extend({
-	el : "#DatasetManager"
+	el : "select#DatasetManager"
 });
 
 DatasetManagerUI.prototype.initialize = function() {
@@ -43,8 +50,6 @@ DatasetManagerUI.prototype.initialize = function() {
 
 DatasetManagerUI.prototype.render = function() {
 	var datasetURL = this.model.get( "datasetURL" );
-	var datasetIndex = null;
-	
 	var datasets = this.model.get( "datasets" );
 	var elems = this.view.selectAll( "option" ).data( datasets );
 	elems.enter().append( "option" );
