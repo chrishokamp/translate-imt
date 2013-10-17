@@ -12,7 +12,7 @@ TargetTypingView.prototype.KEY = {
 	LEFT_ARROW : 37
 };
 TargetTypingView.prototype.WIDTH = 775;
-TargetTypingView.prototype.EXPANDED_HEIGHT = 60;
+TargetTypingView.prototype.EXPANDED_HEIGHT = 40;
 
 TargetTypingView.prototype.USER_COLOR = "#4292C6";
 TargetTypingView.prototype.MT_COLOR = "#4292C6";

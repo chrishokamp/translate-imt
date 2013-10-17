@@ -1,0 +1,7 @@
+{
+	"datasets" : [
+		{ "url" : "data/en-doc.1.json", "label" : "Doc #1" },
+		{ "url" : "data/en-doc.2.json", "label" : "Doc #2" },
+		{ "url" : "data/en-doc.3.json", "label" : "Doc #3" }
+	]
+}

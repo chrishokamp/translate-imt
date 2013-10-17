@@ -1,5 +1,17 @@
 var PTM = Backbone.Model.extend({
-	"defaults" : {
+	"url" : function() {
+		return this.get( "url" );
+	}
+});
+
+PTM.prototype.load = function( url ) {
+	this.reset();
+	this.set( "url", url );
+	this.fetch({ success : this.loaded.bind(this) });
+};
+
+PTM.prototype.reset = function() {
+	this.set({
 		"url" : null,
 		"docId" : null,
 		"segmentIds" : [],
@@ -27,18 +39,7 @@ var PTM = Backbone.Model.extend({
 		"suggestionYCoord" : 0,        // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
 		"mouseXCoord" : 0,
 		"mouseYCoord" : 0
-	},
-	"url" : function() {
-		return this.get( "url" );
-	}
-});
-
-/**
- * Default Backbone initialization call.
- * @override
- * @param {Object} options Options must contain a field 'url' specifying the location of the PTM data.
- **/
-PTM.prototype.initialize = function( options ) {
+	});
 
 	// Define or create a stub for all models and views.
 	/** @param {TranslateServer} **/
@@ -74,8 +75,6 @@ PTM.prototype.initialize = function( options ) {
 	this.showSourceSuggestions = _.debounce( this.__showSourceSuggestions, 10 );
 	/** @param {function} Display the target suggestion (autocomplete) floating menu. The menu is refreshed at most every 10ms. **/
 	this.showTargetSuggestions = _.debounce( this.__showTargetSuggestions, 10 );
-	
-	this.fetch({ success : this.loaded.bind(this) });
 };
 
 /**
@@ -114,6 +113,9 @@ PTM.prototype.loaded = function() {
  * Controller for the Predictive Translate Memory
  **/
 PTM.prototype.setup = function() {
+	var container = d3.select( "#PTM" );
+	container.selectAll( "*" ).remove();
+	
 	var segmentIds = this.get( "segmentIds" );
 	var segments = this.get( "segments" );
 	
@@ -121,7 +123,6 @@ PTM.prototype.setup = function() {
 	this.documentView = new DocumentView({ "model" : this });
 	
 	// Create source boxes and typing UIs
-	var container = d3.select( "#PTM" );
 	for ( var i = 0; i < segmentIds.length; i++ ) {
 		var segmentId = segmentIds[i];
 
@@ -173,24 +174,28 @@ PTM.prototype.setup = function() {
 	this.documentView.addSegment( null );
 
 	// Create highlight object (i.e., floating menu showing word query results when a user hovers over a word in the source language)
-	this.sourceSuggestionState = new SourceSuggestionState();
-	this.sourceSuggestionView = new SourceSuggestionView({ "model" : this.sourceSuggestionState });
-	this.listenTo( this.sourceSuggestionView, "mouseOver:*", this.showSourceSuggestions );
-	this.listenTo( this.sourceSuggestionView, "mouseOut:*", this.showSourceSuggestions );
-	this.listenTo( this.sourceSuggestionView, "mouseOver:option", function(){} );
-	this.listenTo( this.sourceSuggestionView, "mouseOut:option", function(){} );
-	this.listenTo( this.sourceSuggestionView, "mouseClick:option", this.replaceCaretToken );
+//	if ( this.sourceSuggestionState === null && this.sourceSuggestionView === null ) {
+		this.sourceSuggestionState = new SourceSuggestionState();
+		this.sourceSuggestionView = new SourceSuggestionView({ "model" : this.sourceSuggestionState });
+		this.listenTo( this.sourceSuggestionView, "mouseOver:*", this.showSourceSuggestions );
+		this.listenTo( this.sourceSuggestionView, "mouseOut:*", this.showSourceSuggestions );
+		this.listenTo( this.sourceSuggestionView, "mouseOver:option", function(){} );
+		this.listenTo( this.sourceSuggestionView, "mouseOut:option", function(){} );
+		this.listenTo( this.sourceSuggestionView, "mouseClick:option", this.replaceCaretToken );
+//	}
 	this.cache.wordQueries[ "" ] = { "rules" : [] };
 	this.showSourceSuggestions( null, null );
 
 	// Create suggestion object (i.e., floating menu showing updateAutocomplete options when a user is typing in the target language)
-	this.targetSuggestionState = new TargetSuggestionState();
-	this.targetSuggestionView = new TargetSuggestionView({ "model" : this.targetSuggestionState });
-	this.listenTo( this.targetSuggestionView, "mouseOver:*", this.showTargetSuggestions );
-//	this.listenTo( this.targetSuggestionView, "mouseOut:*", this.showTargetSuggestions );
-	this.listenTo( this.targetSuggestionView, "mouseOver:option", function(){} );
-	this.listenTo( this.targetSuggestionView, "mouseOut:option", function(){} );
-	this.listenTo( this.targetSuggestionView, "mouseClick:option", this.replaceActiveTokens );
+//	if ( this.targetSuggestionState === null && this.targetSuggestionView === null ) {
+		this.targetSuggestionState = new TargetSuggestionState();
+		this.targetSuggestionView = new TargetSuggestionView({ "model" : this.targetSuggestionState });
+		this.listenTo( this.targetSuggestionView, "mouseOver:*", this.showTargetSuggestions );
+	//	this.listenTo( this.targetSuggestionView, "mouseOut:*", this.showTargetSuggestions );
+		this.listenTo( this.targetSuggestionView, "mouseOver:option", function(){} );
+		this.listenTo( this.targetSuggestionView, "mouseOut:option", function(){} );
+		this.listenTo( this.targetSuggestionView, "mouseClick:option", this.replaceActiveTokens );
+//	}
 	this.showTargetSuggestions( null, null );
 
 	// Focus on the first segment

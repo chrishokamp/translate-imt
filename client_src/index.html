@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-	<title>PTM Prototype Interface</title>
+	<title>Predictive Translation Memory</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<link rel="stylesheet" href="css/font-awesome.css" />
 	<script type="text/javascript" src="js/d3.js"></script>
@@ -10,6 +10,8 @@
 	<script type="text/javascript" src="js/backbone.js"></script>
 	
 	<link rel="stylesheet" href="css/PTM.css" />
+	<script type="text/javascript" src="js/DatasetManager.js"></script>
+	<script type="text/javascript" src="js/QueryString.js"></script>
 	<script type="text/javascript" src="js/TranslateServer.js"></script>
 	<script type="text/javascript" src="js/SourceBoxState.js"></script>
 	<script type="text/javascript" src="js/SourceBoxView.js"></script>
@@ -22,17 +24,17 @@
 	<script type="text/javascript" src="js/DocumentView.js"></script>
 	<script type="text/javascript" src="js/PTM.js"></script>
 	<script type="text/javascript">
-		var ptm;
 		$(document).ready( function() {
-			var docId = Math.floor( Math.random() * 3 ) + 1;
-			var docURL = "data/en-doc." + docId + ".json";
-			ptm = new PTM({ "url" : docURL });
+			ptm = new PTM();
+			dm = new DatasetManager();
+			dm.on( "change:datasetURL", function() {
+				ptm.load( dm.get( "datasetURL" ) );
+			});
 		});
 	</script>
 </head>
 <body style="background: #ccc">
-<div id="SourceSuggestions" style="position: absolute; z-index: 1000"></div>
-<div id="TargetSuggestions" style="position: absolute; z-index: 1000"></div>
+<div class="UI" style="margin: 10px 20px">Dataset: <select id="DatasetManager"></select></div>
 <div id="PTM"></div>
 <div style="margin: 20px auto; width: 825px"></div>
 </body>

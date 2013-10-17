@@ -23,7 +23,9 @@ DocumentView.prototype.initialize = function( options ) {
 		.style( "box-shadow", "1px 1px 5px #999" )
 		.style( "pointer-events", "none" )
 	this.views.canvas = this.views.container.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" );
-	this.views.background = this.views.canvas.append( "div" ). attr( "class", "Background" ).call( this.__backgroundRenderOnce.bind(this) );
+	this.views.sourceSuggestions = this.views.canvas.append( "div" ).attr( "id", "SourceSuggestions" ).style( "position", "absolute" ).style( "z-index", 1000 );
+	this.views.targetSuggestions = this.views.canvas.append( "div" ).attr( "id", "TargetSuggestions" ).style( "position", "absolute" ).style( "z-index", 1000 );
+	this.views.background = this.views.canvas.append( "div" ).attr( "class", "Background" ).call( this.__backgroundRenderOnce.bind(this) );
 	this.views.focus = this.views.canvas.append( "div" ).attr( "class", "Focus" ).call( this.__focusRenderOnce.bind(this) );
 	this.views.overlay = this.views.canvas.append( "div" ).attr( "class", "Overlay" ).call( this.__overlayRenderOnce.bind(this) );
 	this.views.segments = {};
