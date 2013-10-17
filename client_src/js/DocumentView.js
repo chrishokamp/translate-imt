@@ -31,7 +31,7 @@ DocumentView.prototype.initialize = function( options ) {
 	this.views.segments = {};
 };
 
-DocumentView.prototype.addHeader = function() {
+DocumentView.prototype.__addHeader = function() {
 	var header = this.views.overlay.append( "div" ).attr( "class", "Header" );
 	header
 		.style( "min-height", "20px" )
@@ -56,18 +56,24 @@ DocumentView.prototype.addHeader = function() {
 		.text( "Spence Green, Jason Chuang, Jeffrey Heer, Christopher D. Manning" )
 	this.views.header = header;
 };
-DocumentView.prototype.addFooter = function() {
+/** @private **/
+DocumentView.prototype.__addFooter = function() {
 	var footer = this.views.overlay.append( "div" ).attr( "class", "Footer" );
 	footer.style( "height", "50px" );
 	this.views.footer = footer;
 };
 
+/**
+ * Header is automatically inserted before the first segment.
+ * Footer is inserted when addSegment is called without a segmentId.
+ * @param {string|null} segmentId An unique identifier for each segment; no whitespace allowed.
+ **/
 DocumentView.prototype.addSegment = function( segmentId ) {
 	if ( _.keys( this.views.segments ).length === 0 ) {
-		this.addHeader();
+		this.__addHeader();
 	}
 	if ( segmentId === null ) {
-		this.addFooter();
+		this.__addFooter();
 		return;
 	}
 	var segmentBand = this.views.overlay.append( "div" ).attr( "class", "SegmentBand SegmentBand" + segmentId );
@@ -80,14 +86,18 @@ DocumentView.prototype.addSegment = function( segmentId ) {
 		.style( "background", this.REGULAR_BACKGROUND )
 		.on( "click", function() { this.trigger( "mouseClick", segmentId ) }.bind(this) );
 	segmentBand.append( "div" ).attr( "class", "SourceBoxView SourceBoxView" + segmentId );
-	segmentBand.append( "div" ).attr( "class", "TargetTypingView TargetTypingView" + segmentId );
+//	segmentBand.append( "div" ).attr( "class", "TargetTypingView TargetTypingView" + segmentId );
+	var targetBox = segmentBand.append( "div" ).attr( "class", "TargetBoxView TargetBoxView" + segmentId );
+	targetBox.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" )
+		.append( "div" ).attr( "class", "TargetOverlayView TargetOverlayView" + segmentId );
+	targetBox.append( "div" ).attr( "class", "TargetTextareaView TargetTextareaView" + segmentId );
 	this.views.segments[ segmentId ] = segmentBand;
 	this.resize();
 	return segmentBand;
 };
 
 DocumentView.prototype.renderFocusBand = function() {
-	var typingFocus = this.model.get( "typingFocus" );
+	var typingFocus = this.model.get( "targetFocus" );
 	for ( var segmentId in this.views.segments ) {
 		var segmentBand = this.views.segments[ segmentId ];
 		segmentBand

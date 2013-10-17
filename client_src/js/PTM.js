@@ -26,13 +26,13 @@ PTM.prototype.reset = function() {
 		"highlightScores" : [],
 		"highlightXCoord" : 0,         // @value {number} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
 		"highlightYCoord" : 0,         // @value {number} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
-		"typingUserText" : {},         // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateUserText" event.
-		"typingCaretIndex" : {},       // @value {{segmentId:integer}} Can be modified by TargetTypingView on an "updateUserText" event.
-		"typingPrefix" : {},           // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateTranslations" event.
-		"typingTranslationList" : {},  // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
-		"typingAlignIndexList" : {},   // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
-		"typingChunkIndexList" : {},   // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
-		"typingFocus" : null,          // @value {segmentId} Can be modified by a focusOnSegment() or focusOnNextSegment() call.
+		"targetUserText" : {},         // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateUserText" event.
+		"targetCaretIndex" : {},       // @value {{segmentId:integer}} Can be modified by TargetTypingView on an "updateUserText" event.
+		"targetPrefix" : {},           // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateTranslations" event.
+		"targetTranslationList" : {},  // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
+		"targetAlignIndexList" : {},   // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
+		"targetChunkIndexList" : {},   // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
+		"targetFocus" : null,          // @value {segmentId} Can be modified by a focusOnSegment() or focusOnNextSegment() call.
 		"suggestionSegmentId" : null,  // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
 		"suggestionChunkIndex" : null, // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
 		"suggestionCandidates" : [],   // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
@@ -56,9 +56,15 @@ PTM.prototype.reset = function() {
 	/** @param {SourceSuggestionView} **/
 	this.sourceSuggestionView = null;
 	/** @param {{segmentId:TargetTypingState}} **/
-	this.targetTypingStates = {};
+//	this.targetTypingStates = {};
 	/** @param {{segmentId:TargetTypingView}} **/
-	this.targetTypingViews = {};
+//	this.targetTypingViews = {};
+	
+	this.targetBoxStates = {};
+	this.targetBoxViews = {};
+	this.targetTextareaViews = {};
+	this.targetOverlayViews = {};
+	
 	/** @param {TargetSuggestionState} **/
 	this.targetSuggestionState = null;
 	/** @param {TargetSuggestionView} **/
@@ -94,22 +100,24 @@ PTM.prototype.loaded = function() {
 		var chunkIndex = 0;
 		var insideChunk = false;
 		for ( var i = 0; i < segment.chunkIOB.length; i++ ) {
-      if (segment.chunkIOB[i] === "B") {
-        chunkIndex++;
-        insideChunk = true;
-      } else if (segment.chunkIOB[i] === "O" && insideChunk) {
-        chunkIndex++;
-        insideChunk = false;
-      }
+			if (segment.chunkIOB[i] === "B") {
+				chunkIndex++;
+				insideChunk = true;
+			} else if (segment.chunkIOB[i] === "O" && insideChunk) {
+				chunkIndex++;
+				insideChunk = false;
+			}
 			chunkIndexes.push( chunkIndex );
 		}
 		segment.chunkIndexes = chunkIndexes;
 	}.bind(this);
 	
 	var segments = this.get( "segments" );
-	for ( var segmentId in segments ) {
+	var segmentIds = _.keys( segments ).sort( function(a,b) { return parseInt(a) - parseInt(b) } );
+	segmentIds.forEach( function(segmentId) {
 		amendSegmentChunkIndexes( segments[segmentId] );
-	}
+	}.bind(this) );
+	this.set( "segmentIds", segmentIds );
 	this.setup();
 };
 
@@ -121,15 +129,14 @@ PTM.prototype.setup = function() {
 	container.selectAll( "*" ).remove();
 	
 	var segments = this.get( "segments" );
-	var segmentIds = Object.keys(segments);
+	var segmentIds = this.get( "segmentIds" );
 	
 	// Create a visualization for the entire document
 	this.documentView = new DocumentView({ "model" : this });
 	
 	// Create source boxes and typing UIs
-	for ( var i = 0; i < segmentIds.length; i++ ) {
-		var segmentId = segmentIds[i];
-
+	segmentIds.forEach( function(segmentId) {
+		
 		// Generate HTML DOM elements
 		var segmentBand = this.documentView.addSegment( segmentId );
 		this.listenTo( segmentBand, "mouseClick", this.focusOnSegment );
@@ -151,30 +158,48 @@ PTM.prototype.setup = function() {
 		});
 		
 		// Create state and view objects for the typing UI
-		var targetTypingState = new TargetTypingState();
-		var targetTypingView = new TargetTypingView({ "model" : targetTypingState, "el" : ".TargetTypingView" + segmentId });
-		this.targetTypingStates[segmentId] = targetTypingState;
-		this.targetTypingViews[segmentId] = targetTypingView;
-		this.listenTo( targetTypingState, "updateTranslations", this.loadTranslations );
-		this.listenTo( targetTypingState, "updateSourceTokens", this.updateSourceTokens );
-		this.listenTo( targetTypingState, "updateAutocompleteCandidates", this.showTargetSuggestions );
-		this.listenTo( targetTypingView, "mouseDown:*", this.focusOnSegment );
-		this.listenTo( targetTypingView, "keyPress:enter", this.focusOnNextSegment );
-		this.listenTo( targetTypingView, "keyPress:enter+shift", this.focusOnPreviousSegment );
-		this.listenTo( targetTypingView, "keyPress:tab", this.replaceActiveTokens );
-		this.listenTo( targetTypingView, "keyPress:*", this.updateUserText );
-		this.get( "typingUserText" )[ segmentId ] = "";
-		this.get( "typingPrefix" )[ segmentId ] = "";
-		this.get( "typingTranslationList" )[ segmentId ] = [];
-		this.get( "typingChunkIndexList" )[ segmentId ] = [];
-		this.get( "typingCaretIndex" )[ segmentId ] = 0;
+//		var targetTypingState = new TargetTypingState();
+//		var targetTypingView = new TargetTypingView({ "model" : targetTypingState, "el" : ".TargetTypingView" + segmentId });
+//		this.targetTypingStates[segmentId] = targetTypingState;
+//		this.targetTypingViews[segmentId] = targetTypingView;
+//		this.listenTo( targetTypingState, "updateTranslations", this.loadTranslations );
+//		this.listenTo( targetTypingState, "updateSourceTokens", this.updateSourceTokens );
+//		this.listenTo( targetTypingState, "updateAutocompleteCandidates", this.showTargetSuggestions );
+//		this.listenTo( targetTypingView, "mouseDown:*", this.focusOnSegment );
+//		this.listenTo( targetTypingView, "keyPress:tab", this.replaceActiveTokens );
+		this.get( "targetUserText" )[ segmentId ] = "";
+		this.get( "targetPrefix" )[ segmentId ] = "";
+		this.get( "targetTranslationList" )[ segmentId ] = [];
+		this.get( "targetChunkIndexList" )[ segmentId ] = [];
+		this.get( "targetCaretIndex" )[ segmentId ] = 0;
 		this.cache.translations[ segmentId ] = {};
-		targetTypingState.set({
-			"segmentId" : segmentId
+//		targetTypingState.set({
+//			"segmentId" : segmentId
+//		});
+//		this.updateUserText( segmentId, "", 0 );
+		window.setTimeout( function(f){f()}, Math.random() * 0.01, function() { this.loadTranslations( segmentId, "" ) }.bind(this) );
+		
+		var targetBoxState = new TargetBoxState();
+		var targetBoxView = new TargetBoxView({ "model" : targetBoxState, "el" : ".TargetBoxView" + segmentId });
+		var targetTextareaView = new TargetTextareaView({ "model" : targetBoxState, "el" : ".TargetTextareaView" + segmentId });
+		var targetOverlayView = new TargetOverlayView({ "model" : targetBoxState, "el" : ".TargetOverlayView" + segmentId });
+		this.listenTo( targetBoxState, "updateFocus", this.updateFocus );
+		this.listenTo( targetBoxState, "updateTranslations", this.loadTranslations );
+		this.listenTo( targetBoxState, "updateSuggestions", this.showTargetSuggestions );
+		this.listenTo( targetBoxState, "updateMatchingTokens", this.updateMatchingTokens );
+		this.listenTo( targetBoxState, "updateEditCoords", this.showTargetSuggestions );
+		this.listenTo( targetTextareaView, "keyPress:enter", this.focusOnNextSegment );
+		this.listenTo( targetTextareaView, "keyPress:enter+shift", this.focusOnPreviousSegment );
+		this.targetBoxStates[segmentId] = targetBoxState;
+		this.targetBoxViews[segmentId] = targetBoxView;
+		this.targetTextareaViews[segmentId] = targetTextareaView;
+		this.targetOverlayViews[segmentId] = targetOverlayView;
+		targetBoxState.set({
+			"segmentId" : segmentId,
+			"chunkIndexes" : segments[segmentId].chunkIndexes,
+			"userText" : ""
 		});
-		this.updateUserText( segmentId, "", 0 );
-		this.loadTranslations( segmentId, "" );
-	}
+	}.bind(this) );
 	this.documentView.addSegment( null );
 
 	// Create highlight object (i.e., floating menu showing word query results when a user hovers over a word in the source language)
@@ -187,7 +212,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( this.sourceSuggestionView, "mouseOut:option", function(){} );
 		this.listenTo( this.sourceSuggestionView, "mouseClick:option", this.replaceCaretToken );
 //	}
-	this.cache.wordQueries[ "" ] = { "rules" : [] };
+	this.cache.wordQueries[ ":" ] = { "rules" : [] };
 	this.showSourceSuggestions( null, null );
 
 	// Create suggestion object (i.e., floating menu showing updateAutocomplete options when a user is typing in the target language)
@@ -200,11 +225,11 @@ PTM.prototype.setup = function() {
 		this.listenTo( this.targetSuggestionView, "mouseOut:option", function(){} );
 		this.listenTo( this.targetSuggestionView, "mouseClick:option", this.replaceActiveTokens );
 //	}
-	this.showTargetSuggestions( null, null );
+	this.showTargetSuggestions( null );
 
 	// Focus on the first segment
-	var typingFocus = segmentIds[0];
-	this.focusOnSegment( typingFocus );
+	var targetFocus = segmentIds[0];
+	this.focusOnSegment( targetFocus );
 };
 
 /**
@@ -220,7 +245,7 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
 	if ( highlightXCoord === undefined ) { highlightXCoord = 0 }
 	if ( highlightYCoord === undefined ) { highlightYCoord = 0 }
 	var segments = this.get( "segments" );
-	var segmentIds = Object.keys(segments);
+	var segmentIds = this.get( "segmentIds" );
 
 	var highlightSource = ( highlightSegmentId !== null && highlightTokenIndex !== null ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex ] : "";
 	var highlightLeftContext = ( highlightSource !== "" && highlightTokenIndex > 0 ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex-1 ] : "";
@@ -237,12 +262,11 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
 	}, {trigger:true});
 	
 	// Propagate states to SourceBoxes
-	for ( var i = 0; i < segmentIds.length; i++ ) {
-		var segmentId = segmentIds[ i ];
+	segmentIds.forEach( function(segmentId) {
 		this.sourceBoxStates[ segmentId ].set({
 			"hoverTokenIndex" : ( segmentId === highlightSegmentId ) ? highlightTokenIndex : null
-		}, {trigger:true});
-	}
+		});
+	}.bind(this) );
 	
 	// Propagate states to the SourceSuggestions, and make a word query request (if necessary)
 	this.sourceSuggestionState.set({
@@ -264,102 +288,129 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
  * @param {number} [suggestionYCoord]
  * @private
  **/
-PTM.prototype.__showTargetSuggestions = function( suggestionSegmentId, suggestionChunkIndex, suggestionCandidates, suggestionXCoord, suggestionYCoord ) {
-	if ( suggestionSegmentId === undefined ) { suggestionSegmentId = null }
-	if ( suggestionChunkIndex === undefined ) { suggestionChunkIndex = null }
-	if ( suggestionCandidates === undefined ) { suggestionCandidates = [] }
-	if ( suggestionXCoord === undefined ) { suggestionXCoord = 0 }
-	if ( suggestionYCoord === undefined ) { suggestionYCoord = 0 }
-	
-	// Update PTM states
-	this.set({
-		"suggestionSegmentId" : suggestionSegmentId,
-		"suggestionChunkIndex" : suggestionChunkIndex,
-		"suggestionCandidates" : suggestionCandidates,
-		"suggestionXCoord" : suggestionXCoord,
-		"suggestionYCoord" : suggestionYCoord
-	}, {trigger:true});
-	
-	// Propagate states to TargetSuggestions
-	this.targetSuggestionState.set({
-		"segmentId" : suggestionSegmentId,
-		"chunkIndex" : suggestionChunkIndex,
-		"candidates" : suggestionCandidates,
-		"xCoord" : suggestionXCoord,
-		"yCoord" : suggestionYCoord
-	}, {trigger:true});
+PTM.prototype.__showTargetSuggestions = function( segmentId ) {
+	if ( segmentId === undefined ) { segmentId = null }
+	console.log( "showTargetSuggestins", segmentId )
+	if ( segmentId === null ) {
+		this.set({
+			"suggestionSegmentId" : segmentId,
+			"suggestionCandidates" : [],
+			"suggestionXCoord" : 0,
+			"suggestionYCoord" : 0
+		}, {trigger:true});
+		this.targetSuggestionState.set({
+			"segmentId" : segmentId,
+			"candidates" : [],
+			"xCoord" : 0,
+			"yCoord" : 0
+		}, {trigger:true});
+		return;
+	}
+
+	var targetFocus = this.get( "targetFocus" );
+	if ( targetFocus === segmentId ) {
+		var targetBoxState = this.targetBoxStates[segmentId];
+		var suggestions = targetBoxState.get( "suggestions" );
+		var xCoord = targetBoxState.get( "editXCoord" );
+		var yCoord = targetBoxState.get( "editYCoord" );
+		this.set({
+			"suggestionSegmentId" : segmentId,
+			"suggestionCandidates" : suggestions,
+			"suggestionXCoord" : xCoord,
+			"suggestionYCoord" : yCoord
+		}, {trigger:true});
+		this.targetSuggestionState.set({
+			"segmentId" : segmentId,
+			"candidates" : suggestions,
+			"xCoord" : xCoord,
+			"yCoord" : yCoord
+		}, {trigger:true});
+		return;
+	}
 };
 
 PTM.prototype.updateSourceTokens = function( segmentId ) {
-	var targetTypingState = this.targetTypingStates[ segmentId ];
-	var caretTokenIndexes = targetTypingState.get( "caretSourceTokenIndexes" );
-	var chunkTokenIndexes = targetTypingState.get( "chunkSourceTokenIndexes" );
-	var matchedTokenIndexes = targetTypingState.get( "matchedSourceTokenIndexes" )
-	this.get( "sourceCaretTokens" )[ segmentId ] = caretTokenIndexes;
-	this.get( "sourceChunkTokens" )[ segmentId ] = chunkTokenIndexes;
-	this.get( "sourceMatchedTokens" )[ segmentId ] = matchedTokenIndexes;
+//	var targetTypingState = this.targetTypingStates[ segmentId ];
+//	var caretTokenIndexes = targetTypingState.get( "caretSourceTokenIndexes" );
+//	var chunkTokenIndexes = targetTypingState.get( "chunkSourceTokenIndexes" );
+//	var matchedTokenIndexes = targetTypingState.get( "matchedSourceTokenIndexes" )
+//	this.get( "sourceCaretTokens" )[ segmentId ] = caretTokenIndexes;
+//	this.get( "sourceChunkTokens" )[ segmentId ] = chunkTokenIndexes;
+//	this.get( "sourceMatchedTokens" )[ segmentId ] = matchedTokenIndexes;
+//	this.sourceBoxStates[ segmentId ].set({
+//		"caretTokenIndexes" : caretTokenIndexes,
+//		"chunkTokenIndexes" : chunkTokenIndexes,
+//		"matchedTokenIndexes" : matchedTokenIndexes,
+//	});
+};
+
+PTM.prototype.updateFocus = function( segmentId, hasFocus ) {
+	if ( hasFocus === undefined ) { hasFocus = false }
+	this.set( "targetFocus", hasFocus ? segmentId : null );
+	this.focusOnSegment( segmentId );
+};
+
+PTM.prototype.updateMatchingTokens = function( segmentId, matchingTokens ) {
+	this.get( "sourceMatchedTokens" )[ segmentId ] = matchingTokens;
 	this.sourceBoxStates[ segmentId ].set({
-		"caretTokenIndexes" : caretTokenIndexes,
-		"chunkTokenIndexes" : chunkTokenIndexes,
-		"matchedTokenIndexes" : matchedTokenIndexes,
+		"matchedTokenIndexes" : matchingTokens,
 	});
 };
 
 PTM.prototype.updateUserText = function( segmentId, userText, caretIndex ) {
-	var targetTypingState = this.targetTypingStates[ segmentId ];
-	this.get( "typingUserText" )[ segmentId ] = userText;
-	this.get( "typingCaretIndex" )[ segmentId ] = caretIndex;
-	targetTypingState.setUserText( userText, caretIndex );
+//	var targetTypingState = this.targetTypingStates[ segmentId ];
+	var targetBoxState = this.targetBoxStates[ segmentId ];
+	this.get( "targetUserText" )[ segmentId ] = userText;
+	this.get( "targetCaretIndex" )[ segmentId ] = caretIndex;
+//	targetTypingState.setUserText( userText, caretIndex );
+	targetBoxState.set({
+		"userText" : userText,
+		"caretIndex" : caretIndex
+	});
 };
 
 PTM.prototype.replaceCaretToken = function( segmentId, text ) {
-	var targetTypingState = this.targetTypingStates[ segmentId ];
-	var userText = targetTypingState.replaceCaretToken( text );
-	var caretIndex = userText.length;
-	this.get( "typingUserText" )[ segmentId ] = userText;
-	this.get( "typingCaretIndex" )[ segmentId ] = caretIndex;
-	targetTypingState.setUserText( userText, caretIndex );
+//	var targetTypingState = this.targetTypingStates[ segmentId ];
+//	var userText = targetTypingState.replaceCaretToken( text );
+//	var caretIndex = userText.length;
+//	this.get( "targetUserText" )[ segmentId ] = userText;
+//	this.get( "targetCaretIndex" )[ segmentId ] = caretIndex;
+//	targetTypingState.setUserText( userText, caretIndex );
 };
 PTM.prototype.replaceActiveTokens = function( segmentId, text ) {
-	var targetTypingState = this.targetTypingStates[ segmentId ];
-	var userText = targetTypingState.replaceActiveTokens( text );
-	var caretIndex = userText.length;
-	this.get( "typingUserText" )[ segmentId ] = userText;
-	this.get( "typingCaretIndex" )[ segmentId ] = caretIndex;
-	targetTypingState.setUserText( userText, caretIndex );
+//	var targetTypingState = this.targetTypingStates[ segmentId ];
+//	var userText = targetTypingState.replaceActiveTokens( text );
+//	var caretIndex = userText.length;
+//	this.get( "targetUserText" )[ segmentId ] = userText;
+//	this.get( "targetCaretIndex" )[ segmentId ] = caretIndex;
+//	targetTypingState.setUserText( userText, caretIndex );
 };
 
-PTM.prototype.focusOnSegment = function( typingFocus ) {
-	this.set( "typingFocus", typingFocus );
-  var segments = this.get( "segments" );
-  var segmentIds = Object.keys(segments);
-	for ( var i = 0; i < segmentIds.length; i++ ) {
-		var segmentId = segmentIds[i];
-		this.sourceBoxStates[ segmentId ].set({ "hasFocus" : typingFocus === segmentId });
-		this.targetTypingStates[ segmentId ].setFocus( typingFocus === segmentId );
-	}
-	window.setTimeout( function(f){f()}, 200, function() {
-		this.documentView.renderFocusBand();
-		this.documentView.resize();
-	}.bind(this) );
+PTM.prototype.focusOnSegment = function( targetFocus ) {
+	this.documentView.renderFocusBand();
+	this.documentView.resize();
 };
 
-PTM.prototype.focusOnNextSegment = function( typingFocus ) {
-  var segments = this.get( "segments" );
-  var segmentIds = Object.keys(segments);
-//	var index = segmentIds.indexOf( typingFocus ) + 1;
-	var index = ( segmentIds.indexOf( typingFocus ) + 1 ) % segmentIds.length;
+PTM.prototype.focusOnNextSegment = function( targetFocus ) {
+	var segments = this.get( "segments" );
+	var segmentIds = this.get( "segmentIds" );
+//	var index = segmentIds.indexOf( targetFocus ) + 1;
+	var index = ( segmentIds.indexOf( targetFocus ) + 1 ) % segmentIds.length;
 	var typingNewFocus = ( index >= segmentIds.length ) ? null : segmentIds[ index ];
-	this.focusOnSegment( typingNewFocus );
+	this.targetTextareaViews[ typingNewFocus ].focus();
+//	this.updateFocus( typingNewFocus, true );
+//	this.focusOnSegment( typingNewFocus );
 };
 
-PTM.prototype.focusOnPreviousSegment = function( typingFocus ) {
-  var segments = this.get( "segments" );
-  var segmentIds = Object.keys(segments);
-//	var index = segmentIds.indexOf( typingFocus ) - 1;
-	var index = ( segmentIds.indexOf( typingFocus ) + segmentIds.length - 1 ) % segmentIds.length;
+PTM.prototype.focusOnPreviousSegment = function( targetFocus ) {
+	var segments = this.get( "segments" );
+	var segmentIds = this.get( "segmentIds" );
+//	var index = segmentIds.indexOf( targetFocus ) - 1;
+	var index = ( segmentIds.indexOf( targetFocus ) + segmentIds.length - 1 ) % segmentIds.length;
 	var typingNewFocus = ( index < 0 ) ? null : segmentIds[ index ];
-	this.focusOnSegment( typingNewFocus );
+	this.targetTextareaViews[ typingNewFocus ].focus();
+//	this.updateFocus( typingNewFocus, true );
+//	this.focusOnSegment( typingNewFocus );
 };
 
 PTM.prototype.loadWordQueries = function( source, leftContext ) {
@@ -390,7 +441,7 @@ PTM.prototype.loadWordQueries = function( source, leftContext ) {
 		}
 	}.bind(this);
 
-  var cacheKey = leftContext + ":" + source;
+	var cacheKey = leftContext + ":" + source;
 	var cacheAndUpdate = function( response, request ) {
 		this.cache.wordQueries[ cacheKey ] = response;
 		update( response );
@@ -404,7 +455,7 @@ PTM.prototype.loadWordQueries = function( source, leftContext ) {
 };
 
 PTM.prototype.loadTranslations = function( segmentId, prefix ) {
-	this.get( "typingPrefix" )[ segmentId ] = prefix;
+	this.get( "targetPrefix" )[ segmentId ] = prefix;
 	
 	/**
 	 * Convert machine translation from a string to a list of tokens.
@@ -425,8 +476,8 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	 * @private
 	 **/
 	var amendAlignIndexes = function( response ) {
+		var alignIndexList = [];
 		if ( response.hasOwnProperty( "result" ) ) {
-			var alignIndexList = [];
 			for ( var n = 0; n < response.result.length; n++ ) {
 				var alignStrs = response.result[n].align;
 				var alignIndexes = alignStrs.map( function(d) { 
@@ -435,8 +486,8 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 				});
 				alignIndexList.push( alignIndexes );
 			}
-			response.alignIndexList = alignIndexList;
 		}
+		response.alignIndexList = alignIndexList;
 		return response;
 	}.bind(this);
 	/**
@@ -445,11 +496,11 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	 * @private
 	 **/
 	var amendChunkIndexes = function( response ) {
+		var chunkIndexList = [];
 		var segments = this.get( "segments" );
 		var segment = segments[ segmentId ];
 		var segmentChunkIndexes = segment.chunkIndexes;
 		if ( response.hasOwnProperty( "alignIndexList" ) ) {
-			var chunkIndexList = [];
 			for ( var n = 0; n < response.alignIndexList.length; n++ ) {
 				var alignIndexes = response.alignIndexList[n];
 				var chunkIndexes = _.range( response.translationList[n].length ).map( function(d) { return null } );
@@ -460,19 +511,25 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 				}
 				chunkIndexList.push( chunkIndexes );
 			}
-			response.chunkIndexList = chunkIndexList;
 		}
+		response.chunkIndexList = chunkIndexList;
 		return response;
 	}.bind(this);
 	var update = function( response ) {
-		if ( this.get( "typingPrefix" )[ segmentId ] === prefix ) {
+		if ( this.get( "targetPrefix" )[ segmentId ] === prefix ) {
 			var translationList = response.translationList;
 			var alignIndexList = response.alignIndexList;
 			var chunkIndexList = response.chunkIndexList;
-			this.set( "typingTranslationList" )[ segmentId ] = translationList;
-			this.set( "typingAlignIndexList" )[ segmentId ] = alignIndexList;
-			this.set( "typingChunkIndexList" )[ segmentId ] = chunkIndexList;
-			this.targetTypingStates[ segmentId ].setTranslations( prefix, translationList, alignIndexList, chunkIndexList );
+			this.set( "targetTranslationList" )[ segmentId ] = translationList;
+			this.set( "targetAlignIndexList" )[ segmentId ] = alignIndexList;
+			this.set( "targetChunkIndexList" )[ segmentId ] = chunkIndexList;
+//			this.targetTypingStates[ segmentId ].setTranslations( prefix, translationList, alignIndexList, chunkIndexList );
+			this.targetBoxStates[ segmentId ].set({
+				"prefix" : prefix,
+				"translationList" : translationList,
+				"alignIndexList" : alignIndexList, 
+				"chunkIndexList" : chunkIndexList
+			});
 			this.documentView.resize();
 		}
 	}.bind(this);

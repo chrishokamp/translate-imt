@@ -93,19 +93,17 @@ TargetSuggestionView.prototype.__tokenRenderAlways = function( elem ) {
 
 TargetSuggestionView.prototype.__onMouseOver = function() {
 	var segmentId = this.model.get( "segmentId" );
-	var chunkIndex = this.model.get( "chunkIndex" );
 	var candidates = this.model.get( "candidates" );
 	var xCoord = this.model.get( "xCoord" );
 	var yCoord = this.model.get( "yCoord" );
-	this.trigger( "mouseOver:*", segmentId, chunkIndex, candidates, xCoord, yCoord );
+	this.trigger( "mouseOver:*", segmentId, candidates, xCoord, yCoord );
 };
 TargetSuggestionView.prototype.__onMouseOverOption = function() {
 	var segmentId = this.model.get( "segmentId" );
-	var chunkIndex = this.model.get( "chunkIndex" );
 	var candidates = this.model.get( "candidates" );
 	var xCoord = this.model.get( "xCoord" );
 	var yCoord = this.model.get( "yCoord" );
-	this.trigger( "mouseOver:*", segmentId, chunkIndex, candidates, xCoord, yCoord );
+	this.trigger( "mouseOver:*", segmentId, candidates, xCoord, yCoord );
 	this.trigger( "mouseOver:option" );
 };
 TargetSuggestionView.prototype.__onMouseOut = function() {
