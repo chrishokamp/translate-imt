@@ -10,8 +10,6 @@ DatasetManager.prototype.initialize = function() {
 	this.qs = new QueryString();
 	this.qs.addValueParameter( "url", "url" );
 	this.view = new DatasetManagerUI({ "model" : this });
-	this.on( "change:datasets", this.view.render, this.view );
-	this.on( "change:datasetURL", this.saveQueryString );
 	this.fetch({ "success" : this.loadQueryString.bind(this)});
 };
 
@@ -36,7 +34,10 @@ DatasetManager.prototype.loadQueryString = function() {
 	if ( datasetURL === undefined || datasetURL === null ) {
 		datasetURL = this.get( "datasets" )[0].url;
 	}
+	this.on( "change:datasetURL", this.saveQueryString );
 	this.set( "datasetURL", datasetURL );
+	console.log( datasetURL );
+	this.view.render();
 };
 
 var DatasetManagerUI = Backbone.View.extend({
