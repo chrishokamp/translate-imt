@@ -26,7 +26,7 @@ DatasetManager.prototype.saveQueryString = function() {
 DatasetManager.prototype.loadQueryString = function() {
 	var states = this.qs.read();
 	var datasetURL = states["url"];
-	if ( datasetURL === undefined || dataset === null ) {
+	if ( datasetURL === undefined || datasetURL === null ) {
 		datasetURL = this.get( "datasets" )[0].url;
 	}
 	this.set( "datasetURL", datasetURL );
