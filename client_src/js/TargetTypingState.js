@@ -37,8 +37,7 @@ var TargetTypingState = Backbone.Model.extend({
 		"caretSourceTokenIndexes" : {},
 		"chunkSourceTokenIndexes" : {},
 		"matchedSourceTokenIndexes" : {},
-		"isChanged" : false,    // Whether user-entered text has changed from the prefix used to generate the current list of translations
-		"isExpired" : false     // Whether user-entered text has changed from the prefix AND is also different from the current best translation
+		"isChanged" : false    // Whether user-entered text has changed from the prefix used to generate the current list of translations
 	}
 });
 
@@ -64,9 +63,7 @@ TargetTypingState.prototype.postProcess = function() {
 	}
 	
 	var isChanged = this.get( "isChanged" );
-
-	var isExpired = this.get( "isExpired" );
-	if ( isExpired ) {
+	if ( isChanged ) {
 		var userText = this.get( "userText" );
 		this.trigger( "updateTranslations", segmentId, userText );
 	}
@@ -95,7 +92,6 @@ TargetTypingState.prototype.setTranslations = function( prefix, translationList,
 	this.__updateMatchingTranslations();
 	this.__updateSourceTokens();
 	this.__checkForChangedTokens();
-	this.__checkForExpiredTokens();
 	this.__checkFocus();
 	this.trigger( "modified" );
 };
@@ -111,7 +107,6 @@ TargetTypingState.prototype.setUserText = function( userText, caretIndex ) {
 	this.__updateMatchingTranslations();
 	this.__updateSourceTokens();
 	this.__checkForChangedTokens();
-	this.__checkForExpiredTokens();
 	this.__checkFocus();
 	this.trigger( "modified" );
 };
@@ -168,8 +163,7 @@ TargetTypingState.prototype.replaceActiveTokens = function( text ) {
 TargetTypingState.prototype.__resetTokens = function() {
 	this.set({
 		"allTokens" : [],
-		"isChanged" : false,
-		"isExpired" : false
+		"isChanged" : false
 	});
 };
 
@@ -188,8 +182,7 @@ TargetTypingState.prototype.__newToken = function() {
 		"isActive" : false,        // Set by __updateActiveTokens()
 		"isFirstActive" : false,   // Set by __updateActiveTokens()
 		"isLastActive" : false,    // Set by __updateActiveTokens()
-		"isChanged" : false,
-		"isExpired" : false
+		"isChanged" : false
 	};
 	return token;
 };
@@ -472,21 +465,6 @@ TargetTypingState.prototype.__checkForChangedTokens = function() {
 		isChanged = isChanged || isTokenChanged;
 	}
 	this.set( "isChanged", isChanged );
-};
-
-TargetTypingState.prototype.__checkForExpiredTokens = function() {
-	var allTokens = this.get( "allTokens" );
-	var isExpired = this.get( "isExpired" );
-	var caretIndex = this.get( "caretIndex" );
-	var previousCaretIndex = this.get( "previousCaretIndex" );
-	for ( var n = 0; n < allTokens.length; n++ ) {
-		var token = allTokens[ n ];
-		var isTokenExpired = ( ( token.userWord !== token.prefixWord )  &&  token.userWord !== token.translationWord  &&  ! token.hasCaret );
-		token.isExpired = isTokenExpired;
-		isExpired = isExpired || isTokenExpired;
-	}
-	this.set( "previousCaretIndex", caretIndex );
-	this.set( "isExpired", isExpired );
 };
 
 TargetTypingState.prototype.__checkFocus = function( hasFocus ) {
