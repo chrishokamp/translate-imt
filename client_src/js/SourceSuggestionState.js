@@ -4,6 +4,7 @@ var SourceSuggestionState = Backbone.Model.extend({
 		"tokenIndex" : null,
 		"source" : "",
 		"targets" : [],
+		"scores" : [],
 		"xCoord" : 0,
 		"yCoord" : 0
 	}

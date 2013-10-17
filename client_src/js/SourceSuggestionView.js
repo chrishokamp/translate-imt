@@ -3,7 +3,7 @@ var SourceSuggestionView = Backbone.View.extend({
 });
 
 SourceSuggestionView.prototype.X_OFFSET = 0;
-SourceSuggestionView.prototype.Y_OFFSET = 12 + 7;
+SourceSuggestionView.prototype.Y_OFFSET = -( 12 + 7 ) + 30;
 SourceSuggestionView.prototype.CATCHER_PADDING = 4;
 SourceSuggestionView.prototype.MT_COLOR = "#4292C6";
 
@@ -18,13 +18,15 @@ SourceSuggestionView.prototype.initialize = function() {
 
 SourceSuggestionView.prototype.render = function() {
 	var targets = this.model.get( "targets" );
-	var elems = this.views.overlay.selectAll( "div.token" ).data( targets );
+	var scores = this.model.get( "scores" );
+	var targetsAndScores = _.range(targets.length-1,-1,-1).map( function(index) { return { "text" : targets[index], "score" : scores[index] } } );
+	var elems = this.views.overlay.selectAll( "div.token" ).data( targetsAndScores );
 	elems.enter().append( "div" ).attr( "class", "token" ).call( this.__tokenRenderOnce.bind(this) );
 	elems.exit().remove();
 	
 	this.views.container.style( "opacity", function() { return targets.length === 0 ? 0 : 1 } )
-	this.views.overlay.call( this.__overlayRenderAlways.bind(this) )
 	this.views.overlay.selectAll( "div.token" ).call( this.__tokenRenderAlways.bind(this) );
+	this.views.overlay.call( this.__overlayRenderAlways.bind(this) )
 	this.views.catcher.call( this.__catcherRenderAlways.bind(this) );
 };
 
@@ -48,7 +50,7 @@ SourceSuggestionView.prototype.__catcherRenderAlways = function( elem ) {
 	var height = this.views.overlay[0][0].offsetHeight + (this.CATCHER_PADDING+1) * 2;
 	elem.style( "display", "inline-block" )
 		.style( "left", (xCoord-this.CATCHER_PADDING-1+this.X_OFFSET) + "px" )
-		.style( "top", (yCoord-this.CATCHER_PADDING-1+this.Y_OFFSET) + "px" )
+		.style( "top", (yCoord-this.CATCHER_PADDING-1+this.Y_OFFSET-height) + "px" )
 		.style( "width", width + "px" )
 		.style( "height", height + "px" )
 };
@@ -71,15 +73,17 @@ SourceSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 	var yCoord = this.model.get( "yCoord" );
 	elem.style( "display", "inline-block" )
 		.style( "left", (xCoord+this.X_OFFSET) + "px" )
-		.style( "top", (yCoord+this.Y_OFFSET) + "px" );
+		.style( "top", (yCoord+this.Y_OFFSET-targets.length*24) + "px" );
 };
 
 SourceSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
-	elem.text( function(d) { return d } )
+	var opacity = d3.scale.linear().domain( [ 0, 0.25 ] ).range( [ 0, 1 ] );
+	elem.text( function(d) { return d.text } )
+		.style( "opacity", function(d) { return Math.min( 1, Math.max( 0, opacity(d.score) ) ) } )
 		.style( "position", "static" )
 		.style( "display", "block" )
 		.style( "padding", "2px" )
-		.style( "border-top", function(d,i) { return i===0 ? null : "1px dotted " + this.MT_COLOR }.bind(this) )
+		.style( "border-top", function(_,i) { return i===0 ? null : "1px dotted " + this.MT_COLOR }.bind(this) )
 		.style( "white-space", "nowrap" )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "pointer" )
@@ -112,7 +116,7 @@ SourceSuggestionView.prototype.__onMouseOutOption = function() {
 	this.trigger( "mouseOut:*" );
 	this.trigger( "mouseOut:option" );
 };
-SourceSuggestionView.prototype.__onMouseClickOption = function( text ) {
+SourceSuggestionView.prototype.__onMouseClickOption = function( d ) {
 	var segmentId = this.model.get( "segmentId" )
-	this.trigger( "mouseClick:option", segmentId, text );
+	this.trigger( "mouseClick:option", segmentId, d.text );
 };

@@ -23,6 +23,7 @@ PTM.prototype.reset = function() {
 		"highlightTokenIndex" : null,  // @value {integer|null} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
 		"highlightSource" : "",        // @value {string} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
 		"highlightTargets" : [],       // @value {string[]} Modified at the completion of a loadWordQueries() request, following a SourceBoxView "mouseOver" or "mouseOut" event.
+		"highlightScores" : [],
 		"highlightXCoord" : 0,         // @value {number} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
 		"highlightYCoord" : 0,         // @value {number} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
 		"typingUserText" : {},         // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateUserText" event.
@@ -226,6 +227,7 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
 		"highlightTokenIndex" : highlightTokenIndex,
 		"highlightSource" : highlightSource,
 		"highlightTargets" : [],
+		"highlightScores" : [],
 		"highlightXCoord" : highlightXCoord,
 		"highlightYCoord" : highlightYCoord
 	}, {trigger:true});
@@ -360,14 +362,23 @@ PTM.prototype.loadWordQueries = function( source, leftContext ) {
 		}
 		return [];
 	}.bind(this);
+	var getTargetScores = function( response ) {
+		if ( response.hasOwnProperty( "result" ) ) {
+			return response.result.map( function(d) { return d.score } );
+		}
+		return [];
+	}.bind(this);
 	var update = function( response ) {
 		if ( this.get( "highlightSource" ) === source ) {
 			var targets = getTargetTerms( response );
+			var scores = getTargetScores( response );
 			this.set({
-				"highlightTargets" : targets
+				"highlightTargets" : targets,
+				"highlightScores" : scores
 			});
 			this.sourceSuggestionState.set({
-				"targets" : targets
+				"targets" : targets,
+				"scores" : scores
 			});
 		}
 	}.bind(this);
