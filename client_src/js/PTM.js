@@ -389,14 +389,16 @@ PTM.prototype.loadWordQueries = function( source, leftContext ) {
 			});
 		}
 	}.bind(this);
+
+  var cacheKey = leftContext + ":" + source;
 	var cacheAndUpdate = function( response, request ) {
-		this.cache.wordQueries[ source ] = response;
+		this.cache.wordQueries[ cacheKey ] = response;
 		update( response );
 	}.bind(this);
-	if ( this.cache.wordQueries.hasOwnProperty( source ) ) {
-		update( this.cache.wordQueries[ source ] );
-	}
-	else {
+
+  if ( this.cache.wordQueries.hasOwnProperty( cacheKey ) ) {
+		update( this.cache.wordQueries[ cacheKey ] );
+	} else {
 		this.server.wordQuery( source, leftContext, cacheAndUpdate );
 	}
 };
