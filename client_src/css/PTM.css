@@ -13,6 +13,7 @@
 	font-family: Georgia, Palatino Linotype, serif;
 	font-size: 10pt;
 	color: #000;
+	word-spacing : 0.1em;
 }
 
 .SourceLang {
@@ -25,5 +26,12 @@
 	font-family: NeutraLight, Gill Sans, Helvetica, sans-serif;
 	font-size: 11pt;
 	color: #4292C6;
-	word-spacing :; 0.1em;
+	word-spacing : 0.1em;
+}
+
+.UserText {
+	font-family: NeutraBold, Gill Sans, Helvetica, sans-serif;
+	font-size: 11pt;
+	color: #4292C6;
+	word-spacing : 0.1em;
 }

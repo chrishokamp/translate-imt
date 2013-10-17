@@ -36,7 +36,6 @@ DatasetManager.prototype.loadQueryString = function() {
 	}
 	this.on( "change:datasetURL", this.saveQueryString );
 	this.set( "datasetURL", datasetURL );
-	console.log( datasetURL );
 	this.view.render();
 };
 
