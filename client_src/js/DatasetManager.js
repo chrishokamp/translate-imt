@@ -57,5 +57,5 @@ DatasetManagerUI.prototype.render = function() {
 	this.view.selectAll( "option" )
 		.attr( "value", function(d) { return d.url } )
 		.attr( "selected", function(d) { return ( d.value === datasetURL ) ? "selected" : null } )
-		.text( function(d) { return d.label } );
+		.text( function(d) { return d.label + " (" + d.url + ")" } );
 };
