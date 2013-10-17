@@ -219,7 +219,7 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
 	var segmentIds = this.get( "segmentIds" );
 	var segments = this.get( "segments" );
 	var highlightSource = ( highlightSegmentId !== null && highlightTokenIndex !== null ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex ] : "";
-  var highlightLeftContext = ( highlightSource !== "" && highlightTokenIndex > 0) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex-1 ] : "";
+	var highlightLeftContext = ( highlightSource !== "" && highlightTokenIndex > 0 ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex-1 ] : "";
 	
 	// Update PTM states
 	this.set({
@@ -249,7 +249,7 @@ PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightT
 		"xCoord" : highlightXCoord,
 		"yCoord" : highlightYCoord
 	}, {trigger:true});
-	this.loadWordQueries( highlightSource , highlightLeftContext);
+	this.loadWordQueries( highlightSource , highlightLeftContext );
 };
 
 /**
@@ -358,7 +358,7 @@ PTM.prototype.focusOnPreviousSegment = function( typingFocus ) {
 PTM.prototype.loadWordQueries = function( source, leftContext ) {
 	var getTargetTerms = function( response ) {
 		if ( response.hasOwnProperty( "result" ) ) {
-			return response.result.map( function(d) { return d.tgt.join(' '); } );
+			return response.result.map( function(d) { return d.tgt.join(" "); } );
 		}
 		return [];
 	}.bind(this);
