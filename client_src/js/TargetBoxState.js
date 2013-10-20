@@ -18,9 +18,10 @@ var TargetBoxState = Backbone.Model.extend({
 		
 		// Derived states
 		"userTokens" : [ "" ],
-		"userPrefix" : "",
-		"userSep" : "",
-		"userWord" : "",
+		"editingPrefix" : "",
+		"overlayPrefix" : "",
+		"overlaySep" : "",
+		"overlayEditing" : "",
 		"prefixTokens" : [],
 		"suggestionList" : [],
 		"bestTranslation" : [],       // @value {string[]} A list of tokens in the best translation.
@@ -30,10 +31,12 @@ var TargetBoxState = Backbone.Model.extend({
 		"matchingTokens" : {},
 		
 		// States based on graphics rendering results
-		"caretXCoord" : 0,
-		"caretYCoord" : 0,
-		"editXCoord" : 0,
-		"editYCoord" : 0
+		"caretXCoord" : null,
+		"caretYCoord" : null,
+		"editXCoord" : null,
+		"editYCoord" : null,
+		"canvasXCoord" : null,
+		"canvasYCoord" : null
 	}
 });
 
@@ -45,7 +48,11 @@ TargetBoxState.prototype.IMMEDIATELY = 5;  // milliseconds
 TargetBoxState.prototype.WHITESPACE = /[ ]+/g;
 TargetBoxState.prototype.WHITESPACE_SEPS = /([ ]+)/g;
 
-TargetBoxState.prototype.initialize = function() {
+TargetBoxState.prototype.initialize = function( options ) {
+	var segmentId = options.segmentId;
+	this.view = new TargetBoxView({ "model" : this, "el" : ".TargetBoxView" + segmentId, "segmentId" : segmentId });
+	this.viewTextarea = new TargetTextareaView({ "model" : this, "el" : ".TargetTextareaView" + segmentId });
+	this.viewOverlay = new TargetOverlayView({ "model" : this, "el" : ".TargetOverlayView" + segmentId });
 	this.updateSuggestionList = _.debounce( this.__updateSuggestionList, this.IMMEDIATELY );
 	this.updateBestTranslation = _.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
 	this.updateShowBestTranslations = _.debounce( this.__updateShowBestTranslations, this.IMMEDIATELY );
@@ -54,8 +61,8 @@ TargetBoxState.prototype.initialize = function() {
 	this.updateMatchingTokens = _.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
 	this.triggerUpdateEditCoords = _.debounce( this.__triggerUpdateEditCoords, this.IMMEDIATELY );
 	this.on( "change:prefix", this.updatePrefixTokensAndSuggestionList );
-	this.on( "change:userText", this.updateUserTokens );
-	this.on( "change:userPrefix", this.triggerUpdateTranslations );
+	this.on( "change:userText change:prefixTokens", this.updateUserTokens );
+	this.on( "change:editingPrefix", this.triggerUpdateTranslations );
 	this.on( "change:userTokens change:translationList", this.updateBestTranslation );
 	this.on( "change:userTokens change:suggestionList", this.updateSuggestions );
 	this.on( "change:userTokens change:alignIndexList", this.updateMatchingTokens );
@@ -63,14 +70,14 @@ TargetBoxState.prototype.initialize = function() {
 	this.on( "change:userTokens change:caretIndex", this.updateShowSuggestions );
 	this.on( "change:hasFocus", this.triggerUpdateFocus );
 	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
-	this.on( "change:editXCoord change:editYCoord", this.triggerUpdateEditCoords );
+	this.on( "change:editXCoord change:editYCoord change:canvasXCoord change:canvasYCoord", this.triggerUpdateEditCoords );
 };
 
 TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 	var prefix = this.get( "prefix" );
 	var prefixTokens = prefix.split( this.WHITESPACE );
 
-	var targetTokenIndex = prefixTokens.length;
+	var targetTokenIndex = ( prefix === "" ) ? 0 : prefixTokens.length;
 	var translationList = this.get( "translationList" ); // prefix is always updated whenever translationList or alignIndexList
 	var alignIndexList = this.get( "alignIndexList" );   // is updated, and therefore trigger on change:prefix only.
 	var chunkIndexes = this.get( "chunkIndexes" );       // chunkIndexes is never changed after initialization.
@@ -135,27 +142,45 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 TargetBoxState.prototype.updateUserTokens = function() {
 	var userText = this.get( "userText" );
 	var userTokens = userText.split( this.WHITESPACE );
-	var userPrefix = "";
-	var userSep = "";
-	var userWord = userText;
+	var userTokensAndSeps = userText.split( this.WHITESPACE_SEPS );
+	var prefix = this.get( "prefix" );
+	var prefixTokens = this.get( "prefixTokens" );
+	
+	var editingPrefix = "";
+	var overlayPrefix = userText;
+	var overlaySep = "";
+	var overlayEditing = "";
+	if ( userText === "" ) {
+		overlayPrefix = "";
+		overlaySep = "";
+		overlayEditing = ""
+	}
+	else if ( prefix === "" ) {
+		overlayPrefix = "";
+		overlaySep = "";
+		overlayEditing = userText;
+	}
+	else if ( userTokens.length > prefixTokens.length ) {
+		overlayPrefix = userTokensAndSeps.slice( 0, prefixTokens.length*2-1 ).join("");
+		overlaySep = userTokensAndSeps[ prefixTokens.length*2-1 ];
+		overlayEditing = userTokensAndSeps.slice( prefixTokens.length*2 ).join("");
+	}
 	if ( userTokens.length > 1 ) {
-		var userTokensAndSeps = userText.split( this.WHITESPACE_SEPS );
-		userPrefix = userTokensAndSeps.slice( 0, userTokensAndSeps.length-2 ).join("");
-		userSep = userTokensAndSeps[ userTokensAndSeps.length-2 ];
-		userWord = userTokensAndSeps[ userTokensAndSeps.length-1 ];
+		editingPrefix = userTokensAndSeps.slice( 0, userTokensAndSeps.length-2 ).join("");
 	}
 	this.set({
 		"userTokens" : userTokens,
-		"userPrefix" : userPrefix,
-		"userSep" : userSep,
-		"userWord" : userWord
+		"editingPrefix" : editingPrefix,
+		"overlayPrefix" : overlayPrefix,
+		"overlaySep" : overlaySep,
+		"overlayEditing" : overlayEditing
 	});
 };
 
 TargetBoxState.prototype.triggerUpdateTranslations = function() {
 	var segmentId = this.get( "segmentId" );
-	var userPrefix = this.get( "userPrefix" );
-	this.trigger( "updateTranslations", segmentId, userPrefix );
+	var editingPrefix = this.get( "editingPrefix" );
+	this.trigger( "updateTranslations", segmentId, editingPrefix );
 };
 
 TargetBoxState.prototype.__updateBestTranslation = function() {
@@ -181,7 +206,6 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 			}
 		}
 	}
-//	console.log( "bestTranslation", bestTranslation, translationList[translationIndex] );
 	this.set( "bestTranslation", bestTranslation );
 	this.trigger( "updateBestTranslation", this.get( "segmentId" ), bestTranslation )
 };
@@ -198,7 +222,6 @@ TargetBoxState.prototype.__updateSuggestions = function() {
 			suggestions.push( suggestion );
 		}
 	}
-//	console.log( "suggestions", suggestions );
 	this.set( "suggestions", suggestions );
 	this.trigger( "updateSuggestions", this.get( "segmentId" ), suggestions );
 };
@@ -218,7 +241,6 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 			}
 		}
 	}
-//	console.log( "matchingTokens", _.keys(matchingTokens) );
 	this.set( "matchingTokens", matchingTokens );
 	this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
 };
@@ -251,7 +273,16 @@ TargetBoxState.prototype.triggerUpdateCaretIndex = function() {
 
 TargetBoxState.prototype.__triggerUpdateEditCoords = function() {
 	var segmentId = this.get( "segmentId" );
+	var canvasXCoord = this.get( "canvasXCoord" );
+	var canvasYCoord = this.get( "canvasYCoord" );
 	var editXCoord = this.get( "editXCoord" );
 	var editYCoord = this.get( "editYCoord" );
-	this.trigger( "updateEditCoords", segmentId, editXCoord, editYCoord );
+	var xCoord = ( canvasXCoord !== null && editXCoord !== null ) ? canvasXCoord + editXCoord : null;
+	var yCoord = ( canvasYCoord !== null && editYCoord !== null ) ? canvasYCoord + editYCoord : null;
+	console.log( "updateEditCoords", segmentId, "/", xCoord, yCoord, "/", canvasXCoord, canvasYCoord, "/", editXCoord, editYCoord );
+	this.trigger( "updateEditCoords", segmentId, xCoord, yCoord );
+};
+
+TargetBoxState.prototype.focus = function() {
+	this.viewTextarea.textarea[0][0].focus();
 };

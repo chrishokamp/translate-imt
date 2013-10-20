@@ -9,3 +9,7 @@ var SourceSuggestionState = Backbone.Model.extend({
 		"yCoord" : 0
 	}
 });
+
+SourceSuggestionState.prototype.initialize = function( options ) {
+	this.view = new SourceSuggestionView({ "model" : this });
+};

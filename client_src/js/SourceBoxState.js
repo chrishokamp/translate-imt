@@ -23,3 +23,7 @@ var SourceBoxState = Backbone.Model.extend({
 		
 	}
 });
+
+SourceBoxState.prototype.initialize = function( options ) {
+	this.view = new SourceBoxView({ "model" : this, "el" : options.el });
+};

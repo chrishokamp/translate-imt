@@ -29,18 +29,13 @@ SourceBoxView.prototype.render = function() {
 };
 
 SourceBoxView.prototype.__containerRenderOnce = function( elem ) {
-	elem.style( "padding", "5px 60px 2.5px 15px" )
+	elem.style( "padding", "10px 60px 5px 15px" )  // "5px 60px 2.5px 15px"
 		.classed( "SourceLang", true )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "default" )
 		.on( "click", this.__mouseClick.bind(this) );
 };
-SourceBoxView.prototype.__containerRenderAlways = function( elem ) {
-	var hasFocus = this.model.get( "hasFocus" );
-	elem//.transition().duration( this.ANIMATION_DURATION )
-		.style( "padding-top", hasFocus ? "10px" : "5px" )
-		.style( "padding-bottom", hasFocus ? "5px" : "2.5px" );
-};
+SourceBoxView.prototype.__containerRenderAlways = function( elem ) {};
 
 SourceBoxView.prototype.__tokenRenderOnce = function( elem ) {
 	elem.on( "mouseover", this.__mouseOverToken.bind(this) )
@@ -57,14 +52,11 @@ SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
 };
 SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
-	var tokenTermColor = function( _, tokenIndex ) {
+	var color = function( _, tokenIndex ) {
 		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
 		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-//		if ( ! hasFocus )
-//			return this.UNMATCHED_COLOR;
-//		else 
 		if ( isHovered ) 
 			return this.MT_COLOR;
 		else if ( isMatched ) 
@@ -72,25 +64,23 @@ SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 		else
 			return this.UNMATCHED_COLOR;
 	}.bind(this);
-	var tokenTermBorderBottom = function( _, tokenIndex ) {
+	var borderBottom = function( _, tokenIndex ) {
 		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
 		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		return ( hasFocus && hasChunk ) ? "1px solid " + this.UNMATCHED_COLOR : "none";
 	}.bind(this);
-	var tokenTermPaddingBottom = function( _, tokenIndex ) {
+	var paddingBottom = function( _, tokenIndex ) {
 		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
 		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		return ( hasFocus && hasChunk ) ? "1px" : "2px";
 	}.bind(this);
-	elem.style( "color", tokenTermColor )
-		.style( "border-bottom", tokenTermBorderBottom )
-		.style( "padding-bottom", tokenTermPaddingBottom )
-		//.transition().duration( this.ANIMATION_DURATION )
-		.style( "margin-bottom", hasFocus ? "2px" : "0px" )
+	elem.style( "color", color )
+		.style( "border-bottom", borderBottom )
+		.style( "padding-bottom", paddingBottom )
 };
 
 SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
@@ -105,16 +95,17 @@ SourceBoxView.prototype.__mouseOverToken = function( _, tokenIndex ) {
 	var hasFocus = this.model.get( "hasFocus" );
 	if ( hasFocus ) {
 		var segmentId = this.model.get( "segmentId" );
-		this.trigger( "mouseOver:token", segmentId, tokenIndex, d3.event.srcElement.offsetLeft, d3.event.srcElement.offsetTop );
+		this.model.trigger( "mouseOver:token", segmentId, tokenIndex, d3.event.srcElement.offsetLeft, d3.event.srcElement.offsetTop );
 	}
 };
 SourceBoxView.prototype.__mouseOutToken = function() {
 	var hasFocus = this.model.get( "hasFocus" );
 	if ( hasFocus ) {
-		this.trigger( "mouseOut:token", null, null );
+		this.model.trigger( "mouseOut:token", null, null );
 	}
 };
 SourceBoxView.prototype.__mouseClick = function() {
+	console.log( "click", this.model )
 	var segmentId = this.model.get( "segmentId" );
-	this.trigger( "mouseClick:*", segmentId );
+	this.model.trigger( "mouseClick", segmentId );
 };

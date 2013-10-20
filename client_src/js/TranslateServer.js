@@ -13,8 +13,8 @@ TranslateServer.prototype.TRANSLATE_LIMIT = 10;
 TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
 
 TranslateServer.prototype.CONSOLE_LOG = true;
-//TranslateServer.prototype.TIMEOUT = 30000;  // milliseconds
-TranslateServer.prototype.TIMEOUT = 5000;  // milliseconds
+TranslateServer.prototype.TIMEOUT = 30000;  // milliseconds
+//TranslateServer.prototype.TIMEOUT = 5000;  // milliseconds
 
 /**
  * Make a word query.

@@ -86,11 +86,7 @@ DocumentView.prototype.addSegment = function( segmentId ) {
 		.style( "background", this.REGULAR_BACKGROUND )
 		.on( "click", function() { this.trigger( "mouseClick", segmentId ) }.bind(this) );
 	segmentBand.append( "div" ).attr( "class", "SourceBoxView SourceBoxView" + segmentId );
-//	segmentBand.append( "div" ).attr( "class", "TargetTypingView TargetTypingView" + segmentId );
-	var targetBox = segmentBand.append( "div" ).attr( "class", "TargetBoxView TargetBoxView" + segmentId );
-	targetBox.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" )
-		.append( "div" ).attr( "class", "TargetOverlayView TargetOverlayView" + segmentId );
-	targetBox.append( "div" ).attr( "class", "TargetTextareaView TargetTextareaView" + segmentId );
+	segmentBand.append( "div" ).attr( "class", "TargetBoxView TargetBoxView" + segmentId );
 	this.views.segments[ segmentId ] = segmentBand;
 	this.resize();
 	return segmentBand;

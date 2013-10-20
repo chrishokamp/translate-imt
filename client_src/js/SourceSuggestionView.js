@@ -99,24 +99,24 @@ SourceSuggestionView.prototype.__onMouseOver = function() {
 	var tokenIndex = this.model.get( "tokenIndex" );
 	var xCoord = this.model.get( "xCoord" );
 	var yCoord = this.model.get( "yCoord" );
-	this.trigger( "mouseOver:*", segmentId, tokenIndex, xCoord, yCoord );
+	this.model.trigger( "mouseOver:*", segmentId, tokenIndex, xCoord, yCoord );
 };
 SourceSuggestionView.prototype.__onMouseOverOption = function() {
 	var segmentId = this.model.get( "segmentId" );
 	var tokenIndex = this.model.get( "tokenIndex" );
 	var xCoord = this.model.get( "xCoord" );
 	var yCoord = this.model.get( "yCoord" );
-	this.trigger( "mouseOver:*", segmentId, tokenIndex, xCoord, yCoord );
-	this.trigger( "mouseOver:option" );
+	this.model.trigger( "mouseOver:*", segmentId, tokenIndex, xCoord, yCoord );
+	this.model.trigger( "mouseOver:option" );
 };
 SourceSuggestionView.prototype.__onMouseOut = function() {
-	this.trigger( "mouseOut:*" );
+	this.model.trigger( "mouseOut:*" );
 };
 SourceSuggestionView.prototype.__onMouseOutOption = function() {
-	this.trigger( "mouseOut:*" );
-	this.trigger( "mouseOut:option" );
+	this.model.trigger( "mouseOut:*" );
+	this.model.trigger( "mouseOut:option" );
 };
 SourceSuggestionView.prototype.__onMouseClickOption = function( d ) {
 	var segmentId = this.model.get( "segmentId" )
-	this.trigger( "mouseClick:option", segmentId, d.text );
+	this.model.trigger( "mouseClick:option", segmentId, d.text );
 };

@@ -21,10 +21,6 @@ TargetTextareaView.prototype.render = function() {
 	this.textarea.call( this.__textareaRenderAlways.bind(this) );
 };
 
-TargetTextareaView.prototype.focus = function() {
-	this.textarea[0][0].focus();
-};
-
 TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 	var onFocus = function() { 
 		this.model.set( "hasFocus", true );
@@ -38,21 +34,32 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 			d3.event.preventDefault();
 			d3.event.cancelBubble = true;
 		}
+		else {
+			if ( this.__continuousKeyPress ) {
+				var userText = this.textarea[0][0].value;
+				var caretIndex = this.textarea[0][0].selectionEnd;
+				this.model.set({
+					"userText" : userText,
+					"caretIndex" : caretIndex
+				});
+			}
+		}
+		this.__continuousKeyPress = true;
 	}.bind(this);
 	var onKeyUp = function() {
 		var keyCode = d3.event.keyCode;
 		if ( keyCode === this.KEY.ENTER ) {
 			var segmentId = this.model.get( "segmentId" );
 			if ( d3.event.shiftKey ) {
-				this.trigger( "keyPress:enter+shift", segmentId )
+				this.model.trigger( "keyPress:enter+shift", segmentId )
 			}
 			else if ( !d3.event.shiftKey && !d3.event.metaKey && !d3.event.ctrlKey && !d3.event.altKey && !d3.event.altGraphKey ) {
-				this.trigger( "keyPress:enter", segmentId );
+				this.model.trigger( "keyPress:enter", segmentId );
 			}
 		}
 		else if ( keyCode === this.KEY.TAB ) {
 			var segmentId = this.model.get( "segmentId" );
-			this.trigger( "keyPress:tab", segmentId );
+			this.model.trigger( "keyPress:tab", segmentId );
 		}
 		else {
 			var userText = this.textarea[0][0].value;
@@ -62,6 +69,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 				"caretIndex" : caretIndex
 			});
 		}
+		this.__continuousKeyPress = false;
 	}.bind(this);
 	var onMouseDown = function() {
 		var caretIndex = this.textarea[0][0].selectionEnd;
@@ -71,7 +79,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 	}.bind(this);
 	elem.style( "width", (this.model.WIDTH-75) + "px" )
 		.style( "min-height", this.model.MIN_HEIGHT + "px" )
-		.style( "padding", "2.5px 60px 15px 15px" )
+		.style( "padding", "12.5px 60px 20px 15px" )  // "2.5px 60px 15px 15px"
 		.style( "border", "none" )
 		.style( "outline", "none" )
 		.style( "background", "#eee" )
@@ -89,7 +97,4 @@ TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
 	elem.style( "background", hasFocus ? "#fff" : "#eee" )
 		.style( "resize", hasFocus ? "vertical" : "none" )
-		.transition().duration( this.model.ANIMATION_DURATION )
-			.style( "padding-top", hasFocus ? "12.5px" : "2.5px" )
-			.style( "padding-bottom", hasFocus ? "20px" : "15px" );
 };
