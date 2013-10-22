@@ -143,7 +143,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceSuggestion, "mouseout:option", function(){} );
 		this.listenTo( sourceSuggestion, "click:option", this.insertSourceSuggestion );
 		
-		this.listenTo( targetBox, "keypress:enter", this.selectSuggestionOrFocusOnNextSegment );
+		this.listenTo( targetBox, "keypress:enter", this.selectTargetSuggestionOrFocusOnNextSegment );
 		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
 		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
 		this.listenTo( targetBox, "keypress:up", this.previousTargetSuggestion );
@@ -233,34 +233,45 @@ PTM.prototype.insertSourceSuggestion = function( segmentId, optionIndex ) {
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
 };
+
 PTM.prototype.insertTargetSuggestion = function( segmentId, optionIndex ) {
 	var options = this.targetSuggestions[segmentId].get( "candidates" );
 	var text = ( options.length === 0 ) ? "" : options[ optionIndex ];
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
 };
+
+PTM.prototype.insertSelectedTargetSuggestion = function( segmentId ) {
+	var optionIndex = this.targetSuggestions[segmentId].get( "optionIndex" );
+	var suggestions = this.targetBoxes[segmentId].get( "suggestions" );
+	var text = ( optionIndex >= suggestions.length ) ? "" : suggestions[ optionIndex ];
+	this.targetBoxes[segmentId].replaceEditingToken( text );
+	this.targetBoxes[segmentId].focus();
+};
+
 PTM.prototype.insertFirstSuggestion = function( segmentId ) {
 	var suggestions = this.targetBoxes[segmentId].get( "suggestions" );
 	var text = ( suggestions.length === 0 ) ? "" : suggestions[ 0 ];
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
 };
+
 PTM.prototype.previousTargetSuggestion = function( segmentId ) {
 	this.targetSuggestions[segmentId].previousOption();
 };
+
 PTM.prototype.nextTargetSuggestion = function( segmentId ) {
 	this.targetSuggestions[segmentId].nextOption();
 };
 
 PTM.prototype.focusOnSegment = function( focusSegment ) {
 	this.documentView.focus( focusSegment );
-
 	var segmentIds = this.get( "segmentIds" );
 	segmentIds.forEach( function(segmentId) {
 		if ( focusSegment === segmentId ) {
 			this.sourceBoxes[segmentId].set( "hasFocus", true );
 			this.sourceSuggestions[segmentId].set( "hasFocus", true );
-			this.targetBoxes[segmentId].focus();
+			this.targetBoxes[segmentId].focus();  // Needed to avoid an event loop (focusing on its textarea triggers another focus event)
 			this.targetSuggestions[segmentId].set( "hasFocus", true );
 		}
 		else {
@@ -272,22 +283,26 @@ PTM.prototype.focusOnSegment = function( focusSegment ) {
 	}.bind(this) );
 };
 
-PTM.prototype.selectSuggestionOrFocusOnNextSegment = function( targetFocus ) {
-	this.focusOnNextSegment( targetFocus );
+PTM.prototype.selectTargetSuggestionOrFocusOnNextSegment = function( segmentId ) {
+	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
+	if ( optionIndex === null )
+		this.focusOnNextSegment( segmentId );
+	else
+		this.insertSelectedTargetSuggestion( segmentId );
 };
 
-PTM.prototype.focusOnNextSegment = function( targetFocus ) {
+PTM.prototype.focusOnNextSegment = function( focusSegment ) {
 	var segments = this.get( "segments" );
 	var segmentIds = this.get( "segmentIds" );
-	var index = ( segmentIds.indexOf( targetFocus ) + 1 ) % segmentIds.length;
+	var index = ( segmentIds.indexOf( focusSegment ) + 1 ) % segmentIds.length;
 	var typingNewFocus = ( index >= segmentIds.length ) ? null : segmentIds[ index ];
 	this.focusOnSegment( typingNewFocus );
 };
 
-PTM.prototype.focusOnPreviousSegment = function( targetFocus ) {
+PTM.prototype.focusOnPreviousSegment = function( focusSegment ) {
 	var segments = this.get( "segments" );
 	var segmentIds = this.get( "segmentIds" );
-	var index = ( segmentIds.indexOf( targetFocus ) + segmentIds.length - 1 ) % segmentIds.length;
+	var index = ( segmentIds.indexOf( focusSegment ) + segmentIds.length - 1 ) % segmentIds.length;
 	var typingNewFocus = ( index < 0 ) ? null : segmentIds[ index ];
 	this.focusOnSegment( typingNewFocus );
 };

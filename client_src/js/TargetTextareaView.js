@@ -91,6 +91,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 		.style( "background", "#eee" )
 		.style( "resize", "none" )
 		.classed( "UserText", true )
+		.style( "line-height", "16px" )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "default" )
 		.on( "focus", onFocus )
