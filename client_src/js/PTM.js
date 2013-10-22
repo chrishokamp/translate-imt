@@ -11,6 +11,8 @@ PTM.prototype.load = function( url ) {
 };
 
 PTM.prototype.reset = function() {
+	d3.select( "#PTM" ).selectAll( "*" ).remove();
+	
 	this.set({
 		"url" : null,
 		"docId" : null,
@@ -83,9 +85,6 @@ PTM.prototype.loaded = function() {
  * Controller for the Predictive Translate Memory
  **/
 PTM.prototype.setup = function() {
-	var container = d3.select( "#PTM" );
-	container.selectAll( "*" ).remove();
-	
 	var segments = this.get( "segments" );
 	var segmentIds = this.get( "segmentIds" );
 	
@@ -132,21 +131,23 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceBox, "mouseover", function(){} );
 		this.listenTo( sourceBox, "mouseout", function(){} );
 		this.listenTo( sourceBox, "click", this.focusOnSegment );
-		this.listenTo( sourceBox, "mouseover:token", this.updateSourceSuggestions );
-		this.listenTo( sourceBox, "mouseout:token", this.updateSourceSuggestions );
+		this.listenTo( sourceBox, "mouseover:token", this.showSourceSuggestionsFromText );
+		this.listenTo( sourceBox, "mouseout:token", this.hideSourceSuggestions );
 		this.listenTo( sourceBox, "click:token", function(){} );
 		this.listenTo( sourceBox, "updateBoxDims", this.updateTargetSuggestions );
 		
-		this.listenTo( sourceSuggestion, "mouseover", this.updateSourceSuggestions );
-		this.listenTo( sourceSuggestion, "mouseout", this.updateSourceSuggestions );
+		this.listenTo( sourceSuggestion, "mouseover", this.showSourceSuggestionsFromFloatingBox );
+		this.listenTo( sourceSuggestion, "mouseout", this.hideSourceSuggestions );
 		this.listenTo( sourceSuggestion, "click", function(){} );
 		this.listenTo( sourceSuggestion, "mouseover:option", function(){} );
 		this.listenTo( sourceSuggestion, "mouseout:option", function(){} );
 		this.listenTo( sourceSuggestion, "click:option", this.insertSourceSuggestion );
 		
-		this.listenTo( targetBox, "keypress:enter", this.focusOnNextSegment );
+		this.listenTo( targetBox, "keypress:enter", this.selectSuggestionOrFocusOnNextSegment );
 		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
 		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
+		this.listenTo( targetBox, "keypress:up", this.previousTargetSuggestion );
+		this.listenTo( targetBox, "keypress:down", this.nextTargetSuggestion );
 		this.listenTo( targetBox, "updateMatchingTokens", this.updateMatchingTokens );
 		this.listenTo( targetBox, "updateSuggestions", this.updateTargetSuggestions );
 		this.listenTo( targetBox, "updateEditCoords", this.updateTargetSuggestions );
@@ -169,20 +170,22 @@ PTM.prototype.setup = function() {
 	this.focusOnSegment( segmentIds[0] );
 };
 
-/**
- * @param {string|null} highlightSegmentId
- * @param {integer|null} highlightTokenIndex
- * @param {number|null} [highlightXCoord]
- * @param {number|null} [highlightYCoord]
- * @private
- **/
-PTM.prototype.__updateSourceSuggestions = function( segmentId, tokenIndex, xCoord, yCoord ) {
-	if ( segmentId === undefined ) { segmentId = null }
-	if ( tokenIndex === undefined ) { tokenIndex = null }
-	if ( xCoord === undefined ) { xCoord = 0 }
-	if ( yCoord === undefined ) { yCoord = 0 }
-	var segments = this.get( "segments" );
-	if ( segments.hasOwnProperty(segmentId) ) {
+PTM.prototype.showSourceSuggestionsFromText = function( segmentId ) {
+	var tokenIndex = this.sourceBoxes[segmentId].get("hoverTokenIndex");
+	this.updateSourceSuggestions( segmentId, tokenIndex );
+};
+PTM.prototype.showSourceSuggestionsFromFloatingBox = function( segmentId ) {
+	var tokenIndex = this.sourceSuggestions[segmentId].get("tokenIndex");
+	this.updateSourceSuggestions( segmentId, tokenIndex );
+};
+PTM.prototype.hideSourceSuggestions = function( segmentId ) {
+	this.updateSourceSuggestions( segmentId, null );
+};
+PTM.prototype.__updateSourceSuggestions = function( segmentId, tokenIndex ) {
+	if ( tokenIndex !== this.sourceSuggestions[segmentId].get("tokenIndex") ) {
+		var xCoord = this.sourceBoxes[segmentId].get("hoverXCoord");
+		var yCoord = this.sourceBoxes[segmentId].get("hoverYCoord");
+		var segments = this.get( "segments" );
 		var segment = segments[segmentId];
 		var source = ( tokenIndex === null ) ? "" : segment.tokens[ tokenIndex ];
 		var leftContext = ( source === "" || tokenIndex === 0 ) ? "" : segment.tokens[ tokenIndex-1 ];
@@ -190,11 +193,12 @@ PTM.prototype.__updateSourceSuggestions = function( segmentId, tokenIndex, xCoor
 			"hoverTokenIndex" : tokenIndex
 		});
 		this.sourceSuggestions[segmentId].set({
-			"tokenIndex" : tokenIndex,
 			"source" : source,
+			"tokenIndex" : tokenIndex,
 			"leftContext" : leftContext,
 			"targets" : [],   // To be filled in asynchronously by loadWordQueries.
 			"scores" : [],    // To be filled in asynchronously by loadWordQueries.
+			"optionIndex" : null,
 			"xCoord" : xCoord,
 			"yCoord" : yCoord
 		});
@@ -211,6 +215,7 @@ PTM.prototype.__updateTargetSuggestions = function( segmentId ) {
 	var yCoord = this.targetBoxes[segmentId].get("editYCoord");
 	this.targetSuggestions[segmentId].set({
 		"candidates" : candidates,
+		"optionIndex" : null,
 		"xCoord" : xCoord,
 		"yCoord" : yCoord + yOffset
 	});
@@ -222,7 +227,8 @@ PTM.prototype.updateMatchingTokens = function( segmentId, matchingTokens ) {
 	});
 };
 
-PTM.prototype.insertSourceSuggestion = function( segmentId, tokenIndex, text ) {
+PTM.prototype.insertSourceSuggestion = function( segmentId, optionIndex ) {
+	var text = this.sourceSuggestions[segmentId].get( "targets" )[ optionIndex ];
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
 };
@@ -233,6 +239,12 @@ PTM.prototype.insertTargetSuggestion = function( segmentId, text ) {
 PTM.prototype.insertFirstSuggestion = function( segmentId, text ) {
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
+};
+PTM.prototype.previousTargetSuggestion = function( segmentId ) {
+	this.targetSuggestions[segmentId].previousOption();
+};
+PTM.prototype.nextTargetSuggestion = function( segmentId ) {
+	this.targetSuggestions[segmentId].nextOption();
 };
 
 PTM.prototype.focusOnSegment = function( focusSegment ) {
@@ -253,6 +265,10 @@ PTM.prototype.focusOnSegment = function( focusSegment ) {
 			this.targetSuggestions[segmentId].set( "hasFocus", false );
 		}
 	}.bind(this) );
+};
+
+PTM.prototype.selectSuggestionOrFocusOnNextSegment = function( targetFocus ) {
+	this.focusOnNextSegment( targetFocus );
 };
 
 PTM.prototype.focusOnNextSegment = function( targetFocus ) {

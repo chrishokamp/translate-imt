@@ -6,6 +6,7 @@ TargetSuggestionView.prototype.X_OFFSET = 0;
 TargetSuggestionView.prototype.Y_OFFSET = 12 + 7;
 TargetSuggestionView.prototype.CATCHER_PADDING = 4;
 TargetSuggestionView.prototype.MT_COLOR = "#4292C6";
+TargetSuggestionView.prototype.ACTIVE_COLOR = "#ff7f0e";
 
 TargetSuggestionView.prototype.initialize = function() {
 	this.views = {};
@@ -77,10 +78,13 @@ TargetSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 };
 
 TargetSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
+	var borderTop = function(_,i) {
+		return i===0 ? null : "1px dotted " + this.MT_COLOR
+	}.bind(this);
 	elem.style( "position", "static" )
 		.style( "display", "block" )
 		.style( "padding", "0 2px 2px 2px" )
-		.style( "border-top", function(d,i) { return i===0 ? null : "1px dotted " + this.MT_COLOR }.bind(this) )
+		.style( "border-top", borderTop )
 		.style( "white-space", "nowrap" )
 		.classed( "TargetLang", true )
 		.style( "color", this.MT_COLOR )
@@ -91,7 +95,15 @@ TargetSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
 		.on( "mouseup", this.__onMouseClickOption.bind(this) );
 };
 TargetSuggestionView.prototype.__tokenRenderAlways = function( elem ) {
+	var optionIndex = this.model.get( "optionIndex" );
+	var color = function(d,i) {
+		if ( optionIndex === i )
+			return this.ACTIVE_COLOR;
+		else
+			return this.MT_COLOR;
+	}.bind(this);
 	elem.text( function(d) { return d } )
+		.style( "color", color );
 };
 
 TargetSuggestionView.prototype.__onMouseOver = function() {
@@ -108,11 +120,13 @@ TargetSuggestionView.prototype.__onMouseClick = function() {
 };
 TargetSuggestionView.prototype.__onMouseOverOption = function( optionText, optionIndex ) {
 	var segmentId = this.model.get( "segmentId" );
+	this.model.set( "optionIndex", optionIndex );
 	this.model.trigger( "mouseover", segmentId );
 	this.model.trigger( "mouseover:option", segmentId, optionText, optionIndex );
 };
 TargetSuggestionView.prototype.__onMouseOutOption = function( optionText, optionIndex ) {
 	var segmentId = this.model.get( "segmentId" );
+	this.model.set( "optionIndex", null );
 	this.model.trigger( "mouseout", segmentId );
 	this.model.trigger( "mouseout:option", segmentId, optionText, optionIndex );
 };

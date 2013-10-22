@@ -6,6 +6,7 @@ SourceSuggestionView.prototype.X_OFFSET = 0;
 SourceSuggestionView.prototype.Y_OFFSET = -( 12 + 7 ) + 12 + 4;
 SourceSuggestionView.prototype.CATCHER_PADDING = 4;
 SourceSuggestionView.prototype.MT_COLOR = "#4292C6";
+SourceSuggestionView.prototype.ACTIVE_COLOR = "#ff7f0e";
 
 SourceSuggestionView.prototype.initialize = function() {
 	this.views = {};
@@ -19,7 +20,7 @@ SourceSuggestionView.prototype.initialize = function() {
 SourceSuggestionView.prototype.render = function() {
 	var targets = this.model.get( "targets" );
 	var scores = this.model.get( "scores" );
-	var targetsAndScores = _.range(targets.length-1,-1,-1).map( function(index) { return { "text" : targets[index], "score" : scores[index] } } );
+	var targetsAndScores = _.range(targets.length-1,-1,-1).map( function(index) { return { "index" : index, "text" : targets[index], "score" : scores[index] } } );
 	var elems = this.views.overlay.selectAll( "div.token" ).data( targetsAndScores );
 	elems.enter().append( "div" ).attr( "class", "token" ).call( this.__tokenRenderOnce.bind(this) );
 	elems.exit().remove();
@@ -37,8 +38,9 @@ SourceSuggestionView.prototype.__containerRenderOnce = function( elem ) {
 };
 SourceSuggestionView.prototype.__containerRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
+	var tokenIndex = this.model.get( "tokenIndex" );
 	var targets = this.model.get( "targets" );
-	var isVisible = ( hasFocus && targets.length > 0 );
+	var isVisible = ( hasFocus && tokenIndex !== null && targets.length > 0 );
 	elem.style( "visibility", isVisible ? "visible" : "hidden" )
 		.style( "display", isVisible ? "inline-block" : "none" );
 };
@@ -80,12 +82,17 @@ SourceSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 };
 
 SourceSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
-	var opacity = d3.scale.linear().domain( [ 0, 0.25 ] ).range( [ 0, 1 ] );
+	var os = d3.scale.linear().domain( [ 0, 0.25 ] ).range( [ 0, 1 ] );
+	var opacity = function(d) {
+		return Math.min( 1, Math.max( 0, os( d.score ) ) )
+	}.bind(this);
+	var borderTop = function(_,i) {
+		return i===0 ? null : "1px dotted " + this.MT_COLOR
+	}.bind(this);
 	elem.style( "position", "static" )
 		.style( "display", "block" )
-		.style( "color", this.MT_COLOR )
-		.style( "border-top", function(_,i) { return i===0 ? null : "1px dotted " + this.MT_COLOR }.bind(this) )
-		.style( "opacity", function(d) { return Math.min( 1, Math.max( 0, opacity(d.score) ) ) } )
+		.style( "border-top", borderTop )
+		.style( "opacity", opacity )
 		.style( "padding", "2px" )
 		.classed( "TargetLang", true )
 		.style( "white-space", "nowrap" )
@@ -96,42 +103,44 @@ SourceSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
 		.on( "mouseup", this.__onMouseClickOption.bind(this) );
 };
 SourceSuggestionView.prototype.__tokenRenderAlways = function( elem ) {
-	elem.text( function(d) { return d.text } );
+	var optionIndex = this.model.get( "optionIndex" );
+	var color = function(d) {
+		if ( optionIndex === d.index )
+			return this.ACTIVE_COLOR;
+		else
+			return this.MT_COLOR;
+	}.bind(this);
+	elem.text( function(d) { return d.text } )
+		.style( "color", color )
+	
 };
 
 SourceSuggestionView.prototype.__onMouseOver = function() {
 	var segmentId = this.model.get( "segmentId" );
-	var tokenIndex = this.model.get( "tokenIndex" );
-	var xCoord = this.model.get( "xCoord" );
-	var yCoord = this.model.get( "yCoord" );
-	this.model.trigger( "mouseover", segmentId, tokenIndex, xCoord, yCoord );
+	this.model.trigger( "mouseover", segmentId );
 };
 SourceSuggestionView.prototype.__onMouseOut = function() {
 	var segmentId = this.model.get( "segmentId" );
-	this.model.trigger( "mouseout", segmentId, null );
+	this.model.trigger( "mouseout", segmentId );
 };
 SourceSuggestionView.prototype.__onMouseClick = function() {
 	var segmentId = this.model.get( "segmentId" );
-	var tokenIndex = this.model.get( "tokenIndex" );
-	this.model.trigger( "click", segmentId, tokenIndex );
+	this.model.trigger( "click", segmentId );
 };
-SourceSuggestionView.prototype.__onMouseOverOption = function( optionElem, optionIndex ) {
+SourceSuggestionView.prototype.__onMouseOverOption = function( option ) {
 	var segmentId = this.model.get( "segmentId" );
-	var tokenIndex = this.model.get( "tokenIndex" );
-	var xCoord = this.model.get( "xCoord" );
-	var yCoord = this.model.get( "yCoord" );
-	this.model.trigger( "mouseover", segmentId, tokenIndex, xCoord, yCoord );
-	this.model.trigger( "mouseover:option", segmentId, tokenIndex, optionElem.text, optionIndex );
+	this.model.set( "optionIndex", option.index );
+	this.model.trigger( "mouseover", segmentId );
+	this.model.trigger( "mouseover:option", segmentId, option.index );
 };
-SourceSuggestionView.prototype.__onMouseOutOption = function() {
+SourceSuggestionView.prototype.__onMouseOutOption = function( option ) {
 	var segmentId = this.model.get( "segmentId" );
-	var tokenIndex = this.model.get( "tokenIndex" );
-	this.model.trigger( "mouseout", segmentId, null );
-	this.model.trigger( "mouseout:option", segmentId, tokenIndex, null, null );
+	this.model.set( "optionIndex", null );
+	this.model.trigger( "mouseout", segmentId );
+	this.model.trigger( "mouseout:option", segmentId, option.index );
 };
-SourceSuggestionView.prototype.__onMouseClickOption = function( optionElem, optionIndex ) {
+SourceSuggestionView.prototype.__onMouseClickOption = function( option ) {
 	var segmentId = this.model.get( "segmentId" );
-	var tokenIndex = this.model.get( "tokenIndex" );
-	this.model.trigger( "click", segmentId, tokenIndex );
-	this.model.trigger( "click:option", segmentId, tokenIndex, optionElem.text, optionIndex );
+	this.model.trigger( "click", segmentId );
+	this.model.trigger( "click:option", segmentId, option.index );
 };

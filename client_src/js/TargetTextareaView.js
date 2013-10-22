@@ -4,7 +4,9 @@ var TargetTextareaView = Backbone.View.extend({
 
 TargetTextareaView.prototype.KEY = {
 	TAB : 9,
-	ENTER : 13
+	ENTER : 13,
+	UP_ARROW : 38,
+	DOWN_ARROW : 40
 };
 
 TargetTextareaView.prototype.initialize = function() {
@@ -26,7 +28,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 	var onBlur = function() {}.bind(this);
 	var onKeyDown = function() {
 		var keyCode = d3.event.keyCode;
-		if ( keyCode === this.KEY.ENTER || keyCode === this.KEY.TAB ) {
+		if ( keyCode === this.KEY.ENTER || keyCode === this.KEY.TAB || keyCode === this.KEY.UP_ARROW || keyCode === this.KEY.DOWN_ARROW ) {
 			d3.event.preventDefault();
 			d3.event.cancelBubble = true;
 		}
@@ -58,6 +60,14 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 			var suggestions = this.model.get( "suggestions" );
 			var firstSuggestion = ( suggestions.length === 0 ) ? "" : suggestions[0];
 			this.model.trigger( "keypress:tab", segmentId, firstSuggestion );
+		}
+		else if ( keyCode === this.KEY.UP_ARROW ) {
+			var segmentId = this.model.get( "segmentId" );
+			this.model.trigger( "keypress:up", segmentId );
+		}
+		else if ( keyCode === this.KEY.DOWN_ARROW ) {
+			var segmentId = this.model.get( "segmentId" );
+			this.model.trigger( "keypress:down", segmentId );
 		}
 		else {
 			var userText = this.textarea[0][0].value;

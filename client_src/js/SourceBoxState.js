@@ -21,6 +21,8 @@ var SourceBoxState = Backbone.Model.extend({
 		/** @type {boolean} **/
 		"hasFocus" : false,
 		
+		"hoverXCoord" : 0,
+		"hoverYCoord" : 0,
 		"boxHeight" : 0,
 		"boxWidth" : 0
 	}

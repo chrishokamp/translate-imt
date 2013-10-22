@@ -126,15 +126,15 @@ SourceBoxView.prototype.__mouseOverToken = function( _, tokenIndex ) {
 	var xCoord = elemLeft - containerLeft;
 	var yCoord = elemTop - containerTop;
 	var segmentId = this.model.get( "segmentId" );
+	this.model.set({
+		"hoverXCoord" : xCoord,
+		"hoverYCoord" : yCoord,
+		"hoverTokenIndex" : tokenIndex
+	});
 	this.model.trigger( "mouseover:*", segmentId );
-	this.model.trigger( "mouseover:token", segmentId, tokenIndex, xCoord, yCoord );
+	this.model.trigger( "mouseover:token", segmentId, tokenIndex );
 };
-SourceBoxView.prototype.__mouseOutToken = function() {
-	var segmentId = this.model.get( "segmentId" );
-	this.model.trigger( "mouseout:*", segmentId );
-	this.model.trigger( "mouseout:token", segmentId, null );
-};
-SourceBoxView.prototype.__mouseClickToken = function( _, tokenIndex ) {
+SourceBoxView.prototype.__mouseOutToken = function( _, tokenIndex ) {
 	var containerLeft = this.views.container[0][0].offsetLeft;
 	var containerTop = this.views.container[0][0].offsetTop;
 	var elemLeft = d3.event.srcElement.offsetLeft;
@@ -142,6 +142,16 @@ SourceBoxView.prototype.__mouseClickToken = function( _, tokenIndex ) {
 	var xCoord = elemLeft - containerLeft;
 	var yCoord = elemTop - containerTop;
 	var segmentId = this.model.get( "segmentId" );
+	this.model.set({
+		"hoverXCoord" : xCoord,
+		"hoverYCoord" : yCoord,
+		"hoverTokenIndex" : null
+	});
+	this.model.trigger( "mouseout:*", segmentId );
+	this.model.trigger( "mouseout:token", segmentId, tokenIndex );
+};
+SourceBoxView.prototype.__mouseClickToken = function( _, tokenIndex ) {
+	var segmentId = this.model.get( "segmentId" );
 	this.model.trigger( "click:*", segmentId );
-	this.model.trigger( "click:token", segmentId, tokenIndex, xCoord, yCoord );
+	this.model.trigger( "click:token", segmentId, tokenIndex );
 };
