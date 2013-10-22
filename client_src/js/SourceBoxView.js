@@ -34,6 +34,8 @@ SourceBoxView.prototype.__containerRenderOnce = function( elem ) {
 		.classed( "SourceLang", true )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "default" )
+		.on( "mouseover", this.__mouseOver.bind(this) )
+		.on( "mouseout", this.__mouseOut.bind(this) )
 		.on( "click", this.__mouseClick.bind(this) );
 };
 SourceBoxView.prototype.__containerRenderAlways = function( elem ) {};
@@ -54,6 +56,7 @@ SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
 		.style( "cursor", "default" )
 		.on( "mouseover", this.__mouseOverToken.bind(this) )
 		.on( "mouseout", this.__mouseOutToken.bind(this) )
+		.on( "click", this.__mouseClickToken.bind(this) )
 };
 SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
@@ -92,20 +95,23 @@ SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "white-space", "pre-wrap" )
 		.style( "vertical-align", "top" )
-		.text( " " );
+		.text( " " )
 };
 SourceBoxView.prototype.__tokenSepRenderAlways = function() {};
 
 SourceBoxView.prototype.__mouseOver = function() {
 	var segmentId = this.model.get( "segmentId" );
-	this.model.trigger( "mouseover:*", segmentId );
+	this.model.trigger( "mouseover", segmentId );
 };
 SourceBoxView.prototype.__mouseOut = function() {
 	var segmentId = this.model.get( "segmentId" );
-	this.model.trigger( "mouseout:*", segmentId );
+	this.model.trigger( "mouseout", segmentId );
 };
-SourceBoxView.prototype.__mouseOverToken = function( tokenText, tokenIndex ) {
-	if ( tokenText.search( /\w/ ) === -1 ) { return }
+SourceBoxView.prototype.__mouseClick = function() {
+	var segmentId = this.model.get( "segmentId" );
+	this.model.trigger( "click", segmentId );
+};
+SourceBoxView.prototype.__mouseOverToken = function( _, tokenIndex ) {
 	var containerLeft = this.views.container[0][0].offsetLeft;
 	var containerTop = this.views.container[0][0].offsetTop;
 	var elemLeft = d3.event.srcElement.offsetLeft;
@@ -121,7 +127,14 @@ SourceBoxView.prototype.__mouseOutToken = function() {
 	this.model.trigger( "mouseout:*", segmentId );
 	this.model.trigger( "mouseout:token", segmentId, null );
 };
-SourceBoxView.prototype.__mouseClick = function() {
+SourceBoxView.prototype.__mouseClickToken = function( _, tokenIndex ) {
+	var containerLeft = this.views.container[0][0].offsetLeft;
+	var containerTop = this.views.container[0][0].offsetTop;
+	var elemLeft = d3.event.srcElement.offsetLeft;
+	var elemTop = d3.event.srcElement.offsetTop;
+	var xCoord = elemLeft - containerLeft;
+	var yCoord = elemTop - containerTop;
 	var segmentId = this.model.get( "segmentId" );
-	this.model.trigger( "click", segmentId );
+	this.model.trigger( "click:*", segmentId );
+	this.model.trigger( "click:token", segmentId, tokenIndex, xCoord, yCoord );
 };

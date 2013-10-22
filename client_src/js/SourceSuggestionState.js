@@ -8,7 +8,7 @@ var SourceSuggestionState = Backbone.Model.extend({
 		"scores" : [],
 		"xCoord" : 0,
 		"yCoord" : 0,
-		"hasFocus" : false
+		"hasFocus" : true
 	}
 });
 

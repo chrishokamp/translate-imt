@@ -114,11 +114,12 @@ PTM.prototype.setup = function() {
 		// Create a SourceBox (matching pair of state and view) for each segment
 		var sourceBox = new SourceBoxState({ "el" : ".SourceBoxView" + segmentId });
 		this.sourceBoxes[segmentId] = sourceBox;
+		this.listenTo( sourceBox, "mouseover", function(){} );
+		this.listenTo( sourceBox, "mouseout", function(){} );
 		this.listenTo( sourceBox, "click", this.focusOnSegment );
 		this.listenTo( sourceBox, "mouseover:token", this.showSourceSuggestions );
 		this.listenTo( sourceBox, "mouseout:token", this.showSourceSuggestions );
-		this.listenTo( sourceBox, "mouseover:*", function(){} );
-		this.listenTo( sourceBox, "mouseout:*", function(){} );
+		this.listenTo( sourceBox, "click:token", function(){} );
 		sourceBox.set({
 			"segmentId" : segmentId,
 			"tokens" : segments[ segmentId ].tokens
@@ -128,6 +129,7 @@ PTM.prototype.setup = function() {
 		this.sourceSuggestions[segmentId] = sourceSuggestion;
 		this.listenTo( sourceSuggestion, "mouseover", this.showSourceSuggestions );
 		this.listenTo( sourceSuggestion, "mouseout", this.showSourceSuggestions );
+		this.listenTo( sourceSuggestion, "click", function(){} );
 		this.listenTo( sourceSuggestion, "mouseover:option", function(){} );
 		this.listenTo( sourceSuggestion, "mouseout:option", function(){} );
 		this.listenTo( sourceSuggestion, "click:option", this.replaceCaretToken );
@@ -163,6 +165,7 @@ PTM.prototype.setup = function() {
 		this.targetSuggestions[segmentId] = targetSuggestion;
 		this.listenTo( targetSuggestion, "mouseOver:*", function(){} );
 		this.listenTo( targetSuggestion, "mouseOut:*", function(){} );
+		this.listenTo( targetSuggestion, "mouseClick:option", this.replaceActiveTokens );
 		this.listenTo( targetSuggestion, "mouseOver:option", function(){} );
 		this.listenTo( targetSuggestion, "mouseOut:option", function(){} );
 		this.listenTo( targetSuggestion, "mouseClick:option", this.replaceActiveTokens );
@@ -275,7 +278,7 @@ PTM.prototype.updateUserText = function( segmentId, userText, caretIndex ) {
 	});
 };
 
-PTM.prototype.replaceCaretToken = function( segmentId, text ) {
+PTM.prototype.replaceCaretToken = function( segmentId, tokenIndex, text ) {
 //	var targetTypingState = this.targetTypingStates[ segmentId ];
 //	var userText = targetTypingState.replaceCaretToken( text );
 //	var caretIndex = userText.length;
@@ -313,6 +316,12 @@ PTM.prototype.focusOnPreviousSegment = function( targetFocus ) {
 };
 
 PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
+	var filterEmptyResults = function( response ) {
+		if ( response.hasOwnProperty( "result" ) ) {
+			response.result = _.filter( response.result, function(d) { return d.tgt.length > 0 } );
+		}
+		return response;
+	}.bind(this);
 	var getTargetTerms = function( response ) {
 		if ( response.hasOwnProperty( "result" ) )
 			return response.result.map( function(d) { return d.tgt.join(" "); } );
@@ -341,6 +350,7 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 	}.bind(this);
 	var cacheKey = leftContext + ":" + source;
 	var cacheAndUpdate = function( response, request ) {
+		response = filterEmptyResults( response );
 		this.cache.wordQueries[ cacheKey ] = response;
 		update( response );
 	}.bind(this);
