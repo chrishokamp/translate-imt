@@ -23,14 +23,13 @@ DocumentView.prototype.initialize = function( options ) {
 		.style( "box-shadow", "1px 1px 5px #999" )
 		.style( "pointer-events", "none" )
 	this.views.canvas = this.views.container.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" );
-	this.views.sourceSuggestions = this.views.canvas.append( "div" ).attr( "id", "SourceSuggestions" ).style( "position", "absolute" ).style( "z-index", 1000 );
-	this.views.targetSuggestions = this.views.canvas.append( "div" ).attr( "id", "TargetSuggestions" ).style( "position", "absolute" ).style( "z-index", 1000 );
 	this.views.background = this.views.canvas.append( "div" ).attr( "class", "Background" ).call( this.__backgroundRenderOnce.bind(this) );
 	this.views.focus = this.views.canvas.append( "div" ).attr( "class", "Focus" ).call( this.__focusRenderOnce.bind(this) );
 	this.views.overlay = this.views.canvas.append( "div" ).attr( "class", "Overlay" ).call( this.__overlayRenderOnce.bind(this) );
 	this.views.segments = {};
 };
 
+/** @private **/
 DocumentView.prototype.__addHeader = function() {
 	var header = this.views.overlay.append( "div" ).attr( "class", "Header" );
 	header
@@ -53,7 +52,14 @@ DocumentView.prototype.__addHeader = function() {
 		.style( "font-family", "NeutraLight, Gill Sans, Helvetica, sans-serif" )
 		.style( "font-size", "10pt" )
 		.style( "color", "#666" )
-		.text( "Spence Green, Jason Chuang, Jeffrey Heer, Christopher D. Manning" )
+		.text( "Visualization: Jason Chuang" )
+	header.append( "p" )
+		.style( "padding", "2px 0 0 0" )
+		.style( "margin", 0 )
+		.style( "font-family", "NeutraLight, Gill Sans, Helvetica, sans-serif" )
+		.style( "font-size", "10pt" )
+		.style( "color", "#666" )
+		.text( "Machine Translation: Spence Green" )
 	this.views.header = header;
 };
 /** @private **/
@@ -76,51 +82,20 @@ DocumentView.prototype.addSegment = function( segmentId ) {
 		this.__addFooter();
 		return;
 	}
-	var segmentBand = this.views.overlay.append( "div" ).attr( "class", "SegmentBand SegmentBand" + segmentId );
-	segmentBand
-		.style( "pointer-events", "auto" )
-		.style( "cursor", "default" )
+	var segmentView = this.views.overlay.append( "div" ).attr( "class", "SegmentView SegmentView" + segmentId )
 		.style( "border-top", "1px solid " + this.REGULAR_BACKGROUND )
 		.style( "border-bottom", "1px solid " + this.REGULAR_BACKGROUND )
 		.style( "border-left", "25px solid " + this.REGULAR_BACKGROUND )
 		.style( "background", this.REGULAR_BACKGROUND )
-		.on( "click", function() { this.trigger( "mouseClick", segmentId ) }.bind(this) );
-	segmentBand.append( "div" ).attr( "class", "SourceBoxView SourceBoxView" + segmentId );
-	segmentBand.append( "div" ).attr( "class", "TargetBoxView TargetBoxView" + segmentId );
-	this.views.segments[ segmentId ] = segmentBand;
-	this.resize();
-	return segmentBand;
-};
-
-DocumentView.prototype.renderFocusBand = function() {
-	var typingFocus = this.model.get( "targetFocus" );
-	for ( var segmentId in this.views.segments ) {
-		var segmentBand = this.views.segments[ segmentId ];
-		segmentBand
-			.style( "border-top", ( typingFocus === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
-			.style( "border-bottom", ( typingFocus === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
-			.style( "border-left", ( typingFocus === segmentId ) ? "25px solid " + this.FOCUS_COLOR : "25px solid " + this.REGULAR_BACKGROUND )
-			.style( "background", ( typingFocus === segmentId ) ? this.FOCUS_BACKGROUND : this.REGULAR_BACKGROUND );
-	}
+	var subCanvas = segmentView.append( "div" ).attr( "class", "SubCanvas" )
+		.style( "position", "absolute" );
 	
-	this.views.focus.call( this.__focusRenderAlways.bind(this) );
-};
-
-DocumentView.prototype.resize = function() {
-	var numSegments = _.keys( this.views.segments ).length;
-	var width = this.views.overlay[0][0].offsetWidth;
-	var height = this.views.overlay[0][0].offsetHeight;
-	this.views.maxWidth = ( this.views.maxWidth === undefined ) ? width : Math.max( this.views.maxWidth, width );
-	this.views.maxHeight = ( this.views.maxHeight === undefined ) ? height : Math.max( this.views.maxHeight, height );
-	this.views.canvas
-		.style( "width", this.views.maxWidth + "px" )
-		.style( "height", this.views.maxHeight + "px" )
-	this.views.background
-		.style( "width", this.views.maxWidth + "px" )
-		.style( "height", this.views.maxHeight + "px" )
-	this.views.container
-		.style( "width", this.views.maxWidth + "px" )
-		.style( "height", this.views.maxHeight + "px" );
+	segmentView.append( "div" ).attr( "class", "SourceBoxView SourceBoxView" + segmentId );
+	segmentView.append( "div" ).attr( "class", "TargetBoxView TargetBoxView" + segmentId );
+	subCanvas.append( "div" ).attr( "class", "SourceSuggestionView SourceSuggestionView" + segmentId ).style( "position", "absolute" );
+	subCanvas.append( "div" ).attr( "class", "TargetSuggestionView TargetSuggestionView" + segmentId ).style( "position", "absolute" );
+	this.views.segments[ segmentId ] = segmentView;
+	this.updateDims();
 };
 
 DocumentView.prototype.__overlayRenderOnce = function( elem ) {
@@ -171,3 +146,36 @@ DocumentView.prototype.__focusRenderAlways = function( elem ) {
 	}
 */
 };
+
+
+DocumentView.prototype.renderFocusBand = function() {
+	var typingFocus = this.model.get( "targetFocus" );
+	for ( var segmentId in this.views.segments ) {
+		var segmentView = this.views.segments[ segmentId ];
+		segmentView
+			.style( "border-top", ( typingFocus === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
+			.style( "border-bottom", ( typingFocus === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
+			.style( "border-left", ( typingFocus === segmentId ) ? "25px solid " + this.FOCUS_COLOR : "25px solid " + this.REGULAR_BACKGROUND )
+			.style( "background", ( typingFocus === segmentId ) ? this.FOCUS_BACKGROUND : this.REGULAR_BACKGROUND );
+	}
+	
+	this.views.focus.call( this.__focusRenderAlways.bind(this) );
+};
+
+DocumentView.prototype.updateDims = function() {
+	var numSegments = _.keys( this.views.segments ).length;
+	var width = this.views.overlay[0][0].offsetWidth;
+	var height = this.views.overlay[0][0].offsetHeight;
+	this.views.maxWidth = ( this.views.maxWidth === undefined ) ? width : Math.max( this.views.maxWidth, width );
+	this.views.maxHeight = ( this.views.maxHeight === undefined ) ? height : Math.max( this.views.maxHeight, height );
+	this.views.canvas
+		.style( "width", this.views.maxWidth + "px" )
+		.style( "height", this.views.maxHeight + "px" )
+	this.views.background
+		.style( "width", this.views.maxWidth + "px" )
+		.style( "height", this.views.maxHeight + "px" )
+	this.views.container
+		.style( "width", this.views.maxWidth + "px" )
+		.style( "height", this.views.maxHeight + "px" );
+};
+

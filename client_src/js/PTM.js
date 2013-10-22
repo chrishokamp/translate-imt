@@ -16,16 +16,6 @@ PTM.prototype.reset = function() {
 		"docId" : null,
 		"segmentIds" : [],
 		"segments" : {},
-		"sourceCaretTokens" : {},      // @value {{segmentId:{number:true}}} Can be modified by SourceBoxState on a "updateSourceTokens" event.
-		"sourceChunkTokens" : {},      // @value {{segmentId:{number:true}}} Can be modified by SourceBoxState on a "updateSourceTokens" event.
-		"sourceMatchedTokens" : {},    // @value {{segmentId:{number:true}}} Can be modified by SourceBoxState on a "updateSourceTokens" event.
-		"highlightSegmentId" : null,   // @value {segmentId|null} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
-		"highlightTokenIndex" : null,  // @value {integer|null} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
-		"highlightSource" : "",        // @value {string} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
-		"highlightTargets" : [],       // @value {string[]} Modified at the completion of a loadWordQueries() request, following a SourceBoxView "mouseOver" or "mouseOut" event.
-		"highlightScores" : [],
-		"highlightXCoord" : 0,         // @value {number} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
-		"highlightYCoord" : 0,         // @value {number} Can be modified by SourceBoxView on a "mouseOver" or "mouseOut" event.
 		"targetUserText" : {},         // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateUserText" event.
 		"targetCaretIndex" : {},       // @value {{segmentId:integer}} Can be modified by TargetTypingView on an "updateUserText" event.
 		"targetPrefix" : {},           // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateTranslations" event.
@@ -49,14 +39,14 @@ PTM.prototype.reset = function() {
 	/** @param {DocumentView} **/
 	this.documentView = null;
 	this.sourceBoxes = {};
-	this.sourceSuggestions = null;
+	this.sourceSuggestions = {};
 	this.targetBoxes = {};
-	this.targetSuggestions = null;
+	this.targetSuggestions = {};
 	
 	// Define cache for a cache for storing rqReq and tReq results
 	this.cache = {};
 	/** @param {{string:Object}} Cache for storing rqReq results, indexed by word. **/
-	this.cache.wordQueries = {};
+	this.cache.wordQueries = { ":" : { "rules" : [] } };
 	/** @param {{segmentId:{string:Object}}} Cache for storing tReq results, indexed by segmentId and then by prefix. **/
 	this.cache.translations = {};
 
@@ -119,21 +109,30 @@ PTM.prototype.setup = function() {
 	segmentIds.forEach( function(segmentId) {
 		
 		// Generate HTML DOM elements
-		var segmentBand = this.documentView.addSegment( segmentId );
-		this.listenTo( segmentBand, "mouseClick", this.focusOnSegment );
+		this.documentView.addSegment( segmentId );
 		
 		// Create a SourceBox (matching pair of state and view) for each segment
 		var sourceBox = new SourceBoxState({ "el" : ".SourceBoxView" + segmentId });
 		this.sourceBoxes[segmentId] = sourceBox;
-		this.listenTo( sourceBox, "mouseClick", this.focusOnSegment );
-		this.listenTo( sourceBox, "mouseOver:token", this.showSourceSuggestions );
-		this.listenTo( sourceBox, "mouseOut:token", this.showSourceSuggestions );
-		this.get( "sourceCaretTokens" )[ segmentId ] = {};
-		this.get( "sourceChunkTokens" )[ segmentId ] = {};
-		this.get( "sourceMatchedTokens" )[ segmentId ] = {};
+		this.listenTo( sourceBox, "click", this.focusOnSegment );
+		this.listenTo( sourceBox, "mouseover:token", this.showSourceSuggestions );
+		this.listenTo( sourceBox, "mouseout:token", this.showSourceSuggestions );
+		this.listenTo( sourceBox, "mouseover:*", function(){} );
+		this.listenTo( sourceBox, "mouseout:*", function(){} );
 		sourceBox.set({
 			"segmentId" : segmentId,
 			"tokens" : segments[ segmentId ].tokens
+		});
+		
+		var sourceSuggestion = new SourceSuggestionState({ "el" : ".SourceSuggestionView" + segmentId });
+		this.sourceSuggestions[segmentId] = sourceSuggestion;
+		this.listenTo( sourceSuggestion, "mouseover", this.showSourceSuggestions );
+		this.listenTo( sourceSuggestion, "mouseout", this.showSourceSuggestions );
+		this.listenTo( sourceSuggestion, "mouseover:option", function(){} );
+		this.listenTo( sourceSuggestion, "mouseout:option", function(){} );
+		this.listenTo( sourceSuggestion, "click:option", this.replaceCaretToken );
+		this.sourceSuggestions[segmentId].set({
+			"segmentId" : segmentId
 		});
 		
 		// Create state and view objects for the typing UI
@@ -159,30 +158,16 @@ PTM.prototype.setup = function() {
 			"userText" : ""
 		});
 		this.loadTranslations( segmentId, "" );
+		
+		var targetSuggestion = new TargetSuggestionState({ "el" : ".TargetSuggestionView" + segmentId });
+		this.targetSuggestions[segmentId] = targetSuggestion;
+		this.listenTo( targetSuggestion, "mouseOver:*", function(){} );
+		this.listenTo( targetSuggestion, "mouseOut:*", function(){} );
+		this.listenTo( targetSuggestion, "mouseOver:option", function(){} );
+		this.listenTo( targetSuggestion, "mouseOut:option", function(){} );
+		this.listenTo( targetSuggestion, "mouseClick:option", this.replaceActiveTokens );
 	}.bind(this) );
 	this.documentView.addSegment( null );
-
-	// Create highlight object (i.e., floating menu showing word query results when a user hovers over a word in the source language)
-//	if ( this.sourceSuggestions === null ) {
-		this.sourceSuggestions = new SourceSuggestionState();
-		this.listenTo( this.sourceSuggestions, "mouseOver:*", this.showSourceSuggestions );
-		this.listenTo( this.sourceSuggestions, "mouseOut:*", this.showSourceSuggestions );
-		this.listenTo( this.sourceSuggestions, "mouseOver:option", function(){} );
-		this.listenTo( this.sourceSuggestions, "mouseOut:option", function(){} );
-		this.listenTo( this.sourceSuggestions, "mouseClick:option", this.replaceCaretToken );
-//	}
-	this.cache.wordQueries[ ":" ] = { "rules" : [] };
-	this.showSourceSuggestions( null, null );
-
-	// Create suggestion object (i.e., floating menu showing updateAutocomplete options when a user is typing in the target language)
-//	if ( this.targetSuggestions === null ) {
-		this.targetSuggestions = new TargetSuggestionState();
-		this.listenTo( this.targetSuggestions, "mouseOver:*", function(){} );
-		this.listenTo( this.targetSuggestions, "mouseOut:*", function(){} );
-		this.listenTo( this.targetSuggestions, "mouseOver:option", function(){} );
-		this.listenTo( this.targetSuggestions, "mouseOut:option", function(){} );
-		this.listenTo( this.targetSuggestions, "mouseClick:option", this.replaceActiveTokens );
-//	}
 
 	// Focus on the first segment
 	var targetFocus = segmentIds[0];
@@ -196,45 +181,32 @@ PTM.prototype.setup = function() {
  * @param {number|null} [highlightYCoord]
  * @private
  **/
-PTM.prototype.__showSourceSuggestions = function( highlightSegmentId, highlightTokenIndex, highlightXCoord, highlightYCoord ) {
-	if ( highlightSegmentId === undefined ) { highlightSegmentId = null }
-	if ( highlightTokenIndex === undefined ) { highlightTokenIndex = null }
-	if ( highlightXCoord === undefined ) { highlightXCoord = 0 }
-	if ( highlightYCoord === undefined ) { highlightYCoord = 0 }
+PTM.prototype.__showSourceSuggestions = function( segmentId, tokenIndex, xCoord, yCoord ) {
+	if ( segmentId === undefined ) { segmentId = null }
+	if ( tokenIndex === undefined ) { tokenIndex = null }
+	if ( xCoord === undefined ) { xCoord = 0 }
+	if ( yCoord === undefined ) { yCoord = 0 }
 	var segments = this.get( "segments" );
-	var segmentIds = this.get( "segmentIds" );
-
-	var highlightSource = ( highlightSegmentId !== null && highlightTokenIndex !== null ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex ] : "";
-	var highlightLeftContext = ( highlightSource !== "" && highlightTokenIndex > 0 ) ? segments[ highlightSegmentId ].tokens[ highlightTokenIndex-1 ] : "";
-	
-	// Update PTM states
-	this.set({
-		"highlightSegmentId" : highlightSegmentId,
-		"highlightTokenIndex" : highlightTokenIndex,
-		"highlightSource" : highlightSource,
-		"highlightTargets" : [],
-		"highlightScores" : [],
-		"highlightXCoord" : highlightXCoord,
-		"highlightYCoord" : highlightYCoord
-	}, {trigger:true});
-	
-	// Propagate states to SourceBoxes
-	segmentIds.forEach( function(segmentId) {
-		this.sourceBoxes[ segmentId ].set({
-			"hoverTokenIndex" : ( segmentId === highlightSegmentId ) ? highlightTokenIndex : null
+	if ( segments.hasOwnProperty(segmentId) ) {
+		var segment = segments[segmentId];
+		var source = ( tokenIndex === null ) ? "" : segment.tokens[ tokenIndex ];
+		var leftContext = ( source === "" || tokenIndex === 0 ) ? "" : segment.tokens[ tokenIndex-1 ];
+		this.sourceBoxes[segmentId].set({
+			"hoverTokenIndex" : tokenIndex
 		});
-	}.bind(this) );
-	
-	// Propagate states to the SourceSuggestions, and make a word query request (if necessary)
-	this.sourceSuggestions.set({
-		"segmentId" : highlightSegmentId,
-		"tokenIndex" : highlightTokenIndex,
-		"source" : highlightSource,
-		"targets" : [],
-		"xCoord" : highlightXCoord,
-		"yCoord" : highlightYCoord
-	}, {trigger:true});
-	this.loadWordQueries( highlightSource , highlightLeftContext );
+		this.sourceSuggestions[segmentId].set({
+			"tokenIndex" : tokenIndex,
+			"source" : source,
+			"leftContext" : leftContext,
+			"targets" : [],   // To be filled in asynchronously by loadWordQueries.
+			"scores" : [],    // To be filled in asynchronously by loadWordQueries.
+			"xCoord" : xCoord,
+			"yCoord" : yCoord
+		});
+		if ( tokenIndex !== null ) {
+			this.loadWordQueries( segmentId, source , leftContext );
+		}
+	}
 };
 
 /**
@@ -276,22 +248,6 @@ PTM.prototype.setTargetSuggestionCoords = function( segmentId, xCoord, yCoord ) 
 			"yCoord" : yCoord
 		});
 	}
-};
-
-
-PTM.prototype.updateSourceTokens = function( segmentId ) {
-//	var targetTypingState = this.targetTypingStates[ segmentId ];
-//	var caretTokenIndexes = targetTypingState.get( "caretSourceTokenIndexes" );
-//	var chunkTokenIndexes = targetTypingState.get( "chunkSourceTokenIndexes" );
-//	var matchedTokenIndexes = targetTypingState.get( "matchedSourceTokenIndexes" )
-//	this.get( "sourceCaretTokens" )[ segmentId ] = caretTokenIndexes;
-//	this.get( "sourceChunkTokens" )[ segmentId ] = chunkTokenIndexes;
-//	this.get( "sourceMatchedTokens" )[ segmentId ] = matchedTokenIndexes;
-//	this.sourceBoxes[ segmentId ].set({
-//		"caretTokenIndexes" : caretTokenIndexes,
-//		"chunkTokenIndexes" : chunkTokenIndexes,
-//		"matchedTokenIndexes" : matchedTokenIndexes,
-//	});
 };
 
 PTM.prototype.updateFocus = function( segmentId, hasFocus ) {
@@ -356,41 +312,39 @@ PTM.prototype.focusOnPreviousSegment = function( targetFocus ) {
 	this.focusOnSegment( typingNewFocus );
 };
 
-PTM.prototype.loadWordQueries = function( source, leftContext ) {
+PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 	var getTargetTerms = function( response ) {
-		if ( response.hasOwnProperty( "result" ) ) {
+		if ( response.hasOwnProperty( "result" ) )
 			return response.result.map( function(d) { return d.tgt.join(" "); } );
-		}
-		return [];
+		else
+			return [];
 	}.bind(this);
 	var getTargetScores = function( response ) {
-		if ( response.hasOwnProperty( "result" ) ) {
+		if ( response.hasOwnProperty( "result" ) )
 			return response.result.map( function(d) { return d.score } );
-		}
-		return [];
+		else
+			return [];
 	}.bind(this);
 	var update = function( response ) {
-		if ( this.get( "highlightSource" ) === source ) {
+		var expectedSource = this.sourceSuggestions[segmentId].get("source");
+		var expectedLeftContext = this.sourceSuggestions[segmentId].get("leftContext");
+		if ( source === expectedSource && leftContext === expectedLeftContext ) {
 			var targets = getTargetTerms( response );
 			var scores = getTargetScores( response );
-			this.set({
-				"highlightTargets" : targets,
-				"highlightScores" : scores
-			});
-			this.sourceSuggestions.set({
+			this.sourceSuggestions[segmentId].set({
+				"source" : source,
+				"leftContext" : leftContext,
 				"targets" : targets,
 				"scores" : scores
 			});
 		}
 	}.bind(this);
-
 	var cacheKey = leftContext + ":" + source;
 	var cacheAndUpdate = function( response, request ) {
 		this.cache.wordQueries[ cacheKey ] = response;
 		update( response );
 	}.bind(this);
-
-  if ( this.cache.wordQueries.hasOwnProperty( cacheKey ) ) {
+	if ( this.cache.wordQueries.hasOwnProperty( cacheKey ) ) {
 		update( this.cache.wordQueries[ cacheKey ] );
 	} else {
 		this.server.wordQuery( source, leftContext, cacheAndUpdate );
@@ -473,7 +427,6 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 				"alignIndexList" : alignIndexList, 
 				"chunkIndexList" : chunkIndexList
 			});
-			this.documentView.resize();
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( response, request ) {

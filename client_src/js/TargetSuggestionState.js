@@ -9,5 +9,5 @@ var TargetSuggestionState = Backbone.Model.extend({
 });
 
 TargetSuggestionState.prototype.initialize = function( options ) {
-	this.view = new TargetSuggestionView({ "model" : this });
+	this.view = new TargetSuggestionView({ "model" : this, "el" : options.el });
 };

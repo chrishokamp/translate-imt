@@ -10,22 +10,23 @@ SourceBoxView.prototype.MT_COLOR = "#4292C6";
 SourceBoxView.prototype.ANIMATION_DURATION = 120;
 
 SourceBoxView.prototype.initialize = function() {
-	this.container = d3.select( this.el ).call( this.__containerRenderOnce.bind(this) );
+	this.views = {};
+	this.views.container = d3.select( this.el ).call( this.__containerRenderOnce.bind(this) );
 	this.listenTo( this.model, "change", this.render );
 };
 
 SourceBoxView.prototype.render = function() {
 	var tokens = this.model.get( "tokens" );
-	var elems = this.container.selectAll( "span.Token" ).data( tokens );
+	var elems = this.views.container.selectAll( "span.Token" ).data( tokens );
 	var subElems = elems.enter().append( "span" ).attr( "class", "Token" ).call( this.__tokenRenderOnce.bind(this) );
 	subElems.append( "span" ).attr( "class", "TokenTerm" ).call( this.__tokenTermRenderOnce.bind(this) );
 	subElems.append( "span" ).attr( "class", "TokenSep" ).call( this.__tokenSepRenderOnce.bind(this) );
 	elems.exit().remove();
 
-	this.container.call( this.__containerRenderAlways.bind(this) );
-	this.container.selectAll( "span.Token" ).call( this.__tokenRenderAlways.bind(this) )
-	this.container.selectAll( "span.Token" ).select( "span.TokenTerm" ).call( this.__tokenTermRenderAlways.bind(this) );
-	this.container.selectAll( "span.Token" ).select( "span.TokenSep" ).call( this.__tokenSepRenderAlways.bind(this) );
+	this.views.container.call( this.__containerRenderAlways.bind(this) );
+	this.views.container.selectAll( "span.Token" ).call( this.__tokenRenderAlways.bind(this) )
+	this.views.container.selectAll( "span.Token" ).select( "span.TokenTerm" ).call( this.__tokenTermRenderAlways.bind(this) );
+	this.views.container.selectAll( "span.Token" ).select( "span.TokenSep" ).call( this.__tokenSepRenderAlways.bind(this) );
 };
 
 SourceBoxView.prototype.__containerRenderOnce = function( elem ) {
@@ -38,8 +39,8 @@ SourceBoxView.prototype.__containerRenderOnce = function( elem ) {
 SourceBoxView.prototype.__containerRenderAlways = function( elem ) {};
 
 SourceBoxView.prototype.__tokenRenderOnce = function( elem ) {
-	elem.on( "mouseover", this.__mouseOverToken.bind(this) )
-		.on( "mouseout", this.__mouseOutToken.bind(this) )
+	elem.style( "pointer-events", "auto" )
+		.style( "cursor", "default" )
 		.on( "click", this.__mouseClick.bind(this) );
 };
 SourceBoxView.prototype.__tokenRenderAlways = function() {};
@@ -48,7 +49,11 @@ SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "white-space", "pre-wrap" )
 		.style( "vertical-align", "top" )
-		.text( function(d) { return d } );
+		.text( function(d) { return d } )
+		.style( "pointer-events", "auto" )
+		.style( "cursor", "default" )
+		.on( "mouseover", this.__mouseOverToken.bind(this) )
+		.on( "mouseout", this.__mouseOutToken.bind(this) )
 };
 SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
@@ -57,9 +62,9 @@ SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		if ( isHovered ) 
+		if ( hasFocus && isHovered ) 
 			return this.MT_COLOR;
-		else if ( isMatched ) 
+		else if ( hasFocus && isMatched ) 
 		 	return this.MATCHED_COLOR
 		else
 			return this.UNMATCHED_COLOR;
@@ -91,21 +96,32 @@ SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
 };
 SourceBoxView.prototype.__tokenSepRenderAlways = function() {};
 
-SourceBoxView.prototype.__mouseOverToken = function( _, tokenIndex ) {
-	var hasFocus = this.model.get( "hasFocus" );
-	if ( hasFocus ) {
-		var segmentId = this.model.get( "segmentId" );
-		this.model.trigger( "mouseOver:token", segmentId, tokenIndex, d3.event.srcElement.offsetLeft, d3.event.srcElement.offsetTop );
-	}
+SourceBoxView.prototype.__mouseOver = function() {
+	var segmentId = this.model.get( "segmentId" );
+	this.model.trigger( "mouseover:*", segmentId );
+};
+SourceBoxView.prototype.__mouseOut = function() {
+	var segmentId = this.model.get( "segmentId" );
+	this.model.trigger( "mouseout:*", segmentId );
+};
+SourceBoxView.prototype.__mouseOverToken = function( tokenText, tokenIndex ) {
+	if ( tokenText.search( /\w/ ) === -1 ) { return }
+	var containerLeft = this.views.container[0][0].offsetLeft;
+	var containerTop = this.views.container[0][0].offsetTop;
+	var elemLeft = d3.event.srcElement.offsetLeft;
+	var elemTop = d3.event.srcElement.offsetTop;
+	var xCoord = elemLeft - containerLeft;
+	var yCoord = elemTop - containerTop;
+	var segmentId = this.model.get( "segmentId" );
+	this.model.trigger( "mouseover:*", segmentId );
+	this.model.trigger( "mouseover:token", segmentId, tokenIndex, xCoord, yCoord );
 };
 SourceBoxView.prototype.__mouseOutToken = function() {
-	var hasFocus = this.model.get( "hasFocus" );
-	if ( hasFocus ) {
-		this.model.trigger( "mouseOut:token", null, null );
-	}
+	var segmentId = this.model.get( "segmentId" );
+	this.model.trigger( "mouseout:*", segmentId );
+	this.model.trigger( "mouseout:token", segmentId, null );
 };
 SourceBoxView.prototype.__mouseClick = function() {
-	console.log( "click", this.model )
 	var segmentId = this.model.get( "segmentId" );
-	this.model.trigger( "mouseClick", segmentId );
+	this.model.trigger( "click", segmentId );
 };
