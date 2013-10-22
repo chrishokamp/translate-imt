@@ -57,9 +57,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 		}
 		else if ( keyCode === this.KEY.TAB ) {
 			var segmentId = this.model.get( "segmentId" );
-			var suggestions = this.model.get( "suggestions" );
-			var firstSuggestion = ( suggestions.length === 0 ) ? "" : suggestions[0];
-			this.model.trigger( "keypress:tab", segmentId, firstSuggestion );
+			this.model.trigger( "keypress:tab", segmentId );
 		}
 		else if ( keyCode === this.KEY.UP_ARROW ) {
 			var segmentId = this.model.get( "segmentId" );

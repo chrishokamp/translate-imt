@@ -228,15 +228,20 @@ PTM.prototype.updateMatchingTokens = function( segmentId, matchingTokens ) {
 };
 
 PTM.prototype.insertSourceSuggestion = function( segmentId, optionIndex ) {
-	var text = this.sourceSuggestions[segmentId].get( "targets" )[ optionIndex ];
+	var options = this.sourceSuggestions[segmentId].get( "targets" );
+	var text = ( options.length === 0 ) ? "" : options[ optionIndex ];
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
 };
-PTM.prototype.insertTargetSuggestion = function( segmentId, text ) {
+PTM.prototype.insertTargetSuggestion = function( segmentId, optionIndex ) {
+	var options = this.targetSuggestions[segmentId].get( "candidates" );
+	var text = ( options.length === 0 ) ? "" : options[ optionIndex ];
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
 };
-PTM.prototype.insertFirstSuggestion = function( segmentId, text ) {
+PTM.prototype.insertFirstSuggestion = function( segmentId ) {
+	var suggestions = this.targetBoxes[segmentId].get( "suggestions" );
+	var text = ( suggestions.length === 0 ) ? "" : suggestions[ 0 ];
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
 };
