@@ -8,6 +8,9 @@ DocumentView.prototype.REGULAR_BACKGROUND = "#eee";
 DocumentView.prototype.FOCUS_BACKGROUND = "#DEEBF7";
 DocumentView.prototype.FOCUS_COLOR = "#9ECAE1";
 DocumentView.prototype.ANIMATION_DURATION = 120;
+DocumentView.prototype.SCROLL_FRACTION = 0.1;
+DocumentView.prototype.SCROLL_TOP_PADDING = 60;
+DocumentView.prototype.SCROLL_BOTTOM_PADDING = 240;
 
 DocumentView.prototype.initialize = function( options ) {
 	this.views = {};
@@ -27,6 +30,14 @@ DocumentView.prototype.initialize = function( options ) {
 	this.views.focus = this.views.canvas.append( "div" ).attr( "class", "Focus" ).call( this.__focusRenderOnce.bind(this) );
 	this.views.overlay = this.views.canvas.append( "div" ).attr( "class", "Overlay" ).call( this.__overlayRenderOnce.bind(this) );
 	this.views.segments = {};
+	
+	this.resize = _.debounce( this.__resize, 10 );
+	this.animatedScroll = _.debounce( this.__animatedScroll, 10 );
+	this.listenTo( this.model, "change:focusSegment", this.render.bind(this) );
+};
+
+DocumentView.prototype.render = function( focusSegment ) {
+	this.views.focus.call( this.__focusRenderAlways.bind(this) );
 };
 
 /** @private **/
@@ -83,10 +94,9 @@ DocumentView.prototype.addSegment = function( segmentId ) {
 		return;
 	}
 	var segmentView = this.views.overlay.append( "div" ).attr( "class", "SegmentView SegmentView" + segmentId )
-		.style( "border-top", "1px solid " + this.REGULAR_BACKGROUND )
-		.style( "border-bottom", "1px solid " + this.REGULAR_BACKGROUND )
-		.style( "border-left", "25px solid " + this.REGULAR_BACKGROUND )
-		.style( "background", this.REGULAR_BACKGROUND )
+		.style( "padding-top", "1px" )
+		.style( "padding-bottom", "1px" )
+		.style( "padding-left", "25px" )
 	var subCanvas = segmentView.append( "div" ).attr( "class", "SubCanvas" )
 		.style( "position", "absolute" );
 	
@@ -95,7 +105,6 @@ DocumentView.prototype.addSegment = function( segmentId ) {
 	subCanvas.append( "div" ).attr( "class", "SourceSuggestionView SourceSuggestionView" + segmentId ).style( "position", "absolute" ).style( "z-index", 1000 );
 	subCanvas.append( "div" ).attr( "class", "TargetSuggestionView TargetSuggestionView" + segmentId ).style( "position", "absolute" ).style( "z-index", 1000 );
 	this.views.segments[ segmentId ] = segmentView;
-	this.resize();
 };
 
 DocumentView.prototype.__overlayRenderOnce = function( elem ) {
@@ -128,39 +137,48 @@ DocumentView.prototype.__focusRenderOnce = function( elem ) {
 		.style( "background", this.FOCUS_BACKGROUND );
 };
 DocumentView.prototype.__focusRenderAlways = function( elem ) {
-/*
 	var focusSegment = this.model.get( "focusSegment" );
 	if ( focusSegment !== null ) {
 		var focusSourceView = this.views.container.select( ".SourceBoxView" + focusSegment );
-		var focusTargetView = this.views.container.select( ".TargetTypingView" + focusSegment );
+		var focusTargetView = this.views.container.select( ".TargetBoxView" + focusSegment );
 		var top = focusSourceView[0][0].offsetTop;
 		var bottom = focusTargetView[0][0].offsetTop + focusTargetView[0][0].offsetHeight;
 		elem.transition().duration( this.ANIMATION_DURATION )
 			.style( "opacity", 1 )
 			.style( "top", (top-1) + "px" )
 			.style( "height", (bottom-top) + "px" )
+			
+		var body = d3.select("body")[0][0];
+		var scrollTop = body.scrollTop;
+		var scrollBottom = scrollTop + window.innerHeight;
+		if ( top < scrollTop + this.SCROLL_TOP_PADDING ) {
+			this.animatedScroll( top - this.SCROLL_TOP_PADDING );
+		}
+		else if ( bottom > scrollBottom - this.SCROLL_BOTTOM_PADDING ) {
+			this.animatedScroll( bottom - window.innerHeight + this.SCROLL_BOTTOM_PADDING );
+		}
 	}
 	else {
 		elem.transition().duration( this.ANIMATION_DURATION )
 			.style( "opacity", 0 )
 	}
-*/
 };
 
-DocumentView.prototype.focus = function( focusSegment ) {
-	for ( var segmentId in this.views.segments ) {
-		var segmentView = this.views.segments[ segmentId ];
-		segmentView
-			.style( "border-top", ( focusSegment === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
-			.style( "border-bottom", ( focusSegment === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
-			.style( "border-left", ( focusSegment === segmentId ) ? "25px solid " + this.FOCUS_COLOR : "25px solid " + this.REGULAR_BACKGROUND )
-			.style( "background", ( focusSegment === segmentId ) ? this.FOCUS_BACKGROUND : this.REGULAR_BACKGROUND );
+DocumentView.prototype.__animatedScroll = function( y ) {
+	var body = d3.select("body")[0][0];
+	var scrollTop = body.scrollTop;
+	var dy = ( scrollTop - y );
+	var yLength = Math.abs( dy );
+	if ( yLength < 1 ) {
+		window.scrollTo( 0, y );
 	}
-	this.views.focus.call( this.__focusRenderAlways.bind(this) );
+	else {
+		window.scrollTo( 0, scrollTop - dy * this.SCROLL_FRACTION );
+		this.animatedScroll( y );
+	}
 };
 
-DocumentView.prototype.resize = function() {
-	var numSegments = _.keys( this.views.segments ).length;
+DocumentView.prototype.__resize = function() {
 	var width = this.views.overlay[0][0].offsetWidth;
 	var height = this.views.overlay[0][0].offsetHeight;
 	this.views.maxWidth = ( this.views.maxWidth === undefined ) ? width : Math.max( this.views.maxWidth, width );
@@ -174,5 +192,14 @@ DocumentView.prototype.resize = function() {
 	this.views.container
 		.style( "width", this.views.maxWidth + "px" )
 		.style( "height", this.views.maxHeight + "px" );
+	
+	var focusSegment = this.model.get( "focusSegment" );
+	if ( focusSegment !== null ) {
+		var focusSourceView = this.views.container.select( ".SourceBoxView" + focusSegment );
+		var focusTargetView = this.views.container.select( ".TargetBoxView" + focusSegment );
+		var top = focusSourceView[0][0].offsetTop;
+		var bottom = focusTargetView[0][0].offsetTop + focusTargetView[0][0].offsetHeight;
+		this.views.focus.style( "height", (bottom-top) + "px" );
+	}
 };
 

@@ -3,27 +3,30 @@ var TargetOverlayView = Backbone.View.extend({
 });
 
 TargetOverlayView.prototype.initialize = function() {
-	this.container = d3.select( this.el ).style( "pointer-events", "none" ).call( this.__containerRenderOnce.bind(this) );
-	this.prefixContent = this.container.append( "span" ).attr( "class", "PrefixContent" ).call( this.__userContentStyles.bind(this) );
-	this.editingContent = this.container.append( "span" ).attr( "class", "EditingContent" ).call( this.__userContentStyles.bind(this) );
-	this.mtContent = this.container.append( "span" ).attr( "class", "MtContent" ).call( this.__mtContentStyles.bind(this) );
+	this.views = {};
+	this.views.container = d3.select( this.el ).style( "pointer-events", "none" ).call( this.__containerRenderOnce.bind(this) );
+	this.views.prefixContent = this.views.container.append( "span" ).attr( "class", "PrefixContent" ).call( this.__userContentStyles.bind(this) );
+	this.views.editingContent = this.views.container.append( "span" ).attr( "class", "EditingContent" ).call( this.__userContentStyles.bind(this) );
+	this.views.mtContent = this.views.container.append( "span" ).attr( "class", "MtContent" ).call( this.__mtContentStyles.bind(this) );
 
 	this.render = _.debounce( this.__render, 10 );
+	this.resize = _.debounce( this.__resize, 10 );
 	this.listenTo( this.model, "change:userText change:prefixTokens change:hasFocus change:bestTranslation change:showBestTranslation", this.render.bind(this) );
+	this.listenTo( this.model, "change:boxInnerWidth change:boxInnerHeight", this.resize.bind(this) );
 };
 
 TargetOverlayView.prototype.__render = function() {
 	var prefixContent = this.model.get( "overlayPrefix" ) + this.model.get( "overlaySep" );
 	var editingContent = this.model.get( "overlayEditing" );
 	var mtContent = this.model.get( "bestTranslation" ).join( " " );
-	this.prefixContent.text( prefixContent );
-	this.editingContent.text( editingContent );
-	this.mtContent.text( mtContent );
+	this.views.prefixContent.text( prefixContent );
+	this.views.editingContent.text( editingContent );
+	this.views.mtContent.text( mtContent );
 	
-	var caretXCoord = this.editingContent[0][0].offsetLeft + this.editingContent[0][0].offsetWidth;
-	var caretYCoord = this.editingContent[0][0].offsetTop;
-	var editXCoord = this.editingContent[0][0].offsetLeft;
-	var editYCoord = this.editingContent[0][0].offsetTop;
+	var caretXCoord = this.views.editingContent[0][0].offsetLeft + this.views.editingContent[0][0].offsetWidth;
+	var caretYCoord = this.views.editingContent[0][0].offsetTop;
+	var editXCoord = this.views.editingContent[0][0].offsetLeft;
+	var editYCoord = this.views.editingContent[0][0].offsetTop;
 	this.model.set({
 		"caretXCoord" : caretXCoord,
 		"caretYCoord" : caretYCoord,
@@ -31,14 +34,22 @@ TargetOverlayView.prototype.__render = function() {
 		"editYCoord" : editYCoord
 	});
 
-	this.container.call( this.__containerRenderAlways.bind(this) );
+	this.views.container.call( this.__containerRenderAlways.bind(this) );
+};
+
+TargetOverlayView.prototype.__resize = function() {
+	var width = this.model.get( "boxInnerWidth" );
+	var height = this.model.get( "boxInnerHeight" );
+	this.views.container
+		.style( "width", width + "px" )
+		.style( "height", height + "px" );
 };
 
 TargetOverlayView.prototype.__containerRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "background", "none" )
 		.style( "width", (this.model.WIDTH-75) + "px" )
-		.style( "min-height", this.model.MIN_HEIGHT + "px" )
+		.style( "height", this.model.MIN_HEIGHT + "px" )
 		.style( "padding", "13.5px 61px 21px 16px" )  //"13.5px 61px 21px 16px"
 		.style( "opacity", 1 )
 };

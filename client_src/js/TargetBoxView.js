@@ -9,6 +9,7 @@ TargetBoxView.prototype.initialize = function( options ) {
 	this.views.canvas = this.views.container.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" );
 	this.views.overlay = this.views.canvas.append( "div" ).attr( "class", "TargetOverlayView TargetOverlayView" + segmentId );
 	this.views.textarea = this.views.container.append( "div" ).attr( "class", "TargetTextareaView TargetTextareaView" + segmentId );
+
 	this.listenTo( this.model, "change:userText change:hasFocus", this.render.bind(this) );
 };
 

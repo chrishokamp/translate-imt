@@ -135,6 +135,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceBox, "mouseout:token", this.hideSourceSuggestions );
 		this.listenTo( sourceBox, "click:token", function(){} );
 		this.listenTo( sourceBox, "updateBoxDims", this.updateTargetSuggestions );
+		this.listenTo( sourceBox, "updateBoxDims", this.resizeDocument );
 		
 		this.listenTo( sourceSuggestion, "mouseover", this.showSourceSuggestionsFromFloatingBox );
 		this.listenTo( sourceSuggestion, "mouseout", this.hideSourceSuggestions );
@@ -153,6 +154,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( targetBox, "updateEditCoords", this.updateTargetSuggestions );
 		this.listenTo( targetBox, "updateFocus", this.focusOnSegment );
 		this.listenTo( targetBox, "updateTranslations", this.loadTranslations );
+		this.listenTo( targetBox, "updateBoxDims", this.resizeDocument );
 		
 		this.listenTo( targetSuggestion, "mouseover", function(){} );
 		this.listenTo( targetSuggestion, "mouseout", function(){} );
@@ -168,6 +170,10 @@ PTM.prototype.setup = function() {
 
 	// Focus on the first segment
 	this.focusOnSegment( segmentIds[0] );
+};
+
+PTM.prototype.resizeDocument = function() {
+	this.documentView.resize();
 };
 
 PTM.prototype.showSourceSuggestionsFromText = function( segmentId ) {
@@ -265,7 +271,7 @@ PTM.prototype.nextTargetSuggestion = function( segmentId ) {
 };
 
 PTM.prototype.focusOnSegment = function( focusSegment ) {
-	this.documentView.focus( focusSegment );
+	this.set( "focusSegment", focusSegment );
 	var segmentIds = this.get( "segmentIds" );
 	segmentIds.forEach( function(segmentId) {
 		if ( focusSegment === segmentId ) {
@@ -423,7 +429,6 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 				"alignIndexList" : alignIndexList, 
 				"chunkIndexList" : chunkIndexList
 			});
-			this.documentView.resize();
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( response, request ) {

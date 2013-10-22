@@ -34,7 +34,11 @@ var TargetBoxState = Backbone.Model.extend({
 		"editXCoord" : null,
 		"editYCoord" : null,
 		"canvasXCoord" : null,
-		"canvasYCoord" : null
+		"canvasYCoord" : null,
+		"boxInnerHeight" : 0,
+		"boxInnerWidth" : 0,
+		"boxHeight" : 0,
+		"boxWidth" : 0
 	}
 });
 
@@ -63,6 +67,7 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.on( "change:userTokens change:alignIndexList", this.updateMatchingTokens );
 	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
 	this.on( "change:editXCoord change:editYCoord", this.updateEditCoords );
+	this.on( "change:boxWidth change:boxHeight", this.updateBoxDims );
 };
 
 TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
@@ -263,6 +268,11 @@ TargetBoxState.prototype.updateFocus = function() {
 TargetBoxState.prototype.updateEditCoords = function() {
 	var segmentId = this.get( "segmentId" );
 	this.trigger( "updateEditCoords", segmentId );
+};
+
+TargetBoxState.prototype.updateBoxDims = function() {
+	var segmentId = this.get( "segmentId" );
+	this.trigger( "updateBoxDims", segmentId );
 };
 
 TargetBoxState.prototype.focus = function() {

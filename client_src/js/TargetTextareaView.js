@@ -83,6 +83,16 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 			"caretIndex" : caretIndex
 		});
 	}.bind(this);
+	var onResizeStart = function() {
+	}.bind(this);
+	var onResizeEnd = function() {
+		var height = elem[0][0].offsetHeight;
+		var width = elem[0][0].offsetWidth;
+		this.model.set({
+			"boxHeight" : height,
+			"boxWidth" : width
+		});
+	}.bind(this);
 	elem.style( "width", (this.model.WIDTH-75) + "px" )
 		.style( "min-height", this.model.MIN_HEIGHT + "px" )
 		.style( "padding", "12.5px 60px 20px 15px" )  // "2.5px 60px 15px 15px"
@@ -99,9 +109,21 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 		.on( "keydown", onKeyDown )
 		.on( "keyup", onKeyUp )
 		.on( "click", onMouseDown )
+		.on( "mousedown", onResizeStart )
+		.on( "mouseup", onResizeEnd )
 };
 TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
-	elem.style( "background", hasFocus ? "#fff" : "#eee" )
-		.style( "resize", hasFocus ? "vertical" : "none" )
+	elem.style( "resize", hasFocus ? "vertical" : "none" )
+		.transition().duration( this.model.ANIMATION_DURATION )
+		.style( "background", hasFocus ? "#fff" : "#eee" );
+		
+	var height = elem[0][0].offsetHeight;
+	var width = elem[0][0].offsetWidth;
+	this.model.set({
+		"boxInnerHeight" : height,
+		"boxInnerWidth" : width,
+		"boxHeight" : height + 22.5,
+		"boxWidth" : width + 75
+	});
 };
