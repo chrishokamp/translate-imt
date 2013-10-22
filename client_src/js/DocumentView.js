@@ -169,11 +169,10 @@ DocumentView.prototype.__animatedScroll = function( y ) {
 	var scrollTop = body.scrollTop;
 	var scrollHeight = body.scrollHeight;
 
-	if ( y >= scrollHeight - window.innerHeight - 5 ) {
+	if ( y >= scrollHeight - window.innerHeight - 5 )
 		y = scrollHeight - window.innerHeight - 5;
-	}
+		
 	var dy = ( scrollTop - y ) * this.SCROLL_FRACTION;
-	console.log( "scroll", scrollTop, y, dy, scrollHeight )
 	if ( Math.abs( dy ) < 1.5 ) {
 		window.scrollTo( 0, y );
 	}

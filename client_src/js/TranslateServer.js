@@ -4,8 +4,8 @@ TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
 
 // Debug settings
 //TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8017/t";
-//TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
-TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
+TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
+//TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
 TranslateServer.prototype.SRC_LANG = "EN";
 TranslateServer.prototype.TGT_LANG = "DE";
 
@@ -13,8 +13,8 @@ TranslateServer.prototype.TRANSLATE_LIMIT = 10;
 TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
 
 TranslateServer.prototype.CONSOLE_LOG = true;
-//TranslateServer.prototype.TIMEOUT = 30000;  // milliseconds
-TranslateServer.prototype.TIMEOUT = 200;  // milliseconds
+TranslateServer.prototype.TIMEOUT = 30000;  // milliseconds
+//TranslateServer.prototype.TIMEOUT = 200;  // milliseconds
 
 /**
  * Make a word query.
