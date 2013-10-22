@@ -8,7 +8,7 @@ DocumentView.prototype.REGULAR_BACKGROUND = "#eee";
 DocumentView.prototype.FOCUS_BACKGROUND = "#DEEBF7";
 DocumentView.prototype.FOCUS_COLOR = "#9ECAE1";
 DocumentView.prototype.ANIMATION_DURATION = 120;
-DocumentView.prototype.SCROLL_FRACTION = 0.1;
+DocumentView.prototype.SCROLL_FRACTION = 0.15;
 DocumentView.prototype.SCROLL_TOP_PADDING = 60;
 DocumentView.prototype.SCROLL_BOTTOM_PADDING = 240;
 
@@ -167,13 +167,18 @@ DocumentView.prototype.__focusRenderAlways = function( elem ) {
 DocumentView.prototype.__animatedScroll = function( y ) {
 	var body = d3.select("body")[0][0];
 	var scrollTop = body.scrollTop;
-	var dy = ( scrollTop - y );
-	var yLength = Math.abs( dy );
-	if ( yLength < 1 ) {
+	var scrollHeight = body.scrollHeight;
+
+	if ( y >= scrollHeight - window.innerHeight - 5 ) {
+		y = scrollHeight - window.innerHeight - 5;
+	}
+	var dy = ( scrollTop - y ) * this.SCROLL_FRACTION;
+	console.log( "scroll", scrollTop, y, dy, scrollHeight )
+	if ( Math.abs( dy ) < 1.5 ) {
 		window.scrollTo( 0, y );
 	}
 	else {
-		window.scrollTo( 0, scrollTop - dy * this.SCROLL_FRACTION );
+		window.scrollTo( 0, scrollTop - dy );
 		this.animatedScroll( y );
 	}
 };

@@ -114,10 +114,15 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 };
 TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
-	elem.style( "resize", hasFocus ? "vertical" : "none" )
-		.transition().duration( this.model.ANIMATION_DURATION )
-		.style( "background", hasFocus ? "#fff" : "#eee" );
-		
+	elem.style( "resize", hasFocus ? "vertical" : "none" );
+	
+	if ( hasFocus )
+		elem.transition().duration( this.model.ANIMATION_DURATION + this.model.ANIMATION_DELAY )
+			.style( "background", "#fff" );
+	else
+		elem.transition().duration( this.model.ANIMATION_DURATION )
+			.style( "background", "#eee" );
+
 	var height = elem[0][0].offsetHeight;
 	var width = elem[0][0].offsetWidth;
 	this.model.set({
