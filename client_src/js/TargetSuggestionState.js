@@ -4,7 +4,7 @@ var TargetSuggestionState = Backbone.Model.extend({
 		"candidates" : [],
 		"xCoord" : 0,
 		"yCoord" : 0,
-		"hasFocus" : true
+		"hasFocus" : false
 	}
 });
 

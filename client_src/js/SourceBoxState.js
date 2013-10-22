@@ -19,7 +19,7 @@ var SourceBoxState = Backbone.Model.extend({
 		"matchedTokenIndexes" : {},
 
 		/** @type {boolean} **/
-		"hasFocus" : true,
+		"hasFocus" : false,
 		
 		"boxHeight" : 0,
 		"boxWidth" : 0

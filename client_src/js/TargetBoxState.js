@@ -25,9 +25,7 @@ var TargetBoxState = Backbone.Model.extend({
 		"prefixTokens" : [],
 		"suggestionList" : [],
 		"bestTranslation" : [],       // @value {string[]} A list of tokens in the best translation.
-		"showBestTranslation" : true, // @value {boolean} True if userText is empty or if this target box's textarea has input focus.
 		"suggestions" : [],           // @value {string[]} A list of suggestions matching the current user's input
-		"showSuggestions" : true,     // @value {boolean} True if caret is at the end of this target box's text area.
 		"matchingTokens" : {},
 		
 		// States based on graphics rendering results
@@ -55,17 +53,14 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.viewOverlay = new TargetOverlayView({ "model" : this, "el" : ".TargetOverlayView" + segmentId });
 	this.updateSuggestionList = _.debounce( this.__updateSuggestionList, this.IMMEDIATELY );
 	this.updateBestTranslation = _.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
-	this.updateShowBestTranslations = _.debounce( this.__updateShowBestTranslations, this.IMMEDIATELY );
 	this.updateSuggestions = _.debounce( this.__updateSuggestions, this.IMMEDIATELY );
 	this.updateMatchingTokens = _.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
 	this.on( "change:prefix", this.updatePrefixTokensAndSuggestionList );
 	this.on( "change:userText change:prefixTokens", this.updateUserTokens );
 	this.on( "change:editingPrefix", this.updateTranslations );
 	this.on( "change:userTokens change:translationList", this.updateBestTranslation );
-	this.on( "change:userTokens change:suggestionList change:caretIndex", this.updateSuggestions );
+	this.on( "change:userTokens change:suggestionList change:bestTranslation change:caretIndex", this.updateSuggestions );
 	this.on( "change:userTokens change:alignIndexList", this.updateMatchingTokens );
-	this.on( "change:userTokens change:hasFocus", this.updateShowBestTranslations );
-	this.on( "change:hasFocus", this.updateFocus );
 	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
 	this.on( "change:editXCoord change:editYCoord", this.updateEditCoords );
 };
@@ -207,30 +202,31 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 		}
 	}
 	this.set( "bestTranslation", bestTranslation );
-	this.trigger( "updateBestTranslation", this.get( "segmentId" ), bestTranslation )
 };
 
 TargetBoxState.prototype.__updateSuggestions = function() {
 	var caretIndex = this.get( "caretIndex" );
 	var userText = this.get( "userText" );
-	var showSuggestions = ( caretIndex === userText.length );
-	
+	var bestTranslation = this.get( "bestTranslation" );
 	var suggestions = [];
-	if ( showSuggestions ) {
-		var userTokens = this.get( "userTokens" );
-		var editingToken = userTokens[ userTokens.length - 1 ];
-		var suggestionList = this.get( "suggestionList" );
-		for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
-			var suggestion = suggestionList[suggestionIndex];
-			if ( suggestion.substr( 0, editingToken.length ) === editingToken ) {
-				suggestions.push( suggestion );
+	
+	// Only show suggestions if caret is at the end of the textarea
+	if ( caretIndex === userText.length ) {
+		
+		// Only show suggestions if we've not yet reached the end of the best translation
+		if ( bestTranslation.length > 0 ) {
+			var userTokens = this.get( "userTokens" );
+			var editingToken = userTokens[ userTokens.length - 1 ];
+			var suggestionList = this.get( "suggestionList" );
+			for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
+				var suggestion = suggestionList[suggestionIndex];
+				if ( suggestion.substr( 0, editingToken.length ) === editingToken ) {
+					suggestions.push( suggestion );
+				}
 			}
 		}
 	}
-	this.set({
-		"suggestions" : suggestions,
-		"showSuggestions" : showSuggestions
-	});
+	this.set( "suggestions", suggestions );
 	this.trigger( "updateSuggestions", this.get( "segmentId" ), suggestions );
 };
 
@@ -253,16 +249,9 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 	this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
 };
 
-TargetBoxState.prototype.__updateShowBestTranslations = function() {
-	var hasFocus = this.get( "hasFocus" );
-	var userText = this.get( "userText" );
-	var showBestTranslations = ( hasFocus || userText.length === 0 );
-	this.set( "showBestTranslations", showBestTranslations );
-};
-
 TargetBoxState.prototype.replaceEditingToken = function( text ) {
 	var editingPrefix = this.get( "editingPrefix" );
-	var userText = ( editingPrefix === "" ? "" : editingPrefix + " " ) + text + " ";
+	var userText = ( editingPrefix === "" ? "" : editingPrefix + " " ) + ( text === "" ? "" : text + " " );
 	this.set( "userText", userText );
 };
 

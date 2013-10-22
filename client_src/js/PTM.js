@@ -16,20 +16,7 @@ PTM.prototype.reset = function() {
 		"docId" : null,
 		"segmentIds" : [],
 		"segments" : {},
-		"targetUserText" : {},         // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateUserText" event.
-		"targetCaretIndex" : {},       // @value {{segmentId:integer}} Can be modified by TargetTypingView on an "updateUserText" event.
-		"targetPrefix" : {},           // @value {{segmentId:string}} Can be modified by TargetTypingView on an "updateTranslations" event.
-		"targetTranslationList" : {},  // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
-		"targetAlignIndexList" : {},   // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
-		"targetChunkIndexList" : {},   // @value {{segmentId:string[]}} Modified at the completion of a loadTranslations() request, following a TargetTypingView "updateTranslations" event.
-		"targetFocus" : null,          // @value {segmentId} Can be modified by a focusOnSegment() or focusOnNextSegment() call.
-		"suggestionSegmentId" : null,  // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
-		"suggestionChunkIndex" : null, // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
-		"suggestionCandidates" : [],   // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
-		"suggestionXCorod" : 0,        // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
-		"suggestionYCoord" : 0,        // @value {string} Can be modified by TargetTypingView on a "updateAutocomplete" event.
-		"mouseXCoord" : 0,
-		"mouseYCoord" : 0
+		"focusSegment" : null
 	});
 
 	// Define or create a stub for all models and views.
@@ -51,9 +38,7 @@ PTM.prototype.reset = function() {
 	this.cache.translations = {};
 
 	// Define debounced methods
-	/** @param {function} Display the source suggestion (word lookup) floating menu. The menu is refreshed at most every 10ms. **/
 	this.updateSourceSuggestions = _.debounce( this.__updateSourceSuggestions, 10 );
-	
 	this.updateTargetSuggestions = _.debounce( this.__updateTargetSuggestions, 10 );
 };
 
@@ -159,12 +144,13 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceSuggestion, "mouseout:option", function(){} );
 		this.listenTo( sourceSuggestion, "click:option", this.insertSourceSuggestion );
 		
-		this.listenTo( targetBox, "keyPress:enter", this.focusOnNextSegment );
-		this.listenTo( targetBox, "keyPress:enter+shift", this.focusOnPreviousSegment );
+		this.listenTo( targetBox, "keypress:enter", this.focusOnNextSegment );
+		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
+		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
 		this.listenTo( targetBox, "updateMatchingTokens", this.updateMatchingTokens );
 		this.listenTo( targetBox, "updateSuggestions", this.updateTargetSuggestions );
 		this.listenTo( targetBox, "updateEditCoords", this.updateTargetSuggestions );
-		this.listenTo( targetBox, "updateFocus", this.updateFocus );
+		this.listenTo( targetBox, "updateFocus", this.focusOnSegment );
 		this.listenTo( targetBox, "updateTranslations", this.loadTranslations );
 		
 		this.listenTo( targetSuggestion, "mouseover", function(){} );
@@ -180,8 +166,7 @@ PTM.prototype.setup = function() {
 	this.documentView.addSegment( null );
 
 	// Focus on the first segment
-	var targetFocus = segmentIds[0];
-	this.focusOnSegment( targetFocus );
+	this.focusOnSegment( segmentIds[0] );
 };
 
 /**
@@ -231,27 +216,9 @@ PTM.prototype.__updateTargetSuggestions = function( segmentId ) {
 	});
 };
 
-PTM.prototype.updateFocus = function( segmentId, hasFocus ) {
-	if ( hasFocus === undefined ) { hasFocus = false }
-	this.set( "targetFocus", hasFocus ? segmentId : null );
-//	this.focusOnSegment( segmentId );
-};
-
 PTM.prototype.updateMatchingTokens = function( segmentId, matchingTokens ) {
 	this.sourceBoxes[segmentId].set({
 		"matchedTokenIndexes" : matchingTokens,
-	});
-};
-
-PTM.prototype.updateUserText = function( segmentId, userText, caretIndex ) {
-//	var targetTypingState = this.targetTypingStates[ segmentId ];
-	var targetBox = this.targetBoxes[ segmentId ];
-	this.get( "targetUserText" )[ segmentId ] = userText;
-	this.get( "targetCaretIndex" )[ segmentId ] = caretIndex;
-//	targetTypingState.setUserText( userText, caretIndex );
-	targetBox.set({
-		"userText" : userText,
-		"caretIndex" : caretIndex
 	});
 };
 
@@ -263,9 +230,29 @@ PTM.prototype.insertTargetSuggestion = function( segmentId, text ) {
 	this.targetBoxes[segmentId].replaceEditingToken( text );
 	this.targetBoxes[segmentId].focus();
 };
+PTM.prototype.insertFirstSuggestion = function( segmentId, text ) {
+	this.targetBoxes[segmentId].replaceEditingToken( text );
+	this.targetBoxes[segmentId].focus();
+};
 
-PTM.prototype.focusOnSegment = function( segmentId ) {
-	this.targetBoxes[ segmentId ].focus();
+PTM.prototype.focusOnSegment = function( focusSegment ) {
+	this.documentView.focus( focusSegment );
+
+	var segmentIds = this.get( "segmentIds" );
+	segmentIds.forEach( function(segmentId) {
+		if ( focusSegment === segmentId ) {
+			this.sourceBoxes[segmentId].set( "hasFocus", true );
+			this.sourceSuggestions[segmentId].set( "hasFocus", true );
+			this.targetBoxes[segmentId].focus();
+			this.targetSuggestions[segmentId].set( "hasFocus", true );
+		}
+		else {
+			this.sourceBoxes[segmentId].set( "hasFocus", false );
+			this.sourceSuggestions[segmentId].set( "hasFocus", false );
+			this.targetBoxes[segmentId].set( "hasFocus", false );
+			this.targetSuggestions[segmentId].set( "hasFocus", false );
+		}
+	}.bind(this) );
 };
 
 PTM.prototype.focusOnNextSegment = function( targetFocus ) {
@@ -400,6 +387,7 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 				"alignIndexList" : alignIndexList, 
 				"chunkIndexList" : chunkIndexList
 			});
+			this.documentView.resize();
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( response, request ) {

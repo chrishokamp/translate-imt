@@ -52,14 +52,14 @@ DocumentView.prototype.__addHeader = function() {
 		.style( "font-family", "NeutraLight, Gill Sans, Helvetica, sans-serif" )
 		.style( "font-size", "10pt" )
 		.style( "color", "#666" )
-		.text( "Visualization: Jason Chuang" )
+		.text( "Visualization by Jason Chuang" )
 	header.append( "p" )
 		.style( "padding", "2px 0 0 0" )
 		.style( "margin", 0 )
 		.style( "font-family", "NeutraLight, Gill Sans, Helvetica, sans-serif" )
 		.style( "font-size", "10pt" )
 		.style( "color", "#666" )
-		.text( "Machine Translation: Spence Green" )
+		.text( "Machine Translations by Spence Green" )
 	this.views.header = header;
 };
 /** @private **/
@@ -95,7 +95,7 @@ DocumentView.prototype.addSegment = function( segmentId ) {
 	subCanvas.append( "div" ).attr( "class", "SourceSuggestionView SourceSuggestionView" + segmentId ).style( "position", "absolute" ).style( "z-index", 1000 );
 	subCanvas.append( "div" ).attr( "class", "TargetSuggestionView TargetSuggestionView" + segmentId ).style( "position", "absolute" ).style( "z-index", 1000 );
 	this.views.segments[ segmentId ] = segmentView;
-	this.updateDims();
+	this.resize();
 };
 
 DocumentView.prototype.__overlayRenderOnce = function( elem ) {
@@ -129,10 +129,10 @@ DocumentView.prototype.__focusRenderOnce = function( elem ) {
 };
 DocumentView.prototype.__focusRenderAlways = function( elem ) {
 /*
-	var typingFocus = this.model.get( "typingFocus" );
-	if ( typingFocus !== null ) {
-		var focusSourceView = this.views.container.select( ".SourceBoxView" + typingFocus );
-		var focusTargetView = this.views.container.select( ".TargetTypingView" + typingFocus );
+	var focusSegment = this.model.get( "focusSegment" );
+	if ( focusSegment !== null ) {
+		var focusSourceView = this.views.container.select( ".SourceBoxView" + focusSegment );
+		var focusTargetView = this.views.container.select( ".TargetTypingView" + focusSegment );
 		var top = focusSourceView[0][0].offsetTop;
 		var bottom = focusTargetView[0][0].offsetTop + focusTargetView[0][0].offsetHeight;
 		elem.transition().duration( this.ANIMATION_DURATION )
@@ -147,22 +147,19 @@ DocumentView.prototype.__focusRenderAlways = function( elem ) {
 */
 };
 
-
-DocumentView.prototype.renderFocusBand = function() {
-	var typingFocus = this.model.get( "targetFocus" );
+DocumentView.prototype.focus = function( focusSegment ) {
 	for ( var segmentId in this.views.segments ) {
 		var segmentView = this.views.segments[ segmentId ];
 		segmentView
-			.style( "border-top", ( typingFocus === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
-			.style( "border-bottom", ( typingFocus === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
-			.style( "border-left", ( typingFocus === segmentId ) ? "25px solid " + this.FOCUS_COLOR : "25px solid " + this.REGULAR_BACKGROUND )
-			.style( "background", ( typingFocus === segmentId ) ? this.FOCUS_BACKGROUND : this.REGULAR_BACKGROUND );
+			.style( "border-top", ( focusSegment === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
+			.style( "border-bottom", ( focusSegment === segmentId ) ? "1px solid " + this.FOCUS_COLOR : "1px solid " + this.REGULAR_BACKGROUND )
+			.style( "border-left", ( focusSegment === segmentId ) ? "25px solid " + this.FOCUS_COLOR : "25px solid " + this.REGULAR_BACKGROUND )
+			.style( "background", ( focusSegment === segmentId ) ? this.FOCUS_BACKGROUND : this.REGULAR_BACKGROUND );
 	}
-	
 	this.views.focus.call( this.__focusRenderAlways.bind(this) );
 };
 
-DocumentView.prototype.updateDims = function() {
+DocumentView.prototype.resize = function() {
 	var numSegments = _.keys( this.views.segments ).length;
 	var width = this.views.overlay[0][0].offsetWidth;
 	var height = this.views.overlay[0][0].offsetHeight;
