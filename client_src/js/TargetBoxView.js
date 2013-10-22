@@ -4,21 +4,16 @@ var TargetBoxView = Backbone.View.extend({
 
 TargetBoxView.prototype.initialize = function( options ) {
 	var segmentId = options.segmentId;
-	this.container = d3.select( this.el ).style( "pointer-events", "none" ).call( this.__containerRenderOnce.bind(this) );
-	this.canvas = this.container.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" );
-	this.overlay = this.canvas.append( "div" ).attr( "class", "TargetOverlayView TargetOverlayView" + segmentId );
-	this.textarea = this.container.append( "div" ).attr( "class", "TargetTextareaView TargetTextareaView" + segmentId );
+	this.views = {};
+	this.views.container = d3.select( this.el ).style( "pointer-events", "none" ).call( this.__containerRenderOnce.bind(this) );
+	this.views.canvas = this.views.container.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" );
+	this.views.overlay = this.views.canvas.append( "div" ).attr( "class", "TargetOverlayView TargetOverlayView" + segmentId );
+	this.views.textarea = this.views.container.append( "div" ).attr( "class", "TargetTextareaView TargetTextareaView" + segmentId );
 	this.listenTo( this.model, "change:userText change:hasFocus", this.render.bind(this) );
 };
 
 TargetBoxView.prototype.render = function() {
-	this.container.call( this.__containerRenderAlways.bind(this) );
-	var canvasXCoord = this.canvas[0][0].offsetLeft;
-	var canvasYCoord = this.canvas[0][0].offsetTop;
-	this.model.set({
-		"canvasXCoord" : canvasXCoord,
-		"canvasYCoord" : canvasYCoord
-	});
+	this.views.container.call( this.__containerRenderAlways.bind(this) );
 };
 
 TargetBoxView.prototype.__containerRenderOnce = function( elem ) {

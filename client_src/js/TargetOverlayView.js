@@ -36,11 +36,17 @@ TargetOverlayView.prototype.__render = function() {
 
 TargetOverlayView.prototype.__containerRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
+		.style( "background", "none" )
 		.style( "width", (this.model.WIDTH-75) + "px" )
 		.style( "min-height", this.model.MIN_HEIGHT + "px" )
 		.style( "padding", "13.5px 61px 21px 16px" )  //"13.5px 61px 21px 16px"
+		.style( "opacity", 1 )
 };
-TargetOverlayView.prototype.__containerRenderAlways = function() {};
+TargetOverlayView.prototype.__containerRenderAlways = function( elem ) {
+//	var showBestTranslations = this.model.get( "showBestTranslations" );
+//	elem.transition()
+//		.style( "opacity", showBestTranslations ? 1 : 0 )
+};
 
 
 TargetOverlayView.prototype.__userContentStyles = function( elem ) {

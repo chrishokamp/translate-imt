@@ -92,8 +92,8 @@ DocumentView.prototype.addSegment = function( segmentId ) {
 	
 	segmentView.append( "div" ).attr( "class", "SourceBoxView SourceBoxView" + segmentId );
 	segmentView.append( "div" ).attr( "class", "TargetBoxView TargetBoxView" + segmentId );
-	subCanvas.append( "div" ).attr( "class", "SourceSuggestionView SourceSuggestionView" + segmentId ).style( "position", "absolute" );
-	subCanvas.append( "div" ).attr( "class", "TargetSuggestionView TargetSuggestionView" + segmentId ).style( "position", "absolute" );
+	subCanvas.append( "div" ).attr( "class", "SourceSuggestionView SourceSuggestionView" + segmentId ).style( "position", "absolute" ).style( "z-index", 1000 );
+	subCanvas.append( "div" ).attr( "class", "TargetSuggestionView TargetSuggestionView" + segmentId ).style( "position", "absolute" ).style( "z-index", 1000 );
 	this.views.segments[ segmentId ] = segmentView;
 	this.updateDims();
 };

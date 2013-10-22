@@ -2,9 +2,9 @@ var TargetSuggestionState = Backbone.Model.extend({
 	defaults : {
 		"segmentId" : null,
 		"candidates" : [],
-		"xCoord" : null,
-		"yCoord" : null,
-		"isVisible" : false
+		"xCoord" : 0,
+		"yCoord" : 0,
+		"hasFocus" : true
 	}
 });
 

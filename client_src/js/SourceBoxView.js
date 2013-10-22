@@ -38,7 +38,14 @@ SourceBoxView.prototype.__containerRenderOnce = function( elem ) {
 		.on( "mouseout", this.__mouseOut.bind(this) )
 		.on( "click", this.__mouseClick.bind(this) );
 };
-SourceBoxView.prototype.__containerRenderAlways = function( elem ) {};
+SourceBoxView.prototype.__containerRenderAlways = function() {
+	var height = this.views.container[0][0].offsetHeight;
+	var width = this.views.container[0][0].offsetWidth;
+	this.model.set({
+		"boxHeight" : height,
+		"boxWidth" : width
+	});
+};
 
 SourceBoxView.prototype.__tokenRenderOnce = function( elem ) {
 	elem.style( "pointer-events", "auto" )

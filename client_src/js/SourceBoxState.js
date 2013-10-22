@@ -19,10 +19,19 @@ var SourceBoxState = Backbone.Model.extend({
 		"matchedTokenIndexes" : {},
 
 		/** @type {boolean} **/
-		"hasFocus" : true
+		"hasFocus" : true,
+		
+		"boxHeight" : 0,
+		"boxWidth" : 0
 	}
 });
 
 SourceBoxState.prototype.initialize = function( options ) {
 	this.view = new SourceBoxView({ "model" : this, "el" : options.el });
+	this.on( "change:boxHeight change:boxWidth", this.updateBoxDims );
+};
+
+SourceBoxState.prototype.updateBoxDims = function() {
+	var segmentId = this.get( "segmentId" );
+	this.trigger( "updateBoxDims", segmentId );
 };
