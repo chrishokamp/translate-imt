@@ -1,35 +1,41 @@
-@font-face
-{
-  font-family: NeutraLight;
-  src: url( "../font/NeutraText-Light.otf" ); 
+@font-face {
+	font-family: NeutraTextLight;
+	src: url( "../font/NeutraText-Light.otf" ); 
 }
-@font-face
-{
-  font-family: NeutraBold;
-  src: url( "../font/NeutraText-Bold.otf" ); 
+@font-face {
+	font-family: NeutraTextBold;
+	src: url( "../font/NeutraText-Bold.otf" ); 
 }
-
+@font-face {
+	font-family: HelveticaNeue;
+	src: url( "../font/helveticaneue-webfont.ttf" );
+}
+@font-face {
+	font-family: HelveticaNeueBold;
+	src: url( "../font/helveticaneuebold-webfont.ttf" );
+}
+@font-face {
+	font-family: Georgia;
+	src: url( "../font/Georgia.ttf" );
+}
 .UI {
-	font-family: Georgia, Palatino Linotype, serif;
+	font-family: Georgia, serif;
 	font-size: 10pt;
 	color: #000;
 	word-spacing : 0.1em;
 }
-
 .SourceLang {
-	font-family: Georgia, Palatino Linotype, serif;
+	font-family: Georgia, serif;
 	font-size: 10.5pt;
 	color: #000;
 }
-
 .TargetLang {
-	font-family: NeutraLight, Gill Sans, Helvetica, sans-serif;
+	font-family: HelveticaNeue, NeutraTextLight, sans-serif;
 	font-size: 11pt;
 	color: #4292C6;
 }
-
 .UserText {
-	font-family: NeutraBold, Gill Sans, Helvetica, sans-serif;
+	font-family: HelveticaNeueBold, NeutraTextBold, sans-serif;
 	font-size: 11pt;
 	color: #4292C6;
 }

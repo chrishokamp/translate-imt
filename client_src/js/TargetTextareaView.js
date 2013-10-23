@@ -89,13 +89,15 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 		var height = elem[0][0].offsetHeight;
 		var width = elem[0][0].offsetWidth;
 		this.model.set({
+			"boxInnerHeight" : height - 22.5,
+			"boxInnerWidth" : width - 75,
 			"boxHeight" : height,
 			"boxWidth" : width
 		});
 	}.bind(this);
 	elem.style( "width", (this.model.WIDTH-75) + "px" )
 		.style( "min-height", this.model.MIN_HEIGHT + "px" )
-		.style( "padding", "12.5px 60px 20px 15px" )  // "2.5px 60px 15px 15px"
+		.style( "padding", "10.5px 60px 20px 15px" )  // "2.5px 60px 15px 15px"  WORKAROUND: padding-top should be 12.5px
 		.style( "border", "none" )
 		.style( "outline", "none" )
 		.style( "background", "#eee" )
@@ -126,9 +128,9 @@ TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 	var height = elem[0][0].offsetHeight;
 	var width = elem[0][0].offsetWidth;
 	this.model.set({
-		"boxInnerHeight" : height,
-		"boxInnerWidth" : width,
-		"boxHeight" : height + 22.5,
-		"boxWidth" : width + 75
+		"boxInnerHeight" : height - 22.5,
+		"boxInnerWidth" : width - 75,
+		"boxHeight" : height,
+		"boxWidth" : width
 	});
 };

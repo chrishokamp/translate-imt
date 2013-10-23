@@ -146,9 +146,11 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceSuggestion, "mouseout:option", function(){} );
 		this.listenTo( sourceSuggestion, "click:option", this.insertSourceSuggestion );
 		
-		this.listenTo( targetBox, "keypress:enter", this.selectTargetSuggestionOrFocusOnNextSegment );
+		this.listenTo( targetBox, "keypress:enter", this.focusOnNextSegment );
+//		this.listenTo( targetBox, "keypress:enter", this.insertSelectedTargetSuggestionOrFocusOnNextSegment );
 		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
-		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
+		this.listenTo( targetBox, "keypress:tab", this.insertSelectedTargetSuggestionOrInsertFirstSuggestion );
+//		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
 		this.listenTo( targetBox, "keypress:up", this.previousTargetSuggestion );
 		this.listenTo( targetBox, "keypress:down", this.nextTargetSuggestion );
 		this.listenTo( targetBox, "updateMatchingTokens", this.updateMatchingTokens );
@@ -291,7 +293,15 @@ PTM.prototype.focusOnSegment = function( focusSegment ) {
 	}.bind(this) );
 };
 
-PTM.prototype.selectTargetSuggestionOrFocusOnNextSegment = function( segmentId ) {
+PTM.prototype.insertSelectedTargetSuggestionOrInsertFirstSuggestion = function( segmentId ) {
+	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
+	if ( optionIndex === null )
+		this.insertFirstSuggestion( segmentId );
+	else
+		this.insertSelectedTargetSuggestion( segmentId );
+};
+
+PTM.prototype.insertSelectedTargetSuggestionOrFocusOnNextSegment = function( segmentId ) {
 	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
 	if ( optionIndex === null )
 		this.focusOnNextSegment( segmentId );

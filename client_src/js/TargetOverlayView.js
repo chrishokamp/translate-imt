@@ -48,9 +48,9 @@ TargetOverlayView.prototype.__resize = function() {
 TargetOverlayView.prototype.__containerRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "background", "none" )
-		.style( "width", (this.model.WIDTH-75) + "px" )
-		.style( "height", this.model.MIN_HEIGHT + "px" )
-		.style( "padding", "13.5px 61px 21px 16px" )  //"13.5px 61px 21px 16px"
+//		.style( "width", (this.model.WIDTH-75) + "px" )
+//		.style( "height", this.model.MIN_HEIGHT + "px" )
+		.style( "padding", "12.5px 60px 20px 15px" )  //"13.5px 61px 21px 16px"
 		.style( "opacity", 1 )
 };
 TargetOverlayView.prototype.__containerRenderAlways = function( elem ) {
