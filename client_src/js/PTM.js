@@ -66,6 +66,8 @@ PTM.prototype.loaded = function() {
 			} else if (segment.chunkIOB[i] === "O" && insideChunk) {
 				chunkIndex++;
 				insideChunk = false;
+			} else if (!insideChunk) {
+				chunkIndex++;
 			}
 			chunkIndexes.push( chunkIndex );
 		}
