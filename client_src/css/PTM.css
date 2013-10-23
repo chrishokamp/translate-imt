@@ -1,11 +1,41 @@
-.SourceLang {
-	font-family: Georgia, Palatino Linotype, serif;
-	font-size: 10.5pt;
-	color: #333;
+@font-face {
+	font-family: NeutraTextLight;
+	src: url( "../font/NeutraText-Light.otf" ); 
 }
-
-.TargetLang {
-	font-family: Verdana, Gill Sans, Helvetica, sans-serif;
-	font-size: 11pt;
+@font-face {
+	font-family: NeutraTextBold;
+	src: url( "../font/NeutraText-Bold.otf" ); 
+}
+@font-face {
+	font-family: HelveticaNeue;
+	src: url( "../font/helveticaneue-webfont.ttf" );
+}
+@font-face {
+	font-family: HelveticaNeueBold;
+	src: url( "../font/helveticaneuebold-webfont.ttf" );
+}
+@font-face {
+	font-family: Georgia;
+	src: url( "../font/Georgia.ttf" );
+}
+.UI {
+	font-family: Georgia, serif;
+	font-size: 10pt;
 	color: #000;
+	word-spacing : 0.1em;
+}
+.SourceLang {
+	font-family: Georgia, serif;
+	font-size: 10.5pt;
+	color: #000;
+}
+.TargetLang {
+	font-family: HelveticaNeue, NeutraTextLight, sans-serif;
+	font-size: 11pt;
+	color: #4292C6;
+}
+.UserText {
+	font-family: HelveticaNeueBold, NeutraTextBold, sans-serif;
+	font-size: 11pt;
+	color: #4292C6;
 }
