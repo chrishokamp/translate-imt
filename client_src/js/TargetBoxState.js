@@ -43,7 +43,7 @@ var TargetBoxState = Backbone.Model.extend({
 });
 
 TargetBoxState.prototype.WIDTH = 775;
-TargetBoxState.prototype.MIN_HEIGHT = 30;
+TargetBoxState.prototype.MIN_HEIGHT = 50;
 TargetBoxState.prototype.ANIMATION_DELAY = 180;
 TargetBoxState.prototype.ANIMATION_DURATION = 120;
 TargetBoxState.prototype.IMMEDIATELY = 5;  // milliseconds
