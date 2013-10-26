@@ -218,7 +218,7 @@ TargetBoxState.prototype.__updateSuggestions = function() {
 	
 	// Only show suggestions if caret is in the first word following the prefix
 	// Lowerbound: Must be longer than prefix
-	if ( caretIndex > prefix.length ) {
+	if ( caretIndex > prefix.length || prefix.length === 0 ) {
 		
 		// Only show suggestions if we've not yet reached the end of the best translation
 		if ( bestTranslation.length > 0 ) {
