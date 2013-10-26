@@ -211,22 +211,25 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 };
 
 TargetBoxState.prototype.__updateSuggestions = function() {
+	var prefix = this.get( "prefix" );
 	var caretIndex = this.get( "caretIndex" );
-	var userText = this.get( "userText" );
 	var bestTranslation = this.get( "bestTranslation" );
 	var suggestions = [];
 	
-	// Only show suggestions if caret is at the end of the textarea
-	if ( caretIndex === userText.length ) {
+	// Only show suggestions if caret is in the first word following the prefix
+	// Lowerbound: Must be longer than prefix
+	if ( caretIndex > prefix.length ) {
 		
 		// Only show suggestions if we've not yet reached the end of the best translation
 		if ( bestTranslation.length > 0 ) {
-			var userTokens = this.get( "userTokens" );
-			var editingToken = userTokens[ userTokens.length - 1 ];
+			
+			// Upperbound: Matching all charcters following the prefix
+			var userText = this.get( "userText" );
+			var editingText = userText.substr( prefix.length ).trimLeft();
 			var suggestionList = this.get( "suggestionList" );
 			for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
 				var suggestion = suggestionList[suggestionIndex];
-				if ( suggestion.substr( 0, editingToken.length ) === editingToken ) {
+				if ( suggestion.substr( 0, editingText.length ) === editingText ) {
 					suggestions.push( suggestion );
 				}
 			}
