@@ -57,13 +57,13 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.viewTextarea = new TargetTextareaView({ "model" : this, "el" : ".TargetTextareaView" + segmentId });
 	this.viewOverlay = new TargetOverlayView({ "model" : this, "el" : ".TargetOverlayView" + segmentId });
 	this.updateSuggestionList = _.debounce( this.__updateSuggestionList, this.IMMEDIATELY );
-	this.updateBestTranslation = _.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
+//	this.updateBestTranslation = _.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
 	this.updateSuggestions = _.debounce( this.__updateSuggestions, this.IMMEDIATELY );
 	this.updateMatchingTokens = _.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
 	this.on( "change:prefix", this.updatePrefixTokensAndSuggestionList );
 	this.on( "change:userText change:prefixTokens", this.updateUserTokens );
 	this.on( "change:editingPrefix", this.updateTranslations );
-	this.on( "change:userTokens change:translationList", this.updateBestTranslation );
+	this.on( "change:userTokens change:translationList", this.__updateBestTranslation );
 	this.on( "change:userTokens change:suggestionList change:bestTranslation change:caretIndex", this.updateSuggestions );
 	this.on( "change:userTokens change:alignIndexList", this.updateMatchingTokens );
 	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
