@@ -223,13 +223,13 @@ TargetBoxState.prototype.__updateSuggestions = function() {
 		// Only show suggestions if we've not yet reached the end of the best translation
 		if ( bestTranslation.length > 0 ) {
 			
-			// Upperbound: Matching all charcters following the prefix
+			// Upperbound: Matching all characters following the prefix
 			var userText = this.get( "userText" );
 			var editingText = userText.substr( prefix.length ).trimLeft();
 			var suggestionList = this.get( "suggestionList" );
 			for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
 				var suggestion = suggestionList[suggestionIndex];
-				if ( suggestion.substr( 0, editingText.length ) === editingText ) {
+				if ( suggestion.substr( 0, editingText.length ) === editingText && suggestion.length > editingText.length ) {
 					suggestions.push( suggestion );
 				}
 			}
