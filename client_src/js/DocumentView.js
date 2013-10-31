@@ -21,10 +21,10 @@ DocumentView.prototype.initialize = function( options ) {
 		.style( "width", this.WIDTH + "px" )
 		.style( "height", 0 )
 		.style( "padding", 0 )
-		.style( "border", "1px solid #999" )
+		.style( "border", "1px solid #bbb" )
 		.style( "border-top-right-radius", "30px" )
 		.style( "border-bottom-left-radius", "50px" )
-		.style( "box-shadow", "1px 1px 5px #999" )
+		.style( "box-shadow", "1px 1px 5px #bbb" )
 		.style( "pointer-events", "none" )
 	this.views.canvas = this.views.container.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" );
 	this.views.background = this.views.canvas.append( "div" ).attr( "class", "Background" ).call( this.__backgroundRenderOnce.bind(this) );

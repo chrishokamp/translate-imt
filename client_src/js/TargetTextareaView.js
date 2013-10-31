@@ -120,13 +120,13 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 	}.bind(this);
 	elem.style( "width", (this.model.WIDTH-75) + "px" )
 		.style( "min-height", this.model.MIN_HEIGHT + "px" )
-		.style( "padding", "10.5px 60px 20px 15px" )  // "2.5px 60px 15px 15px"  WORKAROUND: padding-top should be 12.5px
+		.style( "padding", "10px 60px 20px 15px" )  // "2.5px 60px 15px 15px"  WORKAROUND: padding-top should be 12.5px
 		.style( "border", "none" )
 		.style( "outline", "none" )
 		.style( "background", this.BACKGROUND )
 		.style( "resize", "none" )
 		.classed( "UserText", true )
-		.style( "line-height", "16px" )
+		.style( "line-height", "18px" )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "default" )
 		.on( "focus", onFocus )
