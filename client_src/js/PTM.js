@@ -40,7 +40,7 @@ PTM.prototype.reset = function() {
 	this.cache.translations = {};
 
 	// Define debounced methods
-	this.updateSourceSuggestions = this.__updateSourceSuggestions; //_.debounce( this.__updateSourceSuggestions, 10 );
+	this.updateSourceSuggestions = _.debounce( this.__updateSourceSuggestions, 10 );
 	this.updateTargetSuggestions = this.__updateTargetSuggestions; //_.debounce( this.__updateTargetSuggestions, 10 );
 };
 
@@ -205,11 +205,10 @@ PTM.prototype.cycleAssists = function( segmentId ) {
 			"enableSuggestions" : enableSuggestions,
 			"enableBestTranslation" : enableBestTranslation
 		});
+		this.sourceBoxes[id].set({
+			"enableHover" : enableSuggestions
+		});
 	}
-	this.targetBoxes[segmentId].set({
-		"enableSuggestions" : enableSuggestions,
-		"enableBestTranslation" : enableBestTranslation
-	});
 };
 
 PTM.prototype.noTargetSuggestion_OR_cycleAssists = function( segmentId ) {

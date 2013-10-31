@@ -2,6 +2,8 @@ var TargetTextareaView = Backbone.View.extend({
 	el : ".TargetTextareaView"
 });
 
+TargetTextareaView.prototype.BACKGROUND = "#ffffff"
+
 TargetTextareaView.prototype.KEY = {
 	TAB : 9,
 	ENTER : 13,
@@ -121,7 +123,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 		.style( "padding", "10.5px 60px 20px 15px" )  // "2.5px 60px 15px 15px"  WORKAROUND: padding-top should be 12.5px
 		.style( "border", "none" )
 		.style( "outline", "none" )
-		.style( "background", "#eee" )
+		.style( "background", this.BACKGROUND )
 		.style( "resize", "none" )
 		.classed( "UserText", true )
 		.style( "line-height", "16px" )
@@ -147,7 +149,7 @@ TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 			.style( "background", "#fff" );
 	else
 		elem.transition().duration( this.model.ANIMATION_DURATION )
-			.style( "background", "#eee" );
+			.style( "background", this.BACKGROUND );
 
 	var height = elem[0][0].offsetHeight;
 	var width = elem[0][0].offsetWidth;

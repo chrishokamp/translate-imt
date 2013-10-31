@@ -17,6 +17,8 @@ var SourceBoxState = Backbone.Model.extend({
 
 		/** @type {{integer:true}} Indexes of tokens that have a corresponding term in the typing UI. **/
 		"matchedTokenIndexes" : {},
+		
+		"enableHover" : true,
 
 		/** @type {boolean} **/
 		"hasFocus" : false,

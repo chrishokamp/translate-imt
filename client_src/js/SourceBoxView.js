@@ -107,8 +107,10 @@ SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
 SourceBoxView.prototype.__tokenSepRenderAlways = function() {};
 
 SourceBoxView.prototype.__mouseOver = function() {
-	var segmentId = this.model.get( "segmentId" );
-	this.model.trigger( "mouseover", segmentId );
+	if ( this.model.get( "enableHover" ) === true ) {
+		var segmentId = this.model.get( "segmentId" );
+		this.model.trigger( "mouseover", segmentId );
+	}
 };
 SourceBoxView.prototype.__mouseOut = function() {
 	var segmentId = this.model.get( "segmentId" );
@@ -119,20 +121,22 @@ SourceBoxView.prototype.__mouseClick = function() {
 	this.model.trigger( "click", segmentId );
 };
 SourceBoxView.prototype.__mouseOverToken = function( _, tokenIndex ) {
-	var containerLeft = this.views.container[0][0].offsetLeft;
-	var containerTop = this.views.container[0][0].offsetTop;
-	var elemLeft = d3.event.srcElement.offsetLeft;
-	var elemTop = d3.event.srcElement.offsetTop;
-	var xCoord = elemLeft - containerLeft;
-	var yCoord = elemTop - containerTop;
-	var segmentId = this.model.get( "segmentId" );
-	this.model.set({
-		"hoverXCoord" : xCoord,
-		"hoverYCoord" : yCoord,
-		"hoverTokenIndex" : tokenIndex
-	});
-	this.model.trigger( "mouseover:*", segmentId );
-	this.model.trigger( "mouseover:token", segmentId, tokenIndex );
+	if ( this.model.get( "enableHover" ) === true ) {
+		var containerLeft = this.views.container[0][0].offsetLeft;
+		var containerTop = this.views.container[0][0].offsetTop;
+		var elemLeft = d3.event.srcElement.offsetLeft;
+		var elemTop = d3.event.srcElement.offsetTop;
+		var xCoord = elemLeft - containerLeft;
+		var yCoord = elemTop - containerTop;
+		var segmentId = this.model.get( "segmentId" );
+		this.model.set({
+			"hoverXCoord" : xCoord,
+			"hoverYCoord" : yCoord,
+			"hoverTokenIndex" : tokenIndex
+		});
+		this.model.trigger( "mouseover:*", segmentId );
+		this.model.trigger( "mouseover:token", segmentId, tokenIndex );
+	}
 };
 SourceBoxView.prototype.__mouseOutToken = function( _, tokenIndex ) {
 	var containerLeft = this.views.container[0][0].offsetLeft;

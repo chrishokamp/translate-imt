@@ -15,27 +15,29 @@
 	src: url( "../font/helveticaneuebold-webfont.ttf" );
 }
 @font-face {
-	font-family: Georgia;
+	font-family: EmbeddedGeorgia;
 	src: url( "../font/Georgia.ttf" );
 }
 .UI {
-	font-family: Georgia, serif;
+	font-family: EmbeddedGeorgia, Georgia, serif;
 	font-size: 10pt;
 	color: #000;
 	word-spacing : 0.1em;
 }
 .SourceLang {
-	font-family: Georgia, serif;
+	font-family: EmbeddedGeorgia, Georgia, serif;
 	font-size: 10.5pt;
 	color: #000;
 }
 .TargetLang {
-	font-family: HelveticaNeue, NeutraTextLight, sans-serif;
-	font-size: 11pt;
-	color: #4292C6;
+	font-family: Courier New, monospace;
+	font-size: 10pt;
+	font-weight: bold;
+	color: #bfbfbf;
 }
 .UserText {
-	font-family: HelveticaNeueBold, NeutraTextBold, sans-serif;
-	font-size: 11pt;
-	color: #4292C6;
+	font-family: Courier New, monospace;
+	font-size: 10pt;
+	font-weight: bold;
+	color: #000;
 }

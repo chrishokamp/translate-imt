@@ -68,7 +68,7 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.on( "change:editingPrefix", this.updateTranslations );
 	this.on( "change:userTokens change:translationList change:enableBestTranslation", this.updateBestTranslation );
 	this.on( "change:userTokens change:suggestionList change:bestTranslation change:caretIndex change:enableSuggestions", this.updateSuggestions );
-	this.on( "change:userTokens change:alignIndexList", this.updateMatchingTokens );
+	this.on( "change:userTokens change:alignIndexList change:enableBestTranslation", this.updateMatchingTokens );
 	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
 	this.on( "change:editXCoord change:editYCoord", this.updateEditCoords );
 	this.on( "change:boxWidth change:boxHeight", this.updateBoxDims );
@@ -248,16 +248,18 @@ TargetBoxState.prototype.__updateSuggestions = function() {
 
 TargetBoxState.prototype.__updateMatchingTokens = function() {
 	var matchingTokens = {};
-	var userTokens = this.get( "userTokens" );
-	var alignIndexList = this.get( "alignIndexList" );
-	if ( alignIndexList.length > 0 ) {
-		var bestAlignIndexes = alignIndexList[0];
-		for ( var a = 0; a < bestAlignIndexes.length; a++ ) {
-			var alignment = bestAlignIndexes[a];
-			var sourceIndex = alignment.sourceIndex;
-			var targetIndex = alignment.targetIndex;
-			if ( targetIndex < userTokens.length - 1 ) {
-				matchingTokens[ sourceIndex ] = true;
+	if ( this.get( "enableBestTranslation" ) === true ) {
+		var userTokens = this.get( "userTokens" );
+		var alignIndexList = this.get( "alignIndexList" );
+		if ( alignIndexList.length > 0 ) {
+			var bestAlignIndexes = alignIndexList[0];
+			for ( var a = 0; a < bestAlignIndexes.length; a++ ) {
+				var alignment = bestAlignIndexes[a];
+				var sourceIndex = alignment.sourceIndex;
+				var targetIndex = alignment.targetIndex;
+				if ( targetIndex < userTokens.length - 1 ) {
+					matchingTokens[ sourceIndex ] = true;
+				}
 			}
 		}
 	}

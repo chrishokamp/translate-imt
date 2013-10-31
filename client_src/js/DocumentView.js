@@ -4,9 +4,10 @@ var DocumentView = Backbone.View.extend({
 
 DocumentView.prototype.WIDTH = 800;
 DocumentView.prototype.PADDING = 20;
-DocumentView.prototype.REGULAR_BACKGROUND = "#eee";
+DocumentView.prototype.REGULAR_BACKGROUND = "#fff";
 DocumentView.prototype.FOCUS_BACKGROUND = "#DEEBF7";
 DocumentView.prototype.FOCUS_COLOR = "#9ECAE1";
+DocumentView.prototype.FOCUS_SHADOW = "#6baed6";
 DocumentView.prototype.ANIMATION_DURATION = 120;
 DocumentView.prototype.SCROLL_FRACTION = 0.15;
 DocumentView.prototype.SCROLL_TOP_PADDING = 60;
@@ -47,27 +48,8 @@ DocumentView.prototype.__addHeader = function() {
 		.style( "min-height", "20px" )
 		.style( "padding", "20px 40px 20px 25px" )
 		.style( "margin", "0 0 20px 0" )
-		.style( "background", "#f8f8f8" )
-		.style( "border-bottom", "1px solid #999" )
+		.style( "background", this.REGULAR_BACKGROUND )
 		.style( "border-top-right-radius", "29px" )
-	header.append( "p" )
-		.style( "padding", 0 )
-		.style( "margin", 0 )
-		.style( "font-size", "1.6em" )
-		.style( "color", "#333" )
-		.text( "Predictive Translation Memory" )
-	header.append( "p" )
-		.style( "padding", "2px 0 0 0" )
-		.style( "margin", 0 )
-		.style( "font-size", "10pt" )
-		.style( "color", "#666" )
-		.text( "Visualization by Jason Chuang" )
-	header.append( "p" )
-		.style( "padding", "2px 0 0 0" )
-		.style( "margin", 0 )
-		.style( "font-size", "10pt" )
-		.style( "color", "#666" )
-		.text( "Machine Translations by Spence Green" )
 	this.views.header = header;
 };
 /** @private **/
@@ -131,7 +113,8 @@ DocumentView.prototype.__focusRenderOnce = function( elem ) {
 		.style( "border-top", "1px solid " + this.FOCUS_COLOR )
 		.style( "border-bottom", "1px solid " + this.FOCUS_COLOR )
 		.style( "border-left", "25px solid " + this.FOCUS_COLOR )
-		.style( "background", this.FOCUS_BACKGROUND );
+		.style( "background", this.FOCUS_BACKGROUND )
+		.style( "box-shadow", "0 0 8px " + this.FOCUS_SHADOW );
 };
 DocumentView.prototype.__focusRenderAlways = function( elem ) {
 	var focusSegment = this.model.get( "focusSegment" );
