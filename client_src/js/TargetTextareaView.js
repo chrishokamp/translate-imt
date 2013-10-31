@@ -5,6 +5,7 @@ var TargetTextareaView = Backbone.View.extend({
 TargetTextareaView.prototype.KEY = {
 	TAB : 9,
 	ENTER : 13,
+	ESC : 27,
 	UP_ARROW : 38,
 	DOWN_ARROW : 40
 };
@@ -28,21 +29,21 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 	var onBlur = function() {}.bind(this);
 	var onKeyDown = function() {
 		var keyCode = d3.event.keyCode;
-		if ( keyCode === this.KEY.ENTER || keyCode === this.KEY.TAB || keyCode === this.KEY.UP_ARROW || keyCode === this.KEY.DOWN_ARROW ) {
+		if ( keyCode === this.KEY.ENTER || keyCode === this.KEY.TAB || keyCode === this.KEY.UP_ARROW || keyCode === this.KEY.DOWN_ARROW || keyCode === this.KEY.ESC ) {
 			d3.event.preventDefault();
 			d3.event.cancelBubble = true;
 		}
-		else {
-			if ( this.__continuousKeyPress ) {
-				var userText = this.textarea[0][0].value;
-				var caretIndex = this.textarea[0][0].selectionEnd;
-				this.model.set({
-					"userText" : userText,
-					"caretIndex" : caretIndex
-				});
-			}
+		if ( this.__continuousKeyPress ) {
+			var userText = this.textarea[0][0].value;
+			var caretIndex = this.textarea[0][0].selectionEnd;
+			this.model.set({
+				"userText" : userText,
+				"caretIndex" : caretIndex
+			});
 		}
 		this.__continuousKeyPress = true;
+	}.bind(this);
+	var onKeyPress = function() {
 	}.bind(this);
 	var onKeyUp = function() {
 		var keyCode = d3.event.keyCode;
@@ -67,6 +68,10 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 			var segmentId = this.model.get( "segmentId" );
 			this.model.trigger( "keypress:down", segmentId );
 		}
+		else if ( keyCode === this.KEY.ESC ) {
+			var segmentId = this.model.get( "segmentId" );
+			this.model.trigger( "keypress:esc", segmentId );
+		}
 		else {
 			var userText = this.textarea[0][0].value;
 			var caretIndex = this.textarea[0][0].selectionEnd;
@@ -76,6 +81,22 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 			});
 		}
 		this.__continuousKeyPress = false;
+	}.bind(this);
+	var onCopy = function() {
+		var userText = this.textarea[0][0].value;
+		var caretIndex = this.textarea[0][0].selectionEnd;
+		this.model.set({
+			"userText" : userText,
+			"caretIndex" : caretIndex
+		});
+	}.bind(this);
+	var onPaste = function() {
+		var userText = this.textarea[0][0].value;
+		var caretIndex = this.textarea[0][0].selectionEnd;
+		this.model.set({
+			"userText" : userText,
+			"caretIndex" : caretIndex
+		});
 	}.bind(this);
 	var onMouseDown = function() {
 		var caretIndex = this.textarea[0][0].selectionEnd;
@@ -109,7 +130,10 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 		.on( "focus", onFocus )
 		.on( "blur", onBlur )
 		.on( "keydown", onKeyDown )
+		.on( "keyPress", onKeyPress )
 		.on( "keyup", onKeyUp )
+		.on( "copy", onCopy )
+		.on( "paste", onPaste )
 		.on( "click", onMouseDown )
 		.on( "mousedown", onResizeStart )
 		.on( "mouseup", onResizeEnd )

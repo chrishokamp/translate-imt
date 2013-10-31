@@ -16,6 +16,9 @@ var TargetBoxState = Backbone.Model.extend({
 		// State based on user inputs both within and outside of TargetBox
 		"userText" : "",
 		
+		"enableSuggestions" : true,
+		"enableBestTranslation" : true,
+		
 		// Derived states
 		"userTokens" : [ "" ],
 		"editingPrefix" : "",
@@ -56,15 +59,15 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.view = new TargetBoxView({ "model" : this, "el" : ".TargetBoxView" + segmentId, "segmentId" : segmentId });
 	this.viewTextarea = new TargetTextareaView({ "model" : this, "el" : ".TargetTextareaView" + segmentId });
 	this.viewOverlay = new TargetOverlayView({ "model" : this, "el" : ".TargetOverlayView" + segmentId });
-	this.updateSuggestionList = _.debounce( this.__updateSuggestionList, this.IMMEDIATELY );
-//	this.updateBestTranslation = _.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
-	this.updateSuggestions = _.debounce( this.__updateSuggestions, this.IMMEDIATELY );
-	this.updateMatchingTokens = _.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
+	this.updateSuggestionList = this.__updateSuggestionList; //_.debounce( this.__updateSuggestionList, this.IMMEDIATELY );
+	this.updateBestTranslation = this.__updateBestTranslation; //_.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
+	this.updateSuggestions = this.__updateSuggestions; //_.debounce( this.__updateSuggestions, this.IMMEDIATELY );
+	this.updateMatchingTokens = this.__updateMatchingTokens; //_.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
 	this.on( "change:prefix", this.updatePrefixTokensAndSuggestionList );
 	this.on( "change:userText change:prefixTokens", this.updateUserTokens );
 	this.on( "change:editingPrefix", this.updateTranslations );
-	this.on( "change:userTokens change:translationList", this.__updateBestTranslation );
-	this.on( "change:userTokens change:suggestionList change:bestTranslation change:caretIndex", this.updateSuggestions );
+	this.on( "change:userTokens change:translationList change:enableBestTranslation", this.updateBestTranslation );
+	this.on( "change:userTokens change:suggestionList change:bestTranslation change:caretIndex change:enableSuggestions", this.updateSuggestions );
 	this.on( "change:userTokens change:alignIndexList", this.updateMatchingTokens );
 	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
 	this.on( "change:editXCoord change:editYCoord", this.updateEditCoords );
@@ -186,24 +189,26 @@ TargetBoxState.prototype.updateTranslations = function() {
 
 TargetBoxState.prototype.__updateBestTranslation = function() {
 	var bestTranslation = [];
-	var userTokens = this.get( "userTokens" );
-	var userToken = userTokens[ userTokens.length - 1 ];
+	if ( this.get( "enableBestTranslation" ) === true ) {
+		var userTokens = this.get( "userTokens" );
+		var userToken = userTokens[ userTokens.length - 1 ];
 
-	var translationList = this.get( "translationList" );
-	var translationIndex = 0;
-	if ( translationList.length > translationIndex ) {
-		var mtTokens = translationList[translationIndex];
-		if ( mtTokens.length > userTokens.length ) {
-			var mtToken = mtTokens[ userTokens.length - 1 ];
-			if ( mtToken.substr( 0, userToken.length ) === userToken ) {
-				bestTranslation.push( mtToken.substr( userToken.length ) );
-			}
-			else {
-				bestTranslation.push( "" )
-			}
-			for ( var n = userTokens.length; n < mtTokens.length; n++ ) {
-				var mtToken = mtTokens[n];
-				bestTranslation.push( mtToken );
+		var translationList = this.get( "translationList" );
+		var translationIndex = 0;
+		if ( translationList.length > translationIndex ) {
+			var mtTokens = translationList[translationIndex];
+			if ( mtTokens.length > userTokens.length ) {
+				var mtToken = mtTokens[ userTokens.length - 1 ];
+				if ( mtToken.substr( 0, userToken.length ) === userToken ) {
+					bestTranslation.push( mtToken.substr( userToken.length ) );
+				}
+				else {
+					bestTranslation.push( "" )
+				}
+				for ( var n = userTokens.length; n < mtTokens.length; n++ ) {
+					var mtToken = mtTokens[n];
+					bestTranslation.push( mtToken );
+				}
 			}
 		}
 	}
@@ -211,26 +216,28 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 };
 
 TargetBoxState.prototype.__updateSuggestions = function() {
-	var prefix = this.get( "prefix" );
-	var caretIndex = this.get( "caretIndex" );
-	var bestTranslation = this.get( "bestTranslation" );
 	var suggestions = [];
-	
-	// Only show suggestions if caret is in the first word following the prefix
-	// Lowerbound: Must be longer than prefix
-	if ( caretIndex > prefix.length || prefix.length === 0 ) {
-		
-		// Only show suggestions if we've not yet reached the end of the best translation
-		if ( bestTranslation.length > 0 ) {
-			
-			// Upperbound: Matching all characters following the prefix
-			var userText = this.get( "userText" );
-			var editingText = userText.substr( prefix.length ).trimLeft();
-			var suggestionList = this.get( "suggestionList" );
-			for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
-				var suggestion = suggestionList[suggestionIndex];
-				if ( suggestion.substr( 0, editingText.length ) === editingText && suggestion.length > editingText.length ) {
-					suggestions.push( suggestion );
+	if ( this.get( "enableSuggestions" ) === true ) {
+		var prefix = this.get( "prefix" );
+		var caretIndex = this.get( "caretIndex" );
+		var bestTranslation = this.get( "bestTranslation" );
+
+		// Only show suggestions if caret is in the first word following the prefix
+		// Lowerbound: Must be longer than prefix
+		if ( caretIndex > prefix.length || prefix.length === 0 ) {
+
+			// Only show suggestions if we've not yet reached the end of the best translation
+			if ( bestTranslation.length > 0 ) {
+
+				// Upperbound: Matching all characters following the prefix
+				var userText = this.get( "userText" );
+				var editingText = userText.substr( prefix.length ).trimLeft();
+				var suggestionList = this.get( "suggestionList" );
+				for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
+					var suggestion = suggestionList[suggestionIndex];
+					if ( suggestion.substr( 0, editingText.length ) === editingText && suggestion.length > editingText.length ) {
+						suggestions.push( suggestion );
+					}
 				}
 			}
 		}

@@ -32,3 +32,7 @@ TargetSuggestionState.prototype.previousOption = function() {
 		optionIndex --;
 	this.set( "optionIndex", optionIndex );
 };
+
+TargetSuggestionState.prototype.noOption = function() {
+	this.set( "optionIndex", null );
+};
