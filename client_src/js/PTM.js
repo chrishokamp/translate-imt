@@ -430,17 +430,23 @@ PTM.prototype.recycleTranslations = function( segmentId ) {
 		var recycledAlignIndexList = [];
 		var recycledChunkIndexList = [];
 
+		// Recycle any translation that is still valid (i.e., matches the current editingPrefix)
 		var editingPrefixHash = editingPrefix.replace( /[ ]+/g, "" );
 		for ( var i = 0; i < translationList.length; i++ ) {
 			var translation = translationList[i];
 			var translationHash = translation.join( "" );
 			var isValid = ( translationHash.substr( 0, editingPrefixHash.length ) === editingPrefixHash );
-//			console.log( isValid, translationHash, editingPrefixHash );
 			if ( isValid ) {
 				recycledTranslationList.push( translationList[i] );
 				recycledAlignIndexList.push( alignIndexList[i] );
 				recycledChunkIndexList.push( chunkIndexList[i] );
 			}
+		}
+		// Retrain at least one translation, even if none is valid
+		if ( recycledTranslationList.length === 0 && translationList.length > 0 ) {
+			recycledTranslationList.push( translationList[0] );
+			recycledAlignIndexList.push( alignIndexList[0] );
+			recycledChunkIndexList.push( chunkIndexList[0] );
 		}
 		targetBox.set({
 			"prefix" : editingPrefix,
@@ -448,7 +454,7 @@ PTM.prototype.recycleTranslations = function( segmentId ) {
 			"alignIndexList" : recycledAlignIndexList,
 			"chunkIndexList" : recycledChunkIndexList
 		});
-		console.log( "Temporary Translations", recycledTranslationList.map( function(d) { return d.join(" ") } ) );
+		console.log( "Recycled Translations", recycledTranslationList.map( function(d) { return d.join(" ") } ) );
 	}
 };
 
