@@ -197,7 +197,7 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 		var translationIndex = 0;
 		if ( translationList.length > translationIndex ) {
 			var mtTokens = translationList[translationIndex];
-			if ( mtTokens.length > userTokens.length ) {
+			if ( mtTokens.length >= userTokens.length ) {
 				var mtToken = mtTokens[ userTokens.length - 1 ];
 				if ( mtToken.substr( 0, userToken.length ) === userToken ) {
 					bestTranslation.push( mtToken.substr( userToken.length ) );

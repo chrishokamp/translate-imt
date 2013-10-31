@@ -296,9 +296,11 @@ PTM.prototype.clickToInsertTargetSuggestion = function( segmentId, optionIndex )
 
 PTM.prototype.insertFirstSuggestion = function( segmentId ) {
 	var suggestions = this.targetBoxes[segmentId].get( "suggestions" );
-	var text = ( suggestions.length === 0 ) ? "" : suggestions[ 0 ];
-	this.targetBoxes[segmentId].replaceEditingToken( text );
-	this.targetBoxes[segmentId].focus();
+	if ( suggestions.length > 0 ) {
+		var text = suggestions[ 0 ];
+		this.targetBoxes[segmentId].replaceEditingToken( text );
+		this.targetBoxes[segmentId].focus();
+	}
 };
 PTM.prototype.insertSelectedTargetSuggestion = function( segmentId ) {
 	var optionIndex = this.targetSuggestions[segmentId].get( "optionIndex" );
@@ -415,6 +417,41 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 	}
 };
 
+PTM.prototype.recycleTranslations = function( segmentId ) {
+	var targetBox = this.targetBoxes[segmentId];
+	var prefix = targetBox.get( "prefix" );
+	if ( prefix !== null ) {
+		var editingPrefix = targetBox.get( "editingPrefix" );
+		var translationList = targetBox.get( "translationList" );
+		var alignIndexList = targetBox.get( "alignIndexList" );
+		var chunkIndexList = targetBox.get( "chunkIndexList" );
+
+		var recycledTranslationList = [];
+		var recycledAlignIndexList = [];
+		var recycledChunkIndexList = [];
+
+		var editingPrefixHash = editingPrefix.replace( /[ ]+/g, "" );
+		for ( var i = 0; i < translationList.length; i++ ) {
+			var translation = translationList[i];
+			var translationHash = translation.join( "" );
+			var isValid = ( translationHash.substr( 0, editingPrefixHash.length ) === editingPrefixHash );
+//			console.log( isValid, translationHash, editingPrefixHash );
+			if ( isValid ) {
+				recycledTranslationList.push( translationList[i] );
+				recycledAlignIndexList.push( alignIndexList[i] );
+				recycledChunkIndexList.push( chunkIndexList[i] );
+			}
+		}
+		targetBox.set({
+			"prefix" : editingPrefix,
+			"translationList" : recycledTranslationList,
+			"alignIndexList" : recycledAlignIndexList,
+			"chunkIndexList" : recycledChunkIndexList
+		});
+		console.log( "Temporary Translations", recycledTranslationList.map( function(d) { return d.join(" ") } ) );
+	}
+};
+
 PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	/**
 	 * Convert machine translation from a string to a list of tokens.
@@ -485,6 +522,7 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 				"alignIndexList" : alignIndexList, 
 				"chunkIndexList" : chunkIndexList
 			});
+			console.log( "Best Translations", translationList.map( function(d) { return d.join(" ") } ) );
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( response, request ) {
@@ -503,6 +541,9 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 		var segments = this.get( "segments" );
 		var source = segments[ segmentId ].tokens.join( " " );
 		this.cache.translations[ segmentId ][ prefix ] = null;
-		this.server.translate( source, prefix, cacheAndUpdate );
+		this.server.translate( source, prefix, cacheAndUpdate );  // Asynchronous request
+		
+		// Try to recover partial set of translations during the asynchronous request
+		this.recycleTranslations( segmentId );
 	}
 };
