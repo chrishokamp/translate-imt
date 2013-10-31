@@ -206,7 +206,7 @@ PTM.prototype.cycleAssists = function( segmentId ) {
 			"enableBestTranslation" : enableBestTranslation
 		});
 		this.sourceBoxes[id].set({
-			"enableHover" : enableBestTranslation
+			"enableHover" : enableSuggestions
 		});
 	}
 };

@@ -63,7 +63,7 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.updateBestTranslation = this.__updateBestTranslation; //_.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
 	this.updateSuggestions = this.__updateSuggestions; //_.debounce( this.__updateSuggestions, this.IMMEDIATELY );
 	this.updateMatchingTokens = this.__updateMatchingTokens; //_.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
-	this.on( "change:prefix", this.updatePrefixTokensAndSuggestionList );
+	this.on( "change:prefix change:translationList", this.updatePrefixTokensAndSuggestionList );
 	this.on( "change:userText change:prefixTokens", this.updateUserTokens );
 	this.on( "change:editingPrefix", this.updateTranslations );
 	this.on( "change:userTokens change:translationList change:enableBestTranslation", this.updateBestTranslation );
