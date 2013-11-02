@@ -189,7 +189,7 @@ TargetBoxState.prototype.updateTranslations = function() {
 
 TargetBoxState.prototype.__updateBestTranslation = function() {
 	var bestTranslation = [];
-	if ( this.get( "enableBestTranslation" ) === true ) {
+//	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
 		var userToken = userTokens[ userTokens.length - 1 ];
 
@@ -211,7 +211,7 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 				}
 			}
 		}
-	}
+//	}
 	this.set( "bestTranslation", bestTranslation );
 };
 

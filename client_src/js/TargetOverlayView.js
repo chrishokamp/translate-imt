@@ -11,7 +11,7 @@ TargetOverlayView.prototype.initialize = function() {
 
 	this.render = _.debounce( this.__render, 10 );
 	this.resize = _.debounce( this.__resize, 10 );
-	this.listenTo( this.model, "change:userText change:prefixTokens change:hasFocus change:bestTranslation change:showBestTranslation", this.render.bind(this) );
+	this.listenTo( this.model, "change:userText change:prefixTokens change:hasFocus change:bestTranslation change:enableBestTranslation", this.render.bind(this) );
 	this.listenTo( this.model, "change:boxInnerWidth change:boxInnerHeight", this.resize.bind(this) );
 };
 
@@ -48,15 +48,13 @@ TargetOverlayView.prototype.__resize = function() {
 TargetOverlayView.prototype.__containerRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "background", "none" )
-//		.style( "width", (this.model.WIDTH-75) + "px" )
-//		.style( "height", this.model.MIN_HEIGHT + "px" )
 		.style( "padding", "12.5px 60px 20px 15px" )  //"13.5px 61px 21px 16px"
 		.style( "opacity", 1 )
 };
 TargetOverlayView.prototype.__containerRenderAlways = function( elem ) {
-//	var showBestTranslations = this.model.get( "showBestTranslations" );
-//	elem.transition()
-//		.style( "opacity", showBestTranslations ? 1 : 0 )
+	var enableBestTranslation = this.model.get( "enableBestTranslation" );
+	elem.transition()
+		.style( "opacity", enableBestTranslation ? 1 : 0 )
 };
 
 

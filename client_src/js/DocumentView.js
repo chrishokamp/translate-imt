@@ -26,6 +26,11 @@ DocumentView.prototype.initialize = function( options ) {
 		.style( "border-bottom-left-radius", "50px" )
 		.style( "box-shadow", "1px 1px 5px #bbb" )
 		.style( "pointer-events", "none" )
+		.style( "user-select", "none" )
+		.style( "-moz-user-select", "none" )
+		.style( "-webkit-user-select", "none" )
+		.style( "-ms-user-select", "none" )
+		
 	this.views.canvas = this.views.container.append( "div" ).attr( "class", "Canvas" ).style( "position", "absolute" );
 	this.views.background = this.views.canvas.append( "div" ).attr( "class", "Background" ).call( this.__backgroundRenderOnce.bind(this) );
 	this.views.focus = this.views.canvas.append( "div" ).attr( "class", "Focus" ).call( this.__focusRenderOnce.bind(this) );
@@ -50,6 +55,9 @@ DocumentView.prototype.__addHeader = function() {
 		.style( "margin", "0 0 20px 0" )
 		.style( "background", this.REGULAR_BACKGROUND )
 		.style( "border-top-right-radius", "29px" )
+		.style( "border-bottom", "1px solid #bbb" )
+	header.append( "div" )
+		.attr( "class", "OptionPanelView" )
 	this.views.header = header;
 };
 /** @private **/

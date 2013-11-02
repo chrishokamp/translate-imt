@@ -26,6 +26,7 @@ PTM.prototype.reset = function() {
 	this.server = new TranslateServer();
 	
 	/** @param {DocumentView} **/
+	this.optionPanel = null;
 	this.documentView = null;
 	this.sourceBoxes = {};
 	this.sourceSuggestions = {};
@@ -173,12 +174,34 @@ PTM.prototype.setup = function() {
 	}.bind(this) );
 	this.documentView.addSegment( null );
 
+	// Create an options panel
+	this.optionPanel = new OptionPanelState();
+	this.listenTo( this.optionPanel, "change", this.setAssists )
+	
 	// Focus on the first segment
 	this.focusOnSegment( segmentIds[0] );
 };
 
 PTM.prototype.resizeDocument = function( segmentId ) {
 	this.documentView.resize();
+};
+
+PTM.prototype.setAssists = function() {
+	var enableMT = this.optionPanel.get("enableMT");
+	var enableBestTranslation = enableMT;
+	var enableSuggestions = enableMT && this.optionPanel.get("enableSuggestions");
+	var enableHover = enableMT && this.optionPanel.get("enableHover");
+	var segmentIds = this.get( "segmentIds" );
+	for ( var i = 0; i < segmentIds.length; i++ ) {
+		var id = segmentIds[i];
+		this.targetBoxes[id].set({
+			"enableSuggestions" : enableSuggestions,
+			"enableBestTranslation" : enableBestTranslation
+		});
+		this.sourceBoxes[id].set({
+			"enableHover" : enableHover
+		});
+	}
 };
 
 PTM.prototype.cycleAssists = function( segmentId ) {
@@ -209,6 +232,11 @@ PTM.prototype.cycleAssists = function( segmentId ) {
 			"enableHover" : enableSuggestions
 		});
 	}
+	this.optionPanel.set({
+		"enableMT" : enableBestTranslation,
+		"enableHover" : enableSuggestions,
+		"enableSuggestions" : enableSuggestions
+	});
 };
 
 PTM.prototype.noTargetSuggestion_OR_cycleAssists = function( segmentId ) {
