@@ -48,7 +48,7 @@ OptionPanelView.prototype.__bestTranslationsRenderOnce = function( elem ) {
 		.style( "cursor", "pointer" )
 		.on( "change", onChange )
 	elem.append( "span" )
-		.text( "Suggest translations" )
+		.text( "Show a suggested translation for each sentence" )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "pointer" )
 		.on( "click", onClick )
