@@ -150,8 +150,8 @@ PTM.prototype.setup = function() {
 //		this.listenTo( targetBox, "keypress:enter", this.focusOnNextSegment );
 		this.listenTo( targetBox, "keypress:enter", this.insertSelectedTargetSuggestion_OR_focusOnNextSegment );
 		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
-//		this.listenTo( targetBox, "keypress:tab", this.insertSelectedTargetSuggestion_OR_insertFirstSuggestion );
-		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
+		this.listenTo( targetBox, "keypress:tab", this.insertSelectedTargetSuggestion_OR_insertFirstSuggestion );
+//		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
 		this.listenTo( targetBox, "keypress:up", this.previousTargetSuggestion );
 		this.listenTo( targetBox, "keypress:down", this.nextTargetSuggestion );
 		this.listenTo( targetBox, "keypress:esc", this.noTargetSuggestion_OR_cycleAssists );
