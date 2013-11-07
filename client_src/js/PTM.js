@@ -431,11 +431,9 @@ PTM.prototype.recycleTranslations = function( segmentId ) {
 		var editingPrefix = targetBox.get( "editingPrefix" );
 		var translationList = targetBox.get( "translationList" );
 		var alignIndexList = targetBox.get( "alignIndexList" );
-		var chunkIndexList = targetBox.get( "chunkIndexList" );
 
 		var recycledTranslationList = [];
 		var recycledAlignIndexList = [];
-		var recycledChunkIndexList = [];
 
 		// Recycle any translation that is still valid (i.e., matches the current editingPrefix)
 		var editingPrefixHash = editingPrefix.replace( /[ ]+/g, "" );
@@ -446,20 +444,17 @@ PTM.prototype.recycleTranslations = function( segmentId ) {
 			if ( isValid ) {
 				recycledTranslationList.push( translationList[i] );
 				recycledAlignIndexList.push( alignIndexList[i] );
-				recycledChunkIndexList.push( chunkIndexList[i] );
 			}
 		}
 		// Retrain at least one translation, even if none is valid
 		if ( recycledTranslationList.length === 0 && translationList.length > 0 ) {
 			recycledTranslationList.push( translationList[0] );
 			recycledAlignIndexList.push( alignIndexList[0] );
-			recycledChunkIndexList.push( chunkIndexList[0] );
 		}
 		targetBox.set({
 			"prefix" : editingPrefix,
 			"translationList" : recycledTranslationList,
-			"alignIndexList" : recycledAlignIndexList,
-			"chunkIndexList" : recycledChunkIndexList
+			"alignIndexList" : recycledAlignIndexList
 		});
 		console.log( "Recycled Translations", recycledTranslationList.map( function(d) { return d.join(" ") } ) );
 	}
@@ -499,41 +494,14 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 		response.alignIndexList = alignIndexList;
 		return response;
 	}.bind(this);
-	/**
-	 * Match each token in every machine translation to a chunk index
-   * in the source text.
-	 * 
-	 * @private
-	 **/
-	var amendChunkIndexes = function( response ) {
-		var chunkIndexList = [];
-		var segments = this.get( "segments" );
-		var segment = segments[ segmentId ];
-		if ( response.hasOwnProperty( "alignIndexList" ) ) {
-			for ( var n = 0; n < response.alignIndexList.length; n++ ) {
-				var alignIndexes = response.alignIndexList[n];
-				var chunkVector = _.range( response.translationList[n].length ).map( function(d) { return null } );
-				for ( var i = alignIndexes.length - 1; i >= 0; i-- ) {
-					var alignIndex = alignIndexes[i];
-					var chunkIndex = segment.chunkVector[ alignIndex.sourceIndex ];
-					chunkVector[ alignIndex.targetIndex ] = chunkIndex;
-				}
-				chunkIndexList.push( chunkVector );
-			}
-		}
-		response.chunkIndexList = chunkIndexList;
-		return response;
-	}.bind(this);
 	var update = function( response ) {
 		if ( this.targetBoxes[segmentId].get("editingPrefix") === prefix ) {
 			var translationList = response.translationList;
 			var alignIndexList = response.alignIndexList;
-			var chunkIndexList = response.chunkIndexList;
 			this.targetBoxes[ segmentId ].set({
 				"prefix" : prefix,
 				"translationList" : translationList,
 				"alignIndexList" : alignIndexList, 
-				"chunkIndexList" : chunkIndexList
 			});
 			console.log( "Best Translations", translationList.map( function(d) { return d.join(" ") } ) );
 		}
@@ -541,7 +509,6 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	var cacheAndUpdate = function( response, request ) {
 		response = amendTranslationTokens( response );
 		response = amendAlignIndexes( response );
-		response = amendChunkIndexes( response );
 		this.cache.translations[ segmentId ][ prefix ] = response;
 		update( response );
 	}.bind(this);
