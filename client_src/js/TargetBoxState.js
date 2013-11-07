@@ -152,7 +152,6 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
       suggestions[rank] = suggestion;
     }
   }
-  
 	this.set({
 		"prefixTokens" : prefixTokens,
 		"prefixLength" : prefixLength,
@@ -269,18 +268,17 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
     var t2sList = this.get( "t2sAlignments" );
-		if ( t2sList.length > 0 ) {
-      var maxIndex = userTokens.length - 1;
-			for ( var tgtIndex in t2sList[0] ) {
-        if ( t2sList[0].hasOwnProperty(tgtIndex) && tgtIndex < maxIndex) {
-          var srcIndexList = t2sList[ tgtIndex ];
-          if (srcIndexList) {
-            for (var i = 0; i < srcIndexList.length; ++i) {
-              matchingTokens[ srcIndexList[i] ] = true;
-            }
-          }
+    var t2s = t2sList[0];
+    var maxIndex = userTokens[userTokens.length-1] === "" ? userTokens.length-1 : userTokens.length;
+		for ( var tgtIndex in t2s ) {
+      console.log("tgtIndex", tgtIndex);
+      if ( t2s.hasOwnProperty(tgtIndex) && tgtIndex < maxIndex) {
+        var srcIndexList = t2s[ tgtIndex ];
+        console.log("srcIndexList", srcIndexList);
+        for (var i = 0; i < srcIndexList.length; ++i) {
+          matchingTokens[ srcIndexList[i] ] = true;
         }
-			}
+      }
 		}
 	}
 	this.set( "matchingTokens", matchingTokens );
