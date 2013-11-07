@@ -51,35 +51,8 @@ PTM.prototype.reset = function() {
  * @private
  **/
 PTM.prototype.loaded = function() {
-	/**
-	 * Combine consecutive tokens marked as 'chunkIOB' into a chunk.
-	 * Assign a unique index to each chunk.
-	 * @private
-	 **/
-	var amendSegmentChunkIndexes = function( segment ) {
-		var chunkIndexes = [];
-		var chunkIndex = 0;
-		var insideChunk = false;
-		for ( var i = 0; i < segment.chunkIOB.length; i++ ) {
-			if (segment.chunkIOB[i] === "B") {
-				chunkIndex++;
-				insideChunk = true;
-			} else if (segment.chunkIOB[i] === "O" && insideChunk) {
-				chunkIndex++;
-				insideChunk = false;
-			} else if (!insideChunk) {
-				chunkIndex++;
-			}
-			chunkIndexes.push( chunkIndex );
-		}
-		segment.chunkIndexes = chunkIndexes;
-	}.bind(this);
-	
 	var segments = this.get( "segments" );
 	var segmentIds = _.keys( segments ).sort( function(a,b) { return parseInt(a) - parseInt(b) } );
-	segmentIds.forEach( function(segmentId) {
-		amendSegmentChunkIndexes( segments[segmentId] );
-	}.bind(this) );
 	this.set( "segmentIds", segmentIds );
 	this.setup();
 };
@@ -120,7 +93,7 @@ PTM.prototype.setup = function() {
 		var targetBox = new TargetBoxState({ "segmentId" : segmentId });
 		targetBox.set({
 			"segmentId" : segmentId,
-			"chunkIndexes" : segments[segmentId].chunkIndexes,
+			"chunkVector" : segments[segmentId].chunkVector,
 			"userText" : ""
 		});
 		this.targetBoxes[segmentId] = targetBox;
@@ -368,11 +341,17 @@ PTM.prototype.focusOnSegment = function( focusSegment ) {
 };
 
 PTM.prototype.insertSelectedTargetSuggestion_OR_insertFirstSuggestion = function( segmentId ) {
-	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
-	if ( optionIndex === null )
-		this.insertFirstSuggestion( segmentId );
-	else
-		this.insertSelectedTargetSuggestion( segmentId );
+  var i = this.targetBoxes[segmentId].get("caretIndex");
+  var userText = this.targetBoxes[segmentId].get("userText");
+  if (i < userText.length) {
+    this.targetBoxes[segmentId].focus();
+  } else {
+  	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
+	  if ( optionIndex === null )
+		  this.insertFirstSuggestion( segmentId );
+	  else
+		  this.insertSelectedTargetSuggestion( segmentId );
+  }
 };
 
 PTM.prototype.insertSelectedTargetSuggestion_OR_focusOnNextSegment = function( segmentId ) {
@@ -521,25 +500,25 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 		return response;
 	}.bind(this);
 	/**
-	 * Match each token in every machine translation to a chunk index in the source text.
-	 * TODO: Push post-processing onto server?
+	 * Match each token in every machine translation to a chunk index
+   * in the source text.
+	 * 
 	 * @private
 	 **/
 	var amendChunkIndexes = function( response ) {
 		var chunkIndexList = [];
 		var segments = this.get( "segments" );
 		var segment = segments[ segmentId ];
-		var segmentChunkIndexes = segment.chunkIndexes;
 		if ( response.hasOwnProperty( "alignIndexList" ) ) {
 			for ( var n = 0; n < response.alignIndexList.length; n++ ) {
 				var alignIndexes = response.alignIndexList[n];
-				var chunkIndexes = _.range( response.translationList[n].length ).map( function(d) { return null } );
+				var chunkVector = _.range( response.translationList[n].length ).map( function(d) { return null } );
 				for ( var i = alignIndexes.length - 1; i >= 0; i-- ) {
 					var alignIndex = alignIndexes[i];
-					var chunkIndex = segmentChunkIndexes[ alignIndex.sourceIndex ];
-					chunkIndexes[ alignIndex.targetIndex ] = chunkIndex;
+					var chunkIndex = segment.chunkVector[ alignIndex.sourceIndex ];
+					chunkVector[ alignIndex.targetIndex ] = chunkIndex;
 				}
-				chunkIndexList.push( chunkIndexes );
+				chunkIndexList.push( chunkVector );
 			}
 		}
 		response.chunkIndexList = chunkIndexList;
@@ -566,12 +545,14 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 		this.cache.translations[ segmentId ][ prefix ] = response;
 		update( response );
 	}.bind(this);
-	if ( this.cache.translations[ segmentId ].hasOwnProperty( prefix ) ) {
+
+  // Check the cache for translations
+  if ( this.cache.translations[ segmentId ].hasOwnProperty( prefix ) ) {
 		if ( this.cache.translations[ segmentId ][ prefix ] !== null ) {
 			update( this.cache.translations[ segmentId ][ prefix ] );  // Otherwise request has already been sent
 		}
-	}
-	else {
+	} else {
+    // Otherwise, request translations from the service
 		var segments = this.get( "segments" );
 		var source = segments[ segmentId ].tokens.join( " " );
 		this.cache.translations[ segmentId ][ prefix ] = null;

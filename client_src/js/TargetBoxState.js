@@ -2,7 +2,7 @@ var TargetBoxState = Backbone.Model.extend({
 	defaults : {
 		// Initialized once by PTM
 		"segmentId" : null,
-		"chunkIndexes" : [],
+		"chunkVector" : [],
 		
 		// States based on machine translations
 		"prefix" : null,        // @value {string} Prefix used to generate the translations.
@@ -69,7 +69,7 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.on( "change:userTokens change:translationList change:enableBestTranslation", this.updateBestTranslation );
 	this.on( "change:userTokens change:suggestionList change:bestTranslation change:caretIndex change:enableSuggestions", this.updateSuggestions );
 	this.on( "change:userTokens change:alignIndexList change:enableBestTranslation", this.updateMatchingTokens );
-	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
+//	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
 	this.on( "change:editXCoord change:editYCoord", this.updateEditCoords );
 	this.on( "change:boxWidth change:boxHeight", this.updateBoxDims );
 };
@@ -82,7 +82,7 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 	var targetTokenIndex = prefixLength;
 	var translationList = this.get( "translationList" ); // prefix is always updated whenever translationList or alignIndexList
 	var alignIndexList = this.get( "alignIndexList" );   // is updated, and therefore trigger on change:prefix only.
-	var chunkIndexes = this.get( "chunkIndexes" );       // chunkIndexes is never changed after initialization.
+	var chunkVector = this.get( "chunkVector" );       // chunkVector is never changed after initialization.
 	var suggestionList = [];
 	for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
 		var translation = translationList[ translationIndex ];
@@ -99,8 +99,8 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 
 		// All chunk indexes that belong to the source tokens
 		var currentChunkIndexes = {};
-		for ( var sourceTokenIndex = 0; sourceTokenIndex < chunkIndexes.length; sourceTokenIndex++ ) {
-			var chunkIndex = chunkIndexes[ sourceTokenIndex ];
+		for ( var sourceTokenIndex = 0; sourceTokenIndex < chunkVector.length; sourceTokenIndex++ ) {
+			var chunkIndex = chunkVector[ sourceTokenIndex ];
 			if ( sourceTokenIndexes.hasOwnProperty( sourceTokenIndex ) ) {
 				currentChunkIndexes[ chunkIndex ] = true;
 			}
@@ -108,8 +108,8 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 
 		// Expand to include all source tokens that are belong to the same chunk indexes
 		var currentSourceTokenIndexes = {};
-		for ( var sourceTokenIndex = 0; sourceTokenIndex < chunkIndexes.length; sourceTokenIndex++ ) {
-			var chunkIndex = chunkIndexes[ sourceTokenIndex ];
+		for ( var sourceTokenIndex = 0; sourceTokenIndex < chunkVector.length; sourceTokenIndex++ ) {
+			var chunkIndex = chunkVector[ sourceTokenIndex ];
 			if ( currentChunkIndexes.hasOwnProperty( chunkIndex ) ) {
 				currentSourceTokenIndexes[ sourceTokenIndex ] = true;
 			}
