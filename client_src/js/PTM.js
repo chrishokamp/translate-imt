@@ -430,10 +430,12 @@ PTM.prototype.recycleTranslations = function( segmentId ) {
 	if ( prefix !== null ) {
 		var editingPrefix = targetBox.get( "editingPrefix" );
 		var translationList = targetBox.get( "translationList" );
-		var alignIndexList = targetBox.get( "alignIndexList" );
-
+		var s2tAlignments = targetBox.get( "s2tAlignments" );
+		var t2sAlignments = targetBox.get( "t2sAlignments" );
+    
 		var recycledTranslationList = [];
-		var recycledAlignIndexList = [];
+		var recycleds2tAlignments = [];
+    var recycledt2sAlignments = [];
 
 		// Recycle any translation that is still valid (i.e., matches the current editingPrefix)
 		var editingPrefixHash = editingPrefix.replace( /[ ]+/g, "" );
@@ -443,18 +445,21 @@ PTM.prototype.recycleTranslations = function( segmentId ) {
 			var isValid = ( translationHash.substr( 0, editingPrefixHash.length ) === editingPrefixHash );
 			if ( isValid ) {
 				recycledTranslationList.push( translationList[i] );
-				recycledAlignIndexList.push( alignIndexList[i] );
+				recycleds2tAlignments.push( s2tAlignments[i] );
+        recycledt2sAlignments.push( t2sAlignments[i] );
 			}
 		}
 		// Retrain at least one translation, even if none is valid
 		if ( recycledTranslationList.length === 0 && translationList.length > 0 ) {
 			recycledTranslationList.push( translationList[0] );
-			recycledAlignIndexList.push( alignIndexList[0] );
+				recycleds2tAlignments.push( s2tAlignments[0] );
+        recycledt2sAlignments.push( t2sAlignments[0] );
 		}
 		targetBox.set({
 			"prefix" : editingPrefix,
 			"translationList" : recycledTranslationList,
-			"alignIndexList" : recycledAlignIndexList
+			"s2tAlignments" : recycleds2tAlignments,
+      "t2sAlignments" : recycledt2sAlignments
 		});
 		console.log( "Recycled Translations", recycledTranslationList.map( function(d) { return d.join(" ") } ) );
 	}
@@ -476,32 +481,51 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 		return response;
 	}.bind(this);
 	/**
-	 * Convert alignment indexes ("alignList") from a string to a list of {sourceIndex:number, targetIndex:number} entries ("alignIndexList").
+	 * Build alignment grids from the raw alignments.
+   *
 	 * @private
 	 **/
 	var amendAlignIndexes = function( response ) {
-		var alignIndexList = [];
+    var s2tList = [];
+    var t2sList = [];
 		if ( response.hasOwnProperty( "result" ) ) {
 			for ( var n = 0; n < response.result.length; n++ ) {
-				var alignStrs = response.result[n].align;
-				var alignIndexes = alignStrs.map( function(d) { 
-					var st = d.split("-").map( function(d) { return parseInt(d) } );
-					return { "sourceIndex" : st[0], "targetIndex" : st[1] };
-				});
-				alignIndexList.push( alignIndexes );
+				var alignList = response.result[n].align;
+        var s2t = {};
+        var t2s = {};
+        for (var i = 0; i < alignList.length; ++i) {
+          var st = alignList[i].split("-");
+          var srcIndex = parseInt(st[0]);
+          var tgtIndex = parseInt(st[1]);
+          if ( s2t.hasOwnProperty( srcIndex )) {
+            s2t[srcIndex].push( tgtIndex );
+          } else {
+            s2t[srcIndex] = [ tgtIndex ];
+          }
+          if ( t2s.hasOwnProperty( tgtIndex )) {
+            t2s[tgtIndex].push(srcIndex);
+          } else {
+            t2s[tgtIndex] = [srcIndex];
+          }
+        }
+        s2tList.push(s2t);
+        t2sList.push(t2s);
 			}
 		}
-		response.alignIndexList = alignIndexList;
+		response.s2t = s2tList;
+    response.t2s = t2sList;
 		return response;
 	}.bind(this);
 	var update = function( response ) {
 		if ( this.targetBoxes[segmentId].get("editingPrefix") === prefix ) {
 			var translationList = response.translationList;
-			var alignIndexList = response.alignIndexList;
+			var s2t = response.s2t;
+      var t2s = response.t2s;
 			this.targetBoxes[ segmentId ].set({
 				"prefix" : prefix,
 				"translationList" : translationList,
-				"alignIndexList" : alignIndexList, 
+				"s2tAlignments" : s2t,
+        "t2sAlignments" : t2s
 			});
 			console.log( "Best Translations", translationList.map( function(d) { return d.join(" ") } ) );
 		}

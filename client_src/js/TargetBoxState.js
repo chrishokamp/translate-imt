@@ -7,7 +7,8 @@ var TargetBoxState = Backbone.Model.extend({
 		// States based on machine translations
 		"prefix" : null,        // @value {string} Prefix used to generate the translations.
 		"translationList" : [], // @value {string[][]} A list of translations. For each translation: a list of tokens represented as a string.
-		"alignIndexList" : [],  // @value {Object[][]} For each translation: a list of objects {sourceIndex: number, targetIndex: number}.
+		"s2tAlignments" : [],
+    "t2sAlignments" : [],
 
 		// States based on user inputs
 		"caretIndex" : 0,
@@ -81,64 +82,85 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 
 	var targetTokenIndex = prefixLength;
 	var translationList = this.get( "translationList" ); // prefix is always updated whenever translationList or alignIndexList
-	var alignIndexList = this.get( "alignIndexList" );   // is updated, and therefore trigger on change:prefix only.
+	var s2tAlignments = this.get( "s2tAlignments" );
+  var t2sAlignments = this.get( "t2sAlignments" );
 	var chunkVector = this.get( "chunkVector" );       // chunkVector is never changed after initialization.
-	var suggestionList = [];
-	for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
+	var suggestionList = {};
+  var suggestionRank = 0;
+
+  for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
 		var translation = translationList[ translationIndex ];
-		var alignIndexes = alignIndexList[ translationIndex ];
-
+		var s2t = s2tAlignments[ translationIndex ];
+    var t2s = t2sAlignments[ translationIndex ];
 		// All source tokens that correspond to the target token containing the caret
-		var sourceTokenIndexes = {};
-		for ( var a = 0; a < alignIndexes.length; a++ ) {
-			var alignment = alignIndexes[a];
-			if ( alignment.targetIndex === targetTokenIndex ) {
-				sourceTokenIndexes[ alignment.sourceIndex ] = true;
-			}
-		}
-
-		// All chunk indexes that belong to the source tokens
-		var currentChunkIndexes = {};
-		for ( var sourceTokenIndex = 0; sourceTokenIndex < chunkVector.length; sourceTokenIndex++ ) {
-			var chunkIndex = chunkVector[ sourceTokenIndex ];
-			if ( sourceTokenIndexes.hasOwnProperty( sourceTokenIndex ) ) {
-				currentChunkIndexes[ chunkIndex ] = true;
-			}
-		}
-
-		// Expand to include all source tokens that are belong to the same chunk indexes
-		var currentSourceTokenIndexes = {};
-		for ( var sourceTokenIndex = 0; sourceTokenIndex < chunkVector.length; sourceTokenIndex++ ) {
-			var chunkIndex = chunkVector[ sourceTokenIndex ];
-			if ( currentChunkIndexes.hasOwnProperty( chunkIndex ) ) {
-				currentSourceTokenIndexes[ sourceTokenIndex ] = true;
-			}
-		}
-
-		// All target tokens that correspond to the source tokens
-		var currentTargetTokenIndexes = {};
-		var maxTargetTokenIndex = targetTokenIndex;
-		for ( var a = 0; a < alignIndexes.length; a++ ) {
-			var alignment = alignIndexes[a];
-			if ( currentSourceTokenIndexes.hasOwnProperty( alignment.sourceIndex ) ) {
-				currentTargetTokenIndexes[ alignment.targetIndex ] = true;
-				maxTargetTokenIndex = Math.max( maxTargetTokenIndex, alignment.targetIndex );
-			}
-		}
-				
-		// Extract suggestion text
-		var suggestionTokens = translation.slice( targetTokenIndex, maxTargetTokenIndex + 1 );
-		if ( suggestionTokens.length > 0 ) {
-			var suggestionText = suggestionTokens.join(" ");
-			if ( suggestionList.indexOf( suggestionText ) === -1 ) {
-				suggestionList.push( suggestionText );
-			}
-		}
+		var sourceTokenIndexes = t2s[ targetTokenIndex ];
+    if ( sourceTokenIndexes && sourceTokenIndexes.length > 0 ) {
+      sourceTokenIndexes.sort();
+      var lastSrcIndex = -1;
+      var sourceChunkIndex = -1;
+      var targetTokenIndexes = [];
+      for (var i = 0; i < sourceTokenIndexes.length; ++i ) {
+        var srcIndex = sourceTokenIndexes[i];
+        if ( lastSrcIndex >= 0 && srcIndex - lastSrcIndex !== 1) {
+          // Contiguity check
+          break;
+        }
+        var chunkIndex = chunkVector[ srcIndex ];
+        if ( sourceChunkIndex >= 0 && chunkIndex !== sourceChunkIndex ) {
+          // Only take one chunk
+          break;
+        }
+        // Add target alignments
+        if (s2t.hasOwnProperty(srcIndex)) {
+          Array.prototype.push.apply(targetTokenIndexes, s2t[srcIndex]);
+        }
+        sourceChunkIndex = chunkIndex;
+        lastSrcIndex = srcIndex;
+      }
+      if (targetTokenIndexes.length > 0) {
+        targetTokenIndexes.sort();
+        var lastTgtIndex = -1;
+        var suggestionTokens = [];
+        for (var i = 0; i < targetTokenIndexes.length; ++i) {
+          var tgtIndex = targetTokenIndexes[i];
+          if (tgtIndex < targetTokenIndex) {
+            continue;
+          }
+          if (lastTgtIndex >= 0 && tgtIndex - lastTgtIndex !== 1) {
+            break;
+          }
+          lastTgtIndex = tgtIndex;
+          suggestionTokens.push(translation[tgtIndex]);
+        }
+        if (suggestionTokens.length > 0) {
+          var suggestionText = suggestionTokens.join(" ");
+          if ( ! suggestionList.hasOwnProperty(suggestionText)) {
+            suggestionList[suggestionText] = suggestionRank++;
+          }
+        }
+      }
+    }
+    if (suggestionRank === 0 && translationIndex === 0) {
+      // Insert the next token of the best translation
+      // as a default
+      suggestionList[translationList[0][targetTokenIndex]] = suggestionRank++;
+    }
 	}
+  var suggestions = [];
+  for (var i = 0; i < suggestionRank; ++i) {
+    suggestions.push(0);
+  }
+  for (var suggestion in suggestionList) {
+    if (suggestionList.hasOwnProperty(suggestion)) {
+      var rank = suggestionList[suggestion];
+      suggestions[rank] = suggestion;
+    }
+  }
+  
 	this.set({
 		"prefixTokens" : prefixTokens,
 		"prefixLength" : prefixLength,
-		"suggestionList" : suggestionList
+		"suggestionList" : suggestions
 	});
 };
 
@@ -250,16 +272,18 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 	var matchingTokens = {};
 	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
-		var alignIndexList = this.get( "alignIndexList" );
-		if ( alignIndexList.length > 0 ) {
-			var bestAlignIndexes = alignIndexList[0];
-			for ( var a = 0; a < bestAlignIndexes.length; a++ ) {
-				var alignment = bestAlignIndexes[a];
-				var sourceIndex = alignment.sourceIndex;
-				var targetIndex = alignment.targetIndex;
-				if ( targetIndex < userTokens.length - 1 ) {
-					matchingTokens[ sourceIndex ] = true;
-				}
+    var t2sList = this.get( "t2sAlignments" );
+		if ( t2sList.length > 0 ) {
+      var maxIndex = userTokens.length - 1;
+			for ( var tgtIndex in t2sList[0] ) {
+        if ( t2sList[0].hasOwnProperty(tgtIndex) && tgtIndex < maxIndex) {
+          var srcIndexList = t2sList[ tgtIndex ];
+          if (srcIndexList) {
+            for (var i = 0; i < srcIndexList.length; ++i) {
+              matchingTokens[ srcIndexList[i] ] = true;
+            }
+          }
+        }
 			}
 		}
 	}
