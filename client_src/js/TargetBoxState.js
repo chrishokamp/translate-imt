@@ -54,6 +54,7 @@ TargetBoxState.prototype.IMMEDIATELY = 5;  // milliseconds
 
 TargetBoxState.prototype.WHITESPACE = /[ ]+/g;
 TargetBoxState.prototype.WHITESPACE_SEPS = /([ ]+)/g;
+TargetBoxState.prototype.MAX_SUGGESTIONS = 4;
 
 TargetBoxState.prototype.initialize = function( options ) {
 	var segmentId = options.segmentId;
@@ -89,33 +90,28 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
   var suggestionRank = 0;
 
   for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
+    if (suggestionRank === this.MAX_SUGGESTIONS) {
+      break;
+    }
 		var translation = translationList[ translationIndex ];
 		var s2t = s2tAlignments[ translationIndex ];
     var t2s = t2sAlignments[ translationIndex ];
+
 		// All source tokens that correspond to the target token containing the caret
 		var sourceTokenIndexes = t2s[ targetTokenIndex ];
     if ( sourceTokenIndexes && sourceTokenIndexes.length > 0 ) {
       sourceTokenIndexes.sort();
-      var lastSrcIndex = -1;
-      var sourceChunkIndex = -1;
+      var lastSrcIndex = sourceTokenIndexes[0];
+      var sourceChunkIndex = chunkVector[lastSrcIndex];
       var targetTokenIndexes = [];
-      for (var i = 0; i < sourceTokenIndexes.length; ++i ) {
-        var srcIndex = sourceTokenIndexes[i];
-        if ( lastSrcIndex >= 0 && srcIndex - lastSrcIndex !== 1) {
-          // Contiguity check
+      // Extract the target tokens of the chunk
+      for (var i = lastSrcIndex; i < chunkVector.length; ++i) {
+        if (chunkVector[i] !== sourceChunkIndex) {
           break;
         }
-        var chunkIndex = chunkVector[ srcIndex ];
-        if ( sourceChunkIndex >= 0 && chunkIndex !== sourceChunkIndex ) {
-          // Only take one chunk
-          break;
+        if (s2t.hasOwnProperty(i)) {
+          Array.prototype.push.apply(targetTokenIndexes, s2t[i]);
         }
-        // Add target alignments
-        if (s2t.hasOwnProperty(srcIndex)) {
-          Array.prototype.push.apply(targetTokenIndexes, s2t[srcIndex]);
-        }
-        sourceChunkIndex = chunkIndex;
-        lastSrcIndex = srcIndex;
       }
       if (targetTokenIndexes.length > 0) {
         targetTokenIndexes.sort();
