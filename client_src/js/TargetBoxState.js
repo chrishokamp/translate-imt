@@ -100,8 +100,7 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 		// All source tokens that correspond to the target token containing the caret
 		var sourceTokenIndexes = t2s[ targetTokenIndex ];
     if ( sourceTokenIndexes && sourceTokenIndexes.length > 0 ) {
-      sourceTokenIndexes.sort();
-      var lastSrcIndex = sourceTokenIndexes[0];
+      var lastSrcIndex = Math.min.apply(Math, sourceTokenIndexes);
       var sourceChunkIndex = chunkVector[lastSrcIndex];
       var targetTokenIndexes = [];
       // Extract the target tokens of the chunk
@@ -209,10 +208,10 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 //	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
 		var userToken = userTokens[ userTokens.length - 1 ];
-
 		var translationList = this.get( "translationList" );
 		var translationIndex = 0;
-		if ( translationList.length > translationIndex ) {
+
+	if ( translationList.length > translationIndex ) {
 			var mtTokens = translationList[translationIndex];
 			if ( mtTokens.length >= userTokens.length ) {
 				var mtToken = mtTokens[ userTokens.length - 1 ];
@@ -268,18 +267,29 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
     var t2sList = this.get( "t2sAlignments" );
+    var s2tList = this.get( "s2tAlignments" );
     var t2s = t2sList[0];
-    var maxIndex = userTokens[userTokens.length-1] === "" ? userTokens.length-1 : userTokens.length;
-		for ( var tgtIndex in t2s ) {
-      console.log("tgtIndex", tgtIndex);
-      if ( t2s.hasOwnProperty(tgtIndex) && tgtIndex < maxIndex) {
-        var srcIndexList = t2s[ tgtIndex ];
-        console.log("srcIndexList", srcIndexList);
+    var s2t = s2tList[0];
+    var maxIndex = userTokens[userTokens.length-1].trim().length === 0 ? userTokens.length-1 : userTokens.length;
+    var maxSourceIndex = -1;
+		for ( var j = 0; j < maxIndex; ++j ) {
+      var srcIndexList = t2s[ j ];
+      if(srcIndexList) {
         for (var i = 0; i < srcIndexList.length; ++i) {
-          matchingTokens[ srcIndexList[i] ] = true;
+          var srcIndex = srcIndexList[i];
+          matchingTokens[ srcIndex ] = true;
+          if (srcIndex > maxSourceIndex ) {
+            maxSourceIndex = srcIndex;
+          }
         }
       }
 		}
+    // Blank out unaligned source tokens
+    for (var i = 0; i < maxSourceIndex; ++i) {
+      if ( ! s2t.hasOwnProperty(i) ) {
+        matchingTokens[ i ] = true;
+      }
+    }
 	}
 	this.set( "matchingTokens", matchingTokens );
 	this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
