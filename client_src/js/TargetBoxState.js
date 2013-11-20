@@ -270,29 +270,31 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
     var s2tList = this.get( "s2tAlignments" );
     var t2s = t2sList[0];
     var s2t = s2tList[0];
-    var maxIndex = userTokens[userTokens.length-1].trim().length === 0 ? userTokens.length-1 : userTokens.length;
-    var maxSourceIndex = -1;
-		for ( var j = 0; j < maxIndex; ++j ) {
-      var srcIndexList = t2s[ j ];
-      if(srcIndexList) {
-        for (var i = 0; i < srcIndexList.length; ++i) {
-          var srcIndex = srcIndexList[i];
-          matchingTokens[ srcIndex ] = true;
-          if (srcIndex > maxSourceIndex ) {
-            maxSourceIndex = srcIndex;
+    if (t2s && s2t) {
+      var maxIndex = userTokens[userTokens.length-1].trim().length === 0 ? userTokens.length-1 : userTokens.length;
+      var maxSourceIndex = -1;
+		  for ( var j = 0; j < maxIndex; ++j ) {
+        var srcIndexList = t2s[ j ];
+        if(srcIndexList) {
+          for (var i = 0; i < srcIndexList.length; ++i) {
+            var srcIndex = srcIndexList[i];
+            matchingTokens[ srcIndex ] = true;
+            if (srcIndex > maxSourceIndex ) {
+              maxSourceIndex = srcIndex;
+            }
           }
         }
+		  }
+      // Blank out unaligned source tokens
+      for (var i = 0; i < maxSourceIndex; ++i) {
+        if ( ! s2t.hasOwnProperty(i) ) {
+          matchingTokens[ i ] = true;
+        }
       }
-		}
-    // Blank out unaligned source tokens
-    for (var i = 0; i < maxSourceIndex; ++i) {
-      if ( ! s2t.hasOwnProperty(i) ) {
-        matchingTokens[ i ] = true;
-      }
-    }
-	}
-	this.set( "matchingTokens", matchingTokens );
-	this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
+	  }
+	  this.set( "matchingTokens", matchingTokens );
+	  this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
+  }
 };
 
 TargetBoxState.prototype.replaceEditingToken = function( text ) {
