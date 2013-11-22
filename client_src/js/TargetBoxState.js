@@ -2,12 +2,13 @@ var TargetBoxState = Backbone.Model.extend({
 	defaults : {
 		// Initialized once by PTM
 		"segmentId" : null,
-		"chunkIndexes" : [],
+		"chunkVector" : [],
 		
 		// States based on machine translations
 		"prefix" : null,        // @value {string} Prefix used to generate the translations.
 		"translationList" : [], // @value {string[][]} A list of translations. For each translation: a list of tokens represented as a string.
-		"alignIndexList" : [],  // @value {Object[][]} For each translation: a list of objects {sourceIndex: number, targetIndex: number}.
+		"s2tAlignments" : [],
+    "t2sAlignments" : [],
 
 		// States based on user inputs
 		"caretIndex" : 0,
@@ -53,6 +54,7 @@ TargetBoxState.prototype.IMMEDIATELY = 5;  // milliseconds
 
 TargetBoxState.prototype.WHITESPACE = /[ ]+/g;
 TargetBoxState.prototype.WHITESPACE_SEPS = /([ ]+)/g;
+TargetBoxState.prototype.MAX_SUGGESTIONS = 4;
 
 TargetBoxState.prototype.initialize = function( options ) {
 	var segmentId = options.segmentId;
@@ -63,13 +65,13 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.updateBestTranslation = this.__updateBestTranslation; //_.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
 	this.updateSuggestions = this.__updateSuggestions; //_.debounce( this.__updateSuggestions, this.IMMEDIATELY );
 	this.updateMatchingTokens = this.__updateMatchingTokens; //_.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
-	this.on( "change:prefix", this.updatePrefixTokensAndSuggestionList );
+	this.on( "change:prefix change:translationList", this.updatePrefixTokensAndSuggestionList );
 	this.on( "change:userText change:prefixTokens", this.updateUserTokens );
 	this.on( "change:editingPrefix", this.updateTranslations );
 	this.on( "change:userTokens change:translationList change:enableBestTranslation", this.updateBestTranslation );
 	this.on( "change:userTokens change:suggestionList change:bestTranslation change:caretIndex change:enableSuggestions", this.updateSuggestions );
 	this.on( "change:userTokens change:alignIndexList change:enableBestTranslation", this.updateMatchingTokens );
-	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
+//	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
 	this.on( "change:editXCoord change:editYCoord", this.updateEditCoords );
 	this.on( "change:boxWidth change:boxHeight", this.updateBoxDims );
 };
@@ -81,64 +83,78 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 
 	var targetTokenIndex = prefixLength;
 	var translationList = this.get( "translationList" ); // prefix is always updated whenever translationList or alignIndexList
-	var alignIndexList = this.get( "alignIndexList" );   // is updated, and therefore trigger on change:prefix only.
-	var chunkIndexes = this.get( "chunkIndexes" );       // chunkIndexes is never changed after initialization.
-	var suggestionList = [];
-	for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
+	var s2tAlignments = this.get( "s2tAlignments" );
+  var t2sAlignments = this.get( "t2sAlignments" );
+	var chunkVector = this.get( "chunkVector" );       // chunkVector is never changed after initialization.
+	var suggestionList = {};
+  var suggestionRank = 0;
+
+  for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
+    if (suggestionRank === this.MAX_SUGGESTIONS) {
+      break;
+    }
 		var translation = translationList[ translationIndex ];
-		var alignIndexes = alignIndexList[ translationIndex ];
+		var s2t = s2tAlignments[ translationIndex ];
+    var t2s = t2sAlignments[ translationIndex ];
 
 		// All source tokens that correspond to the target token containing the caret
-		var sourceTokenIndexes = {};
-		for ( var a = 0; a < alignIndexes.length; a++ ) {
-			var alignment = alignIndexes[a];
-			if ( alignment.targetIndex === targetTokenIndex ) {
-				sourceTokenIndexes[ alignment.sourceIndex ] = true;
-			}
-		}
-
-		// All chunk indexes that belong to the source tokens
-		var currentChunkIndexes = {};
-		for ( var sourceTokenIndex = 0; sourceTokenIndex < chunkIndexes.length; sourceTokenIndex++ ) {
-			var chunkIndex = chunkIndexes[ sourceTokenIndex ];
-			if ( sourceTokenIndexes.hasOwnProperty( sourceTokenIndex ) ) {
-				currentChunkIndexes[ chunkIndex ] = true;
-			}
-		}
-
-		// Expand to include all source tokens that are belong to the same chunk indexes
-		var currentSourceTokenIndexes = {};
-		for ( var sourceTokenIndex = 0; sourceTokenIndex < chunkIndexes.length; sourceTokenIndex++ ) {
-			var chunkIndex = chunkIndexes[ sourceTokenIndex ];
-			if ( currentChunkIndexes.hasOwnProperty( chunkIndex ) ) {
-				currentSourceTokenIndexes[ sourceTokenIndex ] = true;
-			}
-		}
-
-		// All target tokens that correspond to the source tokens
-		var currentTargetTokenIndexes = {};
-		var maxTargetTokenIndex = targetTokenIndex;
-		for ( var a = 0; a < alignIndexes.length; a++ ) {
-			var alignment = alignIndexes[a];
-			if ( currentSourceTokenIndexes.hasOwnProperty( alignment.sourceIndex ) ) {
-				currentTargetTokenIndexes[ alignment.targetIndex ] = true;
-				maxTargetTokenIndex = Math.max( maxTargetTokenIndex, alignment.targetIndex );
-			}
-		}
-				
-		// Extract suggestion text
-		var suggestionTokens = translation.slice( targetTokenIndex, maxTargetTokenIndex + 1 );
-		if ( suggestionTokens.length > 0 ) {
-			var suggestionText = suggestionTokens.join(" ");
-			if ( suggestionList.indexOf( suggestionText ) === -1 ) {
-				suggestionList.push( suggestionText );
-			}
-		}
+		var sourceTokenIndexes = t2s[ targetTokenIndex ];
+    if ( sourceTokenIndexes && sourceTokenIndexes.length > 0 ) {
+      var lastSrcIndex = Math.min.apply(Math, sourceTokenIndexes);
+      var sourceChunkIndex = chunkVector[lastSrcIndex];
+      var targetTokenIndexes = [];
+      // Extract the target tokens of the chunk
+      for (var i = lastSrcIndex; i < chunkVector.length; ++i) {
+        if (chunkVector[i] !== sourceChunkIndex) {
+          break;
+        }
+        if (s2t.hasOwnProperty(i)) {
+          Array.prototype.push.apply(targetTokenIndexes, s2t[i]);
+        }
+      }
+      if (targetTokenIndexes.length > 0) {
+        targetTokenIndexes.sort();
+        var lastTgtIndex = -1;
+        var suggestionTokens = [];
+        for (var i = 0; i < targetTokenIndexes.length; ++i) {
+          var tgtIndex = targetTokenIndexes[i];
+          if (tgtIndex < targetTokenIndex) {
+            continue;
+          }
+          if (lastTgtIndex >= 0 && tgtIndex - lastTgtIndex !== 1) {
+            break;
+          }
+          lastTgtIndex = tgtIndex;
+          suggestionTokens.push(translation[tgtIndex]);
+        }
+        if (suggestionTokens.length > 0) {
+          var suggestionText = suggestionTokens.join(" ");
+          if ( ! suggestionList.hasOwnProperty(suggestionText)) {
+            suggestionList[suggestionText] = suggestionRank++;
+          }
+        }
+      }
+    }
+    if (suggestionRank === 0 && translationIndex === 0) {
+      // Insert the next token of the best translation
+      // as a default
+      suggestionList[translationList[0][targetTokenIndex]] = suggestionRank++;
+    }
 	}
+  var suggestions = [];
+  for (var i = 0; i < suggestionRank; ++i) {
+    suggestions.push(0);
+  }
+  for (var suggestion in suggestionList) {
+    if (suggestionList.hasOwnProperty(suggestion)) {
+      var rank = suggestionList[suggestion];
+      suggestions[rank] = suggestion;
+    }
+  }
 	this.set({
 		"prefixTokens" : prefixTokens,
 		"prefixLength" : prefixLength,
-		"suggestionList" : suggestionList
+		"suggestionList" : suggestions
 	});
 };
 
@@ -189,16 +205,15 @@ TargetBoxState.prototype.updateTranslations = function() {
 
 TargetBoxState.prototype.__updateBestTranslation = function() {
 	var bestTranslation = [];
-	if ( this.get( "enableBestTranslation" ) === true ) {
+//	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
 		var userToken = userTokens[ userTokens.length - 1 ];
-		// TODO: console.log( userTokens )
-
 		var translationList = this.get( "translationList" );
 		var translationIndex = 0;
-		if ( translationList.length > translationIndex ) {
+
+	if ( translationList.length > translationIndex ) {
 			var mtTokens = translationList[translationIndex];
-			if ( mtTokens.length > userTokens.length ) {
+			if ( mtTokens.length >= userTokens.length ) {
 				var mtToken = mtTokens[ userTokens.length - 1 ];
 				if ( mtToken.substr( 0, userToken.length ) === userToken ) {
 					bestTranslation.push( mtToken.substr( userToken.length ) );
@@ -212,7 +227,7 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 				}
 			}
 		}
-	}
+//	}
 	this.set( "bestTranslation", bestTranslation );
 };
 
@@ -251,21 +266,35 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 	var matchingTokens = {};
 	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
-		var alignIndexList = this.get( "alignIndexList" );
-		if ( alignIndexList.length > 0 ) {
-			var bestAlignIndexes = alignIndexList[0];
-			for ( var a = 0; a < bestAlignIndexes.length; a++ ) {
-				var alignment = bestAlignIndexes[a];
-				var sourceIndex = alignment.sourceIndex;
-				var targetIndex = alignment.targetIndex;
-				if ( targetIndex < userTokens.length - 1 ) {
-					matchingTokens[ sourceIndex ] = true;
-				}
-			}
-		}
-	}
-	this.set( "matchingTokens", matchingTokens );
-	this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
+    var t2sList = this.get( "t2sAlignments" );
+    var s2tList = this.get( "s2tAlignments" );
+    var t2s = t2sList[0];
+    var s2t = s2tList[0];
+    if (t2s && s2t) {
+      var maxIndex = userTokens[userTokens.length-1].trim().length === 0 ? userTokens.length-1 : userTokens.length;
+      var maxSourceIndex = -1;
+		  for ( var j = 0; j < maxIndex; ++j ) {
+        var srcIndexList = t2s[ j ];
+        if(srcIndexList) {
+          for (var i = 0; i < srcIndexList.length; ++i) {
+            var srcIndex = srcIndexList[i];
+            matchingTokens[ srcIndex ] = true;
+            if (srcIndex > maxSourceIndex ) {
+              maxSourceIndex = srcIndex;
+            }
+          }
+        }
+		  }
+      // Blank out unaligned source tokens
+      for (var i = 0; i < maxSourceIndex; ++i) {
+        if ( ! s2t.hasOwnProperty(i) ) {
+          matchingTokens[ i ] = true;
+        }
+      }
+	  }
+	  this.set( "matchingTokens", matchingTokens );
+	  this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
+  }
 };
 
 TargetBoxState.prototype.replaceEditingToken = function( text ) {

@@ -26,6 +26,7 @@ PTM.prototype.reset = function() {
 	this.server = new TranslateServer();
 	
 	/** @param {DocumentView} **/
+	this.optionPanel = null;
 	this.documentView = null;
 	this.sourceBoxes = {};
 	this.sourceSuggestions = {};
@@ -50,35 +51,8 @@ PTM.prototype.reset = function() {
  * @private
  **/
 PTM.prototype.loaded = function() {
-	/**
-	 * Combine consecutive tokens marked as 'chunkIOB' into a chunk.
-	 * Assign a unique index to each chunk.
-	 * @private
-	 **/
-	var amendSegmentChunkIndexes = function( segment ) {
-		var chunkIndexes = [];
-		var chunkIndex = 0;
-		var insideChunk = false;
-		for ( var i = 0; i < segment.chunkIOB.length; i++ ) {
-			if (segment.chunkIOB[i] === "B") {
-				chunkIndex++;
-				insideChunk = true;
-			} else if (segment.chunkIOB[i] === "O" && insideChunk) {
-				chunkIndex++;
-				insideChunk = false;
-			} else if (!insideChunk) {
-				chunkIndex++;
-			}
-			chunkIndexes.push( chunkIndex );
-		}
-		segment.chunkIndexes = chunkIndexes;
-	}.bind(this);
-	
 	var segments = this.get( "segments" );
 	var segmentIds = _.keys( segments ).sort( function(a,b) { return parseInt(a) - parseInt(b) } );
-	segmentIds.forEach( function(segmentId) {
-		amendSegmentChunkIndexes( segments[segmentId] );
-	}.bind(this) );
 	this.set( "segmentIds", segmentIds );
 	this.setup();
 };
@@ -119,7 +93,7 @@ PTM.prototype.setup = function() {
 		var targetBox = new TargetBoxState({ "segmentId" : segmentId });
 		targetBox.set({
 			"segmentId" : segmentId,
-			"chunkIndexes" : segments[segmentId].chunkIndexes,
+			"chunkVector" : segments[segmentId].chunkVector,
 			"userText" : ""
 		});
 		this.targetBoxes[segmentId] = targetBox;
@@ -149,8 +123,8 @@ PTM.prototype.setup = function() {
 //		this.listenTo( targetBox, "keypress:enter", this.focusOnNextSegment );
 		this.listenTo( targetBox, "keypress:enter", this.insertSelectedTargetSuggestion_OR_focusOnNextSegment );
 		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
-//		this.listenTo( targetBox, "keypress:tab", this.insertSelectedTargetSuggestion_OR_insertFirstSuggestion );
-		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
+		this.listenTo( targetBox, "keypress:tab", this.insertSelectedTargetSuggestion_OR_insertFirstSuggestion );
+//		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
 		this.listenTo( targetBox, "keypress:up", this.previousTargetSuggestion );
 		this.listenTo( targetBox, "keypress:down", this.nextTargetSuggestion );
 		this.listenTo( targetBox, "keypress:esc", this.noTargetSuggestion_OR_cycleAssists );
@@ -173,12 +147,34 @@ PTM.prototype.setup = function() {
 	}.bind(this) );
 	this.documentView.addSegment( null );
 
+	// Create an options panel
+	this.optionPanel = new OptionPanelState();
+	this.listenTo( this.optionPanel, "change", this.setAssists )
+	
 	// Focus on the first segment
 	this.focusOnSegment( segmentIds[0] );
 };
 
 PTM.prototype.resizeDocument = function( segmentId ) {
 	this.documentView.resize();
+};
+
+PTM.prototype.setAssists = function() {
+	var enableMT = this.optionPanel.get("enableMT");
+	var enableBestTranslation = enableMT;
+	var enableSuggestions = enableMT && this.optionPanel.get("enableSuggestions");
+	var enableHover = enableMT && this.optionPanel.get("enableHover");
+	var segmentIds = this.get( "segmentIds" );
+	for ( var i = 0; i < segmentIds.length; i++ ) {
+		var id = segmentIds[i];
+		this.targetBoxes[id].set({
+			"enableSuggestions" : enableSuggestions,
+			"enableBestTranslation" : enableBestTranslation
+		});
+		this.sourceBoxes[id].set({
+			"enableHover" : enableHover
+		});
+	}
 };
 
 PTM.prototype.cycleAssists = function( segmentId ) {
@@ -206,9 +202,14 @@ PTM.prototype.cycleAssists = function( segmentId ) {
 			"enableBestTranslation" : enableBestTranslation
 		});
 		this.sourceBoxes[id].set({
-			"enableHover" : enableBestTranslation
+			"enableHover" : enableSuggestions
 		});
 	}
+	this.optionPanel.set({
+		"enableMT" : enableBestTranslation,
+		"enableHover" : enableSuggestions,
+		"enableSuggestions" : enableSuggestions
+	});
 };
 
 PTM.prototype.noTargetSuggestion_OR_cycleAssists = function( segmentId ) {
@@ -296,9 +297,11 @@ PTM.prototype.clickToInsertTargetSuggestion = function( segmentId, optionIndex )
 
 PTM.prototype.insertFirstSuggestion = function( segmentId ) {
 	var suggestions = this.targetBoxes[segmentId].get( "suggestions" );
-	var text = ( suggestions.length === 0 ) ? "" : suggestions[ 0 ];
-	this.targetBoxes[segmentId].replaceEditingToken( text );
-	this.targetBoxes[segmentId].focus();
+	if ( suggestions.length > 0 ) {
+		var text = suggestions[ 0 ];
+		this.targetBoxes[segmentId].replaceEditingToken( text );
+		this.targetBoxes[segmentId].focus();
+	}
 };
 PTM.prototype.insertSelectedTargetSuggestion = function( segmentId ) {
 	var optionIndex = this.targetSuggestions[segmentId].get( "optionIndex" );
@@ -338,11 +341,17 @@ PTM.prototype.focusOnSegment = function( focusSegment ) {
 };
 
 PTM.prototype.insertSelectedTargetSuggestion_OR_insertFirstSuggestion = function( segmentId ) {
-	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
-	if ( optionIndex === null )
-		this.insertFirstSuggestion( segmentId );
-	else
-		this.insertSelectedTargetSuggestion( segmentId );
+  var i = this.targetBoxes[segmentId].get("caretIndex");
+  var userText = this.targetBoxes[segmentId].get("userText");
+  if (i < userText.length) {
+    this.targetBoxes[segmentId].focus();
+  } else {
+  	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
+	  if ( optionIndex === null )
+		  this.insertFirstSuggestion( segmentId );
+	  else
+		  this.insertSelectedTargetSuggestion( segmentId );
+  }
 };
 
 PTM.prototype.insertSelectedTargetSuggestion_OR_focusOnNextSegment = function( segmentId ) {
@@ -415,6 +424,47 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 	}
 };
 
+PTM.prototype.recycleTranslations = function( segmentId ) {
+	var targetBox = this.targetBoxes[segmentId];
+	var prefix = targetBox.get( "prefix" );
+	if ( prefix !== null ) {
+		var editingPrefix = targetBox.get( "editingPrefix" );
+		var translationList = targetBox.get( "translationList" );
+		var s2tAlignments = targetBox.get( "s2tAlignments" );
+		var t2sAlignments = targetBox.get( "t2sAlignments" );
+    
+		var recycledTranslationList = [];
+		var recycleds2tAlignments = [];
+    var recycledt2sAlignments = [];
+
+		// Recycle any translation that is still valid (i.e., matches the current editingPrefix)
+		var editingPrefixHash = editingPrefix.replace( /[ ]+/g, "" );
+		for ( var i = 0; i < translationList.length; i++ ) {
+			var translation = translationList[i];
+			var translationHash = translation.join( "" );
+			var isValid = ( translationHash.substr( 0, editingPrefixHash.length ) === editingPrefixHash );
+			if ( isValid ) {
+				recycledTranslationList.push( translationList[i] );
+				recycleds2tAlignments.push( s2tAlignments[i] );
+        recycledt2sAlignments.push( t2sAlignments[i] );
+			}
+		}
+		// Retrain at least one translation, even if none is valid
+		if ( recycledTranslationList.length === 0 && translationList.length > 0 ) {
+			recycledTranslationList.push( translationList[0] );
+				recycleds2tAlignments.push( s2tAlignments[0] );
+        recycledt2sAlignments.push( t2sAlignments[0] );
+		}
+		targetBox.set({
+			"prefix" : editingPrefix,
+			"translationList" : recycledTranslationList,
+			"s2tAlignments" : recycleds2tAlignments,
+      "t2sAlignments" : recycledt2sAlignments
+		});
+		console.log( "Recycled Translations", recycledTranslationList.map( function(d) { return d.join(" ") } ) );
+	}
+};
+
 PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	/**
 	 * Convert machine translation from a string to a list of tokens.
@@ -431,78 +481,75 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 		return response;
 	}.bind(this);
 	/**
-	 * Convert alignment indexes ("alignList") from a string to a list of {sourceIndex:number, targetIndex:number} entries ("alignIndexList").
+	 * Build alignment grids from the raw alignments.
+   *
 	 * @private
 	 **/
 	var amendAlignIndexes = function( response ) {
-		var alignIndexList = [];
+    var s2tList = [];
+    var t2sList = [];
 		if ( response.hasOwnProperty( "result" ) ) {
 			for ( var n = 0; n < response.result.length; n++ ) {
-				var alignStrs = response.result[n].align;
-				var alignIndexes = alignStrs.map( function(d) { 
-					var st = d.split("-").map( function(d) { return parseInt(d) } );
-					return { "sourceIndex" : st[0], "targetIndex" : st[1] };
-				});
-				alignIndexList.push( alignIndexes );
+				var alignList = response.result[n].align;
+        var s2t = {};
+        var t2s = {};
+        for (var i = 0; i < alignList.length; ++i) {
+          var st = alignList[i].split("-");
+          var srcIndex = parseInt(st[0]);
+          var tgtIndex = parseInt(st[1]);
+          if ( s2t.hasOwnProperty( srcIndex )) {
+            s2t[srcIndex].push( tgtIndex );
+          } else {
+            s2t[srcIndex] = [ tgtIndex ];
+          }
+          if ( t2s.hasOwnProperty( tgtIndex )) {
+            t2s[tgtIndex].push(srcIndex);
+          } else {
+            t2s[tgtIndex] = [srcIndex];
+          }
+        }
+        s2tList.push(s2t);
+        t2sList.push(t2s);
 			}
 		}
-		response.alignIndexList = alignIndexList;
-		return response;
-	}.bind(this);
-	/**
-	 * Match each token in every machine translation to a chunk index in the source text.
-	 * TODO: Push post-processing onto server?
-	 * @private
-	 **/
-	var amendChunkIndexes = function( response ) {
-		var chunkIndexList = [];
-		var segments = this.get( "segments" );
-		var segment = segments[ segmentId ];
-		var segmentChunkIndexes = segment.chunkIndexes;
-		if ( response.hasOwnProperty( "alignIndexList" ) ) {
-			for ( var n = 0; n < response.alignIndexList.length; n++ ) {
-				var alignIndexes = response.alignIndexList[n];
-				var chunkIndexes = _.range( response.translationList[n].length ).map( function(d) { return null } );
-				for ( var i = alignIndexes.length - 1; i >= 0; i-- ) {
-					var alignIndex = alignIndexes[i];
-					var chunkIndex = segmentChunkIndexes[ alignIndex.sourceIndex ];
-					chunkIndexes[ alignIndex.targetIndex ] = chunkIndex;
-				}
-				chunkIndexList.push( chunkIndexes );
-			}
-		}
-		response.chunkIndexList = chunkIndexList;
+		response.s2t = s2tList;
+    response.t2s = t2sList;
 		return response;
 	}.bind(this);
 	var update = function( response ) {
 		if ( this.targetBoxes[segmentId].get("editingPrefix") === prefix ) {
 			var translationList = response.translationList;
-			var alignIndexList = response.alignIndexList;
-			var chunkIndexList = response.chunkIndexList;
+			var s2t = response.s2t;
+      var t2s = response.t2s;
 			this.targetBoxes[ segmentId ].set({
 				"prefix" : prefix,
 				"translationList" : translationList,
-				"alignIndexList" : alignIndexList, 
-				"chunkIndexList" : chunkIndexList
+				"s2tAlignments" : s2t,
+        "t2sAlignments" : t2s
 			});
+			console.log( "Best Translations", translationList.map( function(d) { return d.join(" ") } ) );
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( response, request ) {
 		response = amendTranslationTokens( response );
 		response = amendAlignIndexes( response );
-		response = amendChunkIndexes( response );
 		this.cache.translations[ segmentId ][ prefix ] = response;
 		update( response );
 	}.bind(this);
-	if ( this.cache.translations[ segmentId ].hasOwnProperty( prefix ) ) {
+
+  // Check the cache for translations
+  if ( this.cache.translations[ segmentId ].hasOwnProperty( prefix ) ) {
 		if ( this.cache.translations[ segmentId ][ prefix ] !== null ) {
 			update( this.cache.translations[ segmentId ][ prefix ] );  // Otherwise request has already been sent
 		}
-	}
-	else {
+	} else {
+    // Otherwise, request translations from the service
 		var segments = this.get( "segments" );
 		var source = segments[ segmentId ].tokens.join( " " );
 		this.cache.translations[ segmentId ][ prefix ] = null;
-		this.server.translate( source, prefix, cacheAndUpdate );
+		this.server.translate( source, prefix, cacheAndUpdate );  // Asynchronous request
+		
+		// Try to recover partial set of translations during the asynchronous request
+		this.recycleTranslations( segmentId );
 	}
 };

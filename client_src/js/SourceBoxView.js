@@ -2,10 +2,10 @@ var SourceBoxView = Backbone.View.extend({
 	el : ".SourceBoxView"
 });
 
+SourceBoxView.prototype.REGULAR_COLOR = "#000";
 SourceBoxView.prototype.UNMATCHED_COLOR = "#000";
 SourceBoxView.prototype.MATCHED_COLOR = "#4292C6";
-SourceBoxView.prototype.DIM_COLOR = "#aaa";
-SourceBoxView.prototype.MT_COLOR = "#4292C6";
+SourceBoxView.prototype.HOVER_COLOR = "#ff7f0e";
 
 SourceBoxView.prototype.ANIMATION_DURATION = 120;
 
@@ -30,7 +30,7 @@ SourceBoxView.prototype.render = function() {
 };
 
 SourceBoxView.prototype.__containerRenderOnce = function( elem ) {
-	elem.style( "padding", "10px 60px 5px 15px" )  // "5px 60px 2.5px 15px"
+	elem.style( "padding", "10px 60px 10px 15px" )  // "5px 60px 2.5px 15px"
 		.classed( "SourceLang", true )
 		.style( "pointer-events", "auto" )
 		.style( "cursor", "default" )
@@ -69,33 +69,20 @@ SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
 	var color = function( _, tokenIndex ) {
 		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
-		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		if ( hasFocus && isHovered ) 
-			return this.MT_COLOR;
-		else if ( hasFocus && isMatched ) 
-		 	return this.MATCHED_COLOR
-		else
-			return this.UNMATCHED_COLOR;
-	}.bind(this);
-	var borderBottom = function( _, tokenIndex ) {
-		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
-		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		return ( hasFocus && hasChunk ) ? "1px solid " + this.UNMATCHED_COLOR : "none";
-	}.bind(this);
-	var paddingBottom = function( _, tokenIndex ) {
-		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
-		var hasCaret = ( this.model.get( "caretTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		var hasChunk = ( this.model.get( "chunkTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
-		return ( hasFocus && hasChunk ) ? "1px" : "2px";
+		if ( hasFocus ) {
+			if ( isHovered ) 
+				return this.HOVER_COLOR;
+			else if ( isMatched ) 
+			 	return this.MATCHED_COLOR;
+			else
+				return this.UNMATCHED_COLOR;
+		}
+		else {
+			return this.REGULAR_COLOR;
+		}
 	}.bind(this);
 	elem.style( "color", color )
-		.style( "border-bottom", borderBottom )
-		.style( "padding-bottom", paddingBottom )
 };
 
 SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
