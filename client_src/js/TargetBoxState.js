@@ -64,7 +64,7 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.updateSuggestionList = this.__updateSuggestionList; //_.debounce( this.__updateSuggestionList, this.IMMEDIATELY );
 	this.updateBestTranslation = this.__updateBestTranslation; //_.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
 	this.updateSuggestions = this.__updateSuggestions; //_.debounce( this.__updateSuggestions, this.IMMEDIATELY );
-	this.updateMatchingTokens = this.__updateMatchingTokens; //_.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
+	this.updateMatchingTokens = _.debounce( this.__updateMatchingTokens, this.IMMEDIATELY );
 	this.on( "change:prefix change:translationList", this.updatePrefixTokensAndSuggestionList );
 	this.on( "change:userText change:prefixTokens", this.updateUserTokens );
 	this.on( "change:editingPrefix", this.updateTranslations );
@@ -266,35 +266,39 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 	var matchingTokens = {};
 	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
-    var t2sList = this.get( "t2sAlignments" );
-    var s2tList = this.get( "s2tAlignments" );
-    var t2s = t2sList[0];
-    var s2t = s2tList[0];
-    if (t2s && s2t) {
-      var maxIndex = userTokens[userTokens.length-1].trim().length === 0 ? userTokens.length-1 : userTokens.length;
-      var maxSourceIndex = -1;
-		  for ( var j = 0; j < maxIndex; ++j ) {
-        var srcIndexList = t2s[ j ];
-        if(srcIndexList) {
-          for (var i = 0; i < srcIndexList.length; ++i) {
-            var srcIndex = srcIndexList[i];
-            matchingTokens[ srcIndex ] = true;
-            if (srcIndex > maxSourceIndex ) {
-              maxSourceIndex = srcIndex;
-            }
-          }
-        }
-		  }
-      // Blank out unaligned source tokens
-      for (var i = 0; i < maxSourceIndex; ++i) {
-        if ( ! s2t.hasOwnProperty(i) ) {
-          matchingTokens[ i ] = true;
-        }
-      }
-	  }
-	  this.set( "matchingTokens", matchingTokens );
-	  this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
-  }
+		var s2tAlignments = this.get( "s2tAlignments" );
+		var t2sAlignments = this.get( "t2sAlignments" );
+		if ( s2tAlignments.length > 0 && t2sAlignments.length > 0 ) {
+		    var s2t = s2tAlignments[0];
+			var t2s = t2sAlignments[0];
+			console.log( "userTokens", userTokens )
+			console.log( "s2t", s2t );
+			console.log( "t2s", t2s );
+			if ( userTokens.length > 0 ) {
+				var maxIndex = userTokens.length-1;
+				var rightMostSrcIndex = -1;
+		        for ( var t = 0; t < maxIndex; t++ ) {
+					if ( t2s.hasOwnProperty(t) ) {
+						var srcIndexList = t2s[ t ];
+						for ( var s = 0; s < srcIndexList.length; s++ ) {
+							var srcIndex = srcIndexList[ s ];
+							matchingTokens[ srcIndex ] = true;
+							rightMostSrcIndex = Math.max( rightMostSrcIndex, srcIndex );
+						}
+					}
+		        }
+				// Blank out unaligned source tokens
+				for ( var s = 0; s < rightMostSrcIndex; s++ ) {
+					if ( ! s2t.hasOwnProperty(s) ) {
+						matchingTokens[ s ] = true;
+					}
+				}
+			}
+			console.log( "matchingTokens", matchingTokens );
+		}
+	}
+	this.set( "matchingTokens", matchingTokens );
+	this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
 };
 
 TargetBoxState.prototype.replaceEditingToken = function( text ) {
