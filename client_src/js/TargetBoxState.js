@@ -192,6 +192,7 @@ TargetBoxState.prototype.__updateBestTranslation = function() {
 	if ( this.get( "enableBestTranslation" ) === true ) {
 		var userTokens = this.get( "userTokens" );
 		var userToken = userTokens[ userTokens.length - 1 ];
+		// TODO: console.log( userTokens )
 
 		var translationList = this.get( "translationList" );
 		var translationIndex = 0;
