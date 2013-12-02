@@ -1,0 +1,14 @@
+{
+	"datasets" : [
+		{ "url" : "/static/en.1.txt.ser.gz.json", "label" : "Freeing Tymoshenko" },
+		{ "url" : "/static/en.2.txt.ser.gz.json", "label" : "Libya's Victory" },
+		{ "url" : "/static/en.3.txt.ser.gz.json", "label" : "Character Strengthening" },
+		{ "url" : "/static/en.4.txt.ser.gz.json", "label" : "Taxed Establishments" },
+		{ "url" : "/static/en.5.txt.ser.gz.json", "label" : "European Crisis" },
+		{ "url" : "/static/en.6.txt.ser.gz.json", "label" : "Bloody Ideology" },
+		{ "url" : "/static/en.7.txt.ser.gz.json", "label" : "Car Categories" },
+		{ "url" : "/static/en.2009.1.txt.ser.gz.json", "label" : "World Record" },
+		{ "url" : "/static/en.2009.2.txt.ser.gz.json", "label" : "Prague Stock Market" },
+		{ "url" : "/static/en.2009.3.txt.ser.gz.json", "label" : "Football" }
+	]
+}

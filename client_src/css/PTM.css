@@ -1,22 +1,22 @@
 @font-face {
 	font-family: NeutraTextLight;
-	src: url( "../font/NeutraText-Light.otf" ); 
+	src: url( "/static/NeutraText-Light.otf" ); 
 }
 @font-face {
 	font-family: NeutraTextBold;
-	src: url( "../font/NeutraText-Bold.otf" ); 
+	src: url( "/static/NeutraText-Bold.otf" ); 
 }
 @font-face {
 	font-family: HelveticaNeue;
-	src: url( "../font/helveticaneue-webfont.ttf" );
+	src: url( "/static/helveticaneue-webfont.ttf" );
 }
 @font-face {
 	font-family: HelveticaNeueBold;
-	src: url( "../font/helveticaneuebold-webfont.ttf" );
+	src: url( "/static/helveticaneuebold-webfont.ttf" );
 }
 @font-face {
 	font-family: EmbeddedGeorgia;
-	src: url( "../font/Georgia.ttf" );
+	src: url( "/static/Georgia.ttf" );
 }
 .UI {
 	font-family: EmbeddedGeorgia, Georgia, serif;
@@ -32,13 +32,11 @@
 .TargetLang {
 	font-family: Courier New, monospace;
 	font-size: 10pt;
-	font-weight: bold;
 	color: #bfbfbf;
 }
 .UserText {
 	font-family: Courier New, monospace;
 	font-size: 10pt;
-	font-weight: bold;
 	color: #000;
 }
 .OptionPanel {
