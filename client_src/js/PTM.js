@@ -244,7 +244,7 @@ PTM.prototype.setup = function() {
 
 	// Create an options panel
 	this.optionPanel = new OptionPanelState();
-	optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", optionPanel ), this );
+	this.optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", this.optionPanel ), this );
 	this.listenTo( this.optionPanel, "change", this.setAssists );
 	
 	// Focus on the first segment
