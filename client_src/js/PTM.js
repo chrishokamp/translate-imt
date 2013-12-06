@@ -4,7 +4,7 @@ var PTM = Backbone.Model.extend({
 	},
 	"defaults" : {
 		"isLogging" : true,
-		"postEditMode" : true,
+		"postEditMode" : false,
 		"activities" : []
 	}
 });
@@ -170,7 +170,7 @@ PTM.prototype.setup = function() {
 		var sourceBox = new SourceBoxState({
 			"el" : ".SourceBoxView" + segmentId
 		});
-		if ( !postEditMode ) {
+		if ( postEditMode ) {
 			sourceBox.set({
 				"enableHover" : false
 			});
@@ -191,7 +191,7 @@ PTM.prototype.setup = function() {
 		
 		// Create state and view objects for the typing UI
 		var targetBox = new TargetBoxState({ "segmentId" : segmentId });
-		if ( !postEditMode ) {
+		if ( postEditMode ) {
 			targetBox.set({
 				"enableSuggestions" : false,
 				"enableBestTranslation" : false
@@ -257,7 +257,7 @@ PTM.prototype.setup = function() {
 
 	// Create an options panel
 	this.optionPanel = new OptionPanelState();
-	if ( !postEditMode ) {
+	if ( postEditMode ) {
 		this.optionPanel.set({
 			"enableHover" : false,
 			"enableSuggestions" : false,
@@ -638,16 +638,24 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 		return response;
 	}.bind(this);
 	var update = function( response ) {
-		if ( this.targetBoxes[segmentId].get("editingPrefix") === prefix ) {
-			var translationList = response.translationList;
-			var s2t = response.s2t;
-			var t2s = response.t2s;
+		var postEditMode = this.get( "postEditMode" );
+		if ( postEditMode ) {
 			this.targetBoxes[ segmentId ].set({
-				"prefix" : prefix,
-				"translationList" : translationList,
-				"s2tAlignments" : s2t,
-				"t2sAlignments" : t2s
+				"userText" : response.translationList[0].join(" ")
 			});
+		}
+		else {
+			if ( this.targetBoxes[segmentId].get("editingPrefix") === prefix ) {
+				var translationList = response.translationList;
+				var s2t = response.s2t;
+				var t2s = response.t2s;
+				this.targetBoxes[ segmentId ].set({
+					"prefix" : prefix,
+					"translationList" : translationList,
+					"s2tAlignments" : s2t,
+					"t2sAlignments" : t2s
+				});
+			}
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( response, request ) {
