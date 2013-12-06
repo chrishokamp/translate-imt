@@ -163,6 +163,7 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 };
 
 TargetBoxState.prototype.updateUserTokens = function() {
+	var segmentId = this.get( "segmentId" );
 	var userText = this.get( "userText" );
 	var userTokens = userText.split( this.WHITESPACE );
 	var userTokensAndSeps = userText.split( this.WHITESPACE_SEPS );
@@ -199,6 +200,7 @@ TargetBoxState.prototype.updateUserTokens = function() {
 		"overlaySep" : overlaySep,
 		"overlayEditing" : overlayEditing
 	});
+	this.trigger( "updateOverlayEditing", segmentId, overlayEditing );
 };
 
 TargetBoxState.prototype.updateTranslations = function() {

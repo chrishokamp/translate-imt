@@ -229,6 +229,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( targetBox, "updateFocus", this.focusOnSegment );
 		this.listenTo( targetBox, "updateTranslations", this.loadTranslations );
 		this.listenTo( targetBox, "updateBoxDims", this.resizeDocument );
+		this.listenTo( targetBox, "updateOverlayEditing", this.updateOverlayEditing );
 		
 		this.listenTo( targetSuggestion, "mouseover", function(){} );
 		this.listenTo( targetSuggestion, "mouseout", function(){} );
@@ -357,14 +358,23 @@ PTM.prototype.__updateSourceSuggestions = function( segmentId, tokenIndex ) {
 
 PTM.prototype.__updateTargetSuggestions = function( segmentId ) {
 	var candidates = this.targetBoxes[segmentId].get("suggestions");
+	var overlayEditing = this.targetBoxes[segmentId].get("overlayEditing");
 	var yOffset = this.sourceBoxes[segmentId].get("boxHeight");
 	var xCoord = this.targetBoxes[segmentId].get("editXCoord");
 	var yCoord = this.targetBoxes[segmentId].get("editYCoord");
 	this.targetSuggestions[segmentId].set({
+		"overlayEditing" : overlayEditing,
 		"candidates" : candidates,
-		"optionIndex" : null,
+		"optionIndex" : 0,
 		"xCoord" : xCoord,
 		"yCoord" : yCoord + yOffset
+	});
+};
+
+PTM.prototype.updateOverlayEditing = function( segmentId ) {
+	var overlayEditing = this.targetBoxes[segmentId].get("overlayEditing");
+	this.targetSuggestions[segmentId].set({
+		"overlayEditing" : overlayEditing
 	});
 };
 
@@ -444,16 +454,13 @@ PTM.prototype.insertSelectedTargetSuggestion_OR_insertFirstSuggestion = function
 	} 
 	else {
 		var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
-		 if ( optionIndex === null )
-			this.insertFirstSuggestion( segmentId );
-		 else
-			this.insertSelectedTargetSuggestion( segmentId );
+		this.insertSelectedTargetSuggestion( segmentId );
 	}
 };
 
 PTM.prototype.insertSelectedTargetSuggestion_OR_focusOnNextSegment = function( segmentId ) {
 	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
-	if ( optionIndex === null )
+	if ( optionIndex === 0 )
 		this.focusOnNextSegment( segmentId );
 	else
 		this.insertSelectedTargetSuggestion( segmentId );

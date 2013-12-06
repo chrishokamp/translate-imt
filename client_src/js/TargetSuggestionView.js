@@ -2,8 +2,8 @@ var TargetSuggestionView = Backbone.View.extend({
 	el : "#TargetSuggestions"
 });
 
-TargetSuggestionView.prototype.X_OFFSET = 0;
-TargetSuggestionView.prototype.Y_OFFSET = 12 + 7;
+TargetSuggestionView.prototype.X_OFFSET = -2;
+TargetSuggestionView.prototype.Y_OFFSET = 12 + 7 - 21;
 TargetSuggestionView.prototype.CATCHER_PADDING = 4;
 TargetSuggestionView.prototype.MT_COLOR = "#4292C6";
 TargetSuggestionView.prototype.ACTIVE_COLOR = "#ff7f0e";
@@ -65,9 +65,6 @@ TargetSuggestionView.prototype.__catcherRenderAlways = function( elem ) {
 TargetSuggestionView.prototype.__overlayRenderOnce = function( elem ) {
 	elem.style( "position", "absolute" )
 		.style( "display", "inline-block" )
-		.style( "background", "#fff" )
-		.style( "border", "1px solid " + this.MT_COLOR )
-		.style( "box-shadow", "0 0 5px " + this.MT_COLOR )
 		.style( "padding", "2px 0 0 0" )
 };
 TargetSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
@@ -78,14 +75,10 @@ TargetSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 };
 
 TargetSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
-	var borderTop = function(_,i) {
-		return i===0 ? null : "1px dotted " + this.MT_COLOR
-	}.bind(this);
 	elem.style( "position", "static" )
 		.style( "display", "block" )
 		.style( "padding", "0 2px 2px 2px" )
-		.style( "border-top", borderTop )
-		.style( "white-space", "nowrap" )
+		.style( "white-space", "pre" )
 		.classed( "TargetLang", true )
 		.style( "color", this.MT_COLOR )
 		.style( "pointer-events", "auto" )
@@ -95,6 +88,8 @@ TargetSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
 		.on( "mouseup", this.__onMouseClickOption.bind(this) );
 };
 TargetSuggestionView.prototype.__tokenRenderAlways = function( elem ) {
+	var candidateCount = this.model.get( "candidates" ).length;
+	var overlayEditingLength = this.model.get( "overlayEditing" ).length;
 	var optionIndex = this.model.get( "optionIndex" );
 	var color = function(d,i) {
 		if ( optionIndex === i )
@@ -102,8 +97,25 @@ TargetSuggestionView.prototype.__tokenRenderAlways = function( elem ) {
 		else
 			return this.MT_COLOR;
 	}.bind(this);
-	elem.text( function(d) { return d } )
-		.style( "color", color );
+	var getText = function(d,i) {
+		if ( i === 0 ) {
+			spaces = "";
+			for ( var j = 0; j < overlayEditingLength; j++ ) {
+				spaces += " ";
+			}
+			return spaces + d.slice( overlayEditingLength );
+		}
+		else {
+			return d;
+		}
+	}.bind(this)
+	elem.text( getText )
+		.style( "color", color )
+		.style( "background", function(__,i) { return (i===0) ? "none" : "#fff" }.bind(this) )
+		.style( "border-bottom", function() { return (candidateCount<=1) ? "none" : "1px solid " + this.MT_COLOR }.bind(this) )
+		.style( "border-left", function(__,i) { return (i===0) ? "none" : "1px solid " + this.MT_COLOR }.bind(this) )
+		.style( "border-right", function(__,i) { return (i===0) ? "none" : "1px solid " + this.MT_COLOR }.bind(this) )
+//		.style( "border-top", function(__,i) { return (i===0) ? "1px solid " + this.MT_COLOR : "none" }.bind(this) )
 };
 
 TargetSuggestionView.prototype.__onMouseOver = function() {
