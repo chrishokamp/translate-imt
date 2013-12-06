@@ -32,6 +32,7 @@ TargetBoxState.prototype.reset = function() {
 		"suggestionList" : [],
 		"bestTranslation" : [],       // @value {string[]} A list of tokens in the best translation.
 		"suggestions" : [],           // @value {string[]} A list of suggestions matching the current user's input
+		"firstSuggestion" : "",
 		"matchingTokens" : {},
 		
 		// States based on graphics rendering results
@@ -209,60 +210,66 @@ TargetBoxState.prototype.updateTranslations = function() {
 
 TargetBoxState.prototype.__updateBestTranslation = function() {
 	var bestTranslation = [];
-//	if ( this.get( "enableBestTranslation" ) === true ) {
-		var userTokens = this.get( "userTokens" );
-		var userToken = userTokens[ userTokens.length - 1 ];
-		var translationList = this.get( "translationList" );
-		var translationIndex = 0;
+	var userTokens = this.get( "userTokens" );
+	var userToken = userTokens[ userTokens.length - 1 ];
+	var translationList = this.get( "translationList" );
+	var translationIndex = 0;
 
 	if ( translationList.length > translationIndex ) {
-			var mtTokens = translationList[translationIndex];
-			if ( mtTokens.length >= userTokens.length ) {
-				var mtToken = mtTokens[ userTokens.length - 1 ];
-				if ( mtToken.substr( 0, userToken.length ) === userToken ) {
-					bestTranslation.push( mtToken.substr( userToken.length ) );
-				}
-				else {
-					bestTranslation.push( "" )
-				}
-				for ( var n = userTokens.length; n < mtTokens.length; n++ ) {
-					var mtToken = mtTokens[n];
-					bestTranslation.push( mtToken );
-				}
+		var mtTokens = translationList[translationIndex];
+		if ( mtTokens.length >= userTokens.length ) {
+			var mtToken = mtTokens[ userTokens.length - 1 ];
+			if ( mtToken.substr( 0, userToken.length ) === userToken ) {
+				bestTranslation.push( mtToken.substr( userToken.length ) );
+			}
+			else {
+				bestTranslation.push( "" )
+			}
+			for ( var n = userTokens.length; n < mtTokens.length; n++ ) {
+				var mtToken = mtTokens[n];
+				bestTranslation.push( mtToken );
 			}
 		}
-//	}
+	}
 	this.set( "bestTranslation", bestTranslation );
 };
 
 TargetBoxState.prototype.__updateSuggestions = function() {
 	var suggestions = [];
-	if ( this.get( "enableSuggestions" ) === true ) {
-		var prefix = this.get( "prefix" );
-		var caretIndex = this.get( "caretIndex" );
-		var bestTranslation = this.get( "bestTranslation" );
+	var firstSuggestion = "";
+	var prefix = this.get( "prefix" );
+	var caretIndex = this.get( "caretIndex" );
+	var bestTranslation = this.get( "bestTranslation" );
 
-		// Only show suggestions if caret is in the first word following the prefix
-		// Lowerbound: Must be longer than prefix
-		if ( caretIndex > prefix.length || prefix.length === 0 ) {
+	// Only show suggestions if caret is in the first word following the prefix
+	// Lowerbound: Must be longer than prefix
+	if ( caretIndex > prefix.length || prefix.length === 0 ) {
 
-			// Only show suggestions if we've not yet reached the end of the best translation
-			if ( bestTranslation.length > 0 ) {
+		// Only show suggestions if we've not yet reached the end of the best translation
+		if ( bestTranslation.length > 0 ) {
 
-				// Upperbound: Matching all characters following the prefix
-				var userText = this.get( "userText" );
-				var editingText = userText.substr( prefix.length ).trimLeft();
-				var suggestionList = this.get( "suggestionList" );
-				for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
-					var suggestion = suggestionList[suggestionIndex];
-					if ( suggestion.substr( 0, editingText.length ) === editingText && suggestion.length > editingText.length ) {
-						suggestions.push( suggestion );
-					}
+			// Upperbound: Matching all characters following the prefix
+			var userText = this.get( "userText" );
+			var editingText = userText.substr( prefix.length ).trimLeft();
+			var suggestionList = this.get( "suggestionList" );
+			for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
+				var suggestion = suggestionList[suggestionIndex];
+				if ( suggestion.substr( 0, editingText.length ) === editingText && suggestion.length > editingText.length ) {
+					suggestions.push( suggestion );
 				}
 			}
 		}
 	}
-	this.set( "suggestions", suggestions );
+	if ( suggestions.length > 0 ) {
+		firstSuggestion = suggestions[ 0 ];
+	}
+	if ( this.get( "enableSuggestions" ) !== true ) {
+		suggestions = [];
+	}
+	this.set({
+		"suggestions" : suggestions,
+		"firstSuggestion" : firstSuggestion
+	});
 	this.trigger( "updateSuggestions", this.get( "segmentId" ), suggestions );
 };
 

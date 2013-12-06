@@ -392,10 +392,9 @@ PTM.prototype.clickToInsertTargetSuggestion = function( segmentId, optionIndex )
 };
 
 PTM.prototype.insertFirstSuggestion = function( segmentId ) {
-	var suggestions = this.targetBoxes[segmentId].get( "suggestions" );
-	if ( suggestions.length > 0 ) {
-		var text = suggestions[ 0 ];
-		this.targetBoxes[segmentId].replaceEditingToken( text );
+	var firstSuggestion = this.targetBoxes[segmentId].get( "firstSuggestion" );
+	if ( firstSuggestion.length > 0 ) {
+		this.targetBoxes[segmentId].replaceEditingToken( firstSuggestion );
 		this.targetBoxes[segmentId].focus();
 	}
 };
