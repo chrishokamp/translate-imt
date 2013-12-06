@@ -2,7 +2,8 @@ var OptionPanelState = Backbone.Model.extend({
 	defaults : {
 		"enableHover" : true,
 		"enableSuggestions" : true,
-		"enableMT" : true
+		"enableMT" : true,
+		"visible" : true
 	}
 });
 

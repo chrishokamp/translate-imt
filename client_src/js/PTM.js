@@ -4,9 +4,45 @@ var PTM = Backbone.Model.extend({
 	},
 	"defaults" : {
 		"isLogging" : true,
+		"postEditMode" : true,
 		"activities" : []
 	}
 });
+
+PTM.prototype.reset = function() {
+	d3.select( "#PTM" ).selectAll( "*" ).remove();
+	
+	this.set({
+		"url" : null,
+		"docId" : null,
+		"segmentIds" : [],
+		"segments" : {},
+		"focusSegment" : null
+	});
+
+	// Define or create a stub for all models and views.
+	/** @param {TranslateServer} **/
+	this.server = new TranslateServer();
+	
+	/** @param {DocumentView} **/
+	this.optionPanel = null;
+	this.documentView = null;
+	this.sourceBoxes = {};
+	this.sourceSuggestions = {};
+	this.targetBoxes = {};
+	this.targetSuggestions = {};
+	
+	// Define cache for a cache for storing rqReq and tReq results
+	this.cache = {};
+	/** @param {{string:Object}} Cache for storing rqReq results, indexed by word. **/
+	this.cache.wordQueries = { ":" : { "rules" : [] } };
+	/** @param {{segmentId:{string:Object}}} Cache for storing tReq results, indexed by segmentId and then by prefix. **/
+	this.cache.translations = {};
+
+	// Define debounced methods
+	this.updateSourceSuggestions = _.debounce( this.__updateSourceSuggestions, 10 );
+	this.updateTargetSuggestions = this.__updateTargetSuggestions; //_.debounce( this.__updateTargetSuggestions, 10 );
+};
 
 PTM.prototype.initialize = function() {
 	this.listenTo( this, "change", this.makeActivityLogger( "ptm", "", this ) );
@@ -113,45 +149,11 @@ PTM.prototype.logActivities = function( elemId, subElemId, elem ) {
 	this.get("activities").push(activity);
 };
 
-PTM.prototype.reset = function() {
-	d3.select( "#PTM" ).selectAll( "*" ).remove();
-	
-	this.set({
-		"url" : null,
-		"docId" : null,
-		"segmentIds" : [],
-		"segments" : {},
-		"focusSegment" : null
-	});
-
-	// Define or create a stub for all models and views.
-	/** @param {TranslateServer} **/
-	this.server = new TranslateServer();
-	
-	/** @param {DocumentView} **/
-	this.optionPanel = null;
-	this.documentView = null;
-	this.sourceBoxes = {};
-	this.sourceSuggestions = {};
-	this.targetBoxes = {};
-	this.targetSuggestions = {};
-	
-	// Define cache for a cache for storing rqReq and tReq results
-	this.cache = {};
-	/** @param {{string:Object}} Cache for storing rqReq results, indexed by word. **/
-	this.cache.wordQueries = { ":" : { "rules" : [] } };
-	/** @param {{segmentId:{string:Object}}} Cache for storing tReq results, indexed by segmentId and then by prefix. **/
-	this.cache.translations = {};
-
-	// Define debounced methods
-	this.updateSourceSuggestions = _.debounce( this.__updateSourceSuggestions, 10 );
-	this.updateTargetSuggestions = this.__updateTargetSuggestions; //_.debounce( this.__updateTargetSuggestions, 10 );
-};
-
 /**
  * Controller for the Predictive Translate Memory
  **/
 PTM.prototype.setup = function() {
+	var postEditMode = this.get( "postEditMode" );
 	var segments = this.get( "segments" );
 	var segmentIds = this.get( "segmentIds" );
 	
@@ -168,6 +170,11 @@ PTM.prototype.setup = function() {
 		var sourceBox = new SourceBoxState({
 			"el" : ".SourceBoxView" + segmentId
 		});
+		if ( !postEditMode ) {
+			sourceBox.set({
+				"enableHover" : false
+			});
+		}
 		sourceBox.on( "change", this.makeActivityLogger( "sourceBoxes", segmentId, sourceBox ), this );
 		sourceBox.set({
 			"segmentId" : segmentId,
@@ -184,6 +191,12 @@ PTM.prototype.setup = function() {
 		
 		// Create state and view objects for the typing UI
 		var targetBox = new TargetBoxState({ "segmentId" : segmentId });
+		if ( !postEditMode ) {
+			targetBox.set({
+				"enableSuggestions" : false,
+				"enableBestTranslation" : false
+			});
+		}
 		targetBox.on( "change", this.makeActivityLogger( "targetBoxes", segmentId, targetBox ), this );
 		targetBox.set({
 			"segmentId" : segmentId,
@@ -244,9 +257,17 @@ PTM.prototype.setup = function() {
 
 	// Create an options panel
 	this.optionPanel = new OptionPanelState();
+	if ( !postEditMode ) {
+		this.optionPanel.set({
+			"enableHover" : false,
+			"enableSuggestions" : false,
+			"enableMT" : false,
+			"visible" : false
+		});
+	}
 	this.optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", this.optionPanel ), this );
 	this.listenTo( this.optionPanel, "change", this.setAssists );
-	
+
 	// Focus on the first segment
 	this.focusOnSegment( segmentIds[0] );
 };
@@ -256,10 +277,11 @@ PTM.prototype.resizeDocument = function( segmentId ) {
 };
 
 PTM.prototype.setAssists = function() {
+	var enableAll = this.optionPanel.get("visible");
 	var enableMT = this.optionPanel.get("enableMT");
-	var enableBestTranslation = enableMT;
-	var enableSuggestions = enableMT && this.optionPanel.get("enableSuggestions");
-	var enableHover = enableMT && this.optionPanel.get("enableHover");
+	var enableBestTranslation = enableAll && enableMT;
+	var enableSuggestions = enableAll && enableMT && this.optionPanel.get("enableSuggestions");
+	var enableHover = enableAll && enableMT && this.optionPanel.get("enableHover");
 	var segmentIds = this.get( "segmentIds" );
 	for ( var i = 0; i < segmentIds.length; i++ ) {
 		var id = segmentIds[i];
@@ -274,21 +296,28 @@ PTM.prototype.setAssists = function() {
 };
 
 PTM.prototype.cycleAssists = function( segmentId ) {
+	var enableAll = this.optionPanel.get("visible");
 	var enableSuggestions = this.targetBoxes[segmentId].get("enableSuggestions");
 	var enableBestTranslation = this.targetBoxes[segmentId].get("enableBestTranslation");
-	if ( enableSuggestions ) {
-		enableSuggestions = false;
-		enableBestTranslation = true;
-	}
-	else {
-		if ( enableBestTranslation ) {
+	if ( enableAll ) {
+		if ( enableSuggestions ) {
 			enableSuggestions = false;
-			enableBestTranslation = false;
-		}
-		else {
-			enableSuggestions = true;
 			enableBestTranslation = true;
 		}
+		else {
+			if ( enableBestTranslation ) {
+				enableSuggestions = false;
+				enableBestTranslation = false;
+			}
+			else {
+				enableSuggestions = true;
+				enableBestTranslation = true;
+			}
+		}
+	}
+	else {
+		enableSuggestions = false;
+		enableBestTranslation = false;
 	}
 	var segmentIds = this.get( "segmentIds" );
 	for ( var i = 0; i < segmentIds.length; i++ ) {

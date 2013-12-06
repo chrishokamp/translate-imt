@@ -7,7 +7,7 @@ TargetBoxState.prototype.reset = function() {
 		"chunkVector" : [],
 		
 		// States based on machine translations
-		"prefix" : null,        // @value {string} Prefix used to generate the translations.
+		"prefix" : "",        // @value {string} Prefix used to generate the translations.
 		"translationList" : [], // @value {string[][]} A list of translations. For each translation: a list of tokens represented as a string.
 		"s2tAlignments" : [],
     	"t2sAlignments" : [],

@@ -6,14 +6,22 @@ OptionPanelView.prototype.initialize = function( options ) {
 	this.views = {};
 	this.views.container = d3.select( this.el )
 		.style( "display", "inline-block" )
+		.style( "visibility", "visible" )
 		.style( "padding", 0 );
 	this.views.bestTranslation = this.views.container.append( "div" ).attr( "class", "EnableBestTranslations" ).call( this.__bestTranslationsRenderOnce.bind(this) );
 	this.views.suggestions = this.views.container.append( "div" ).attr( "class", "EnableSuggestions" ).call( this.__suggestionsRenderOnce.bind(this) );
 	this.views.hover = this.views.container.append( "div" ).attr( "class", "EnableHover" ).call( this.__hoverRenderOnce.bind(this) );
 	
+	this.listenTo( this.model, "change:visible", this.changeVisibility );
 	this.listenTo( this.model, "change:enableMT", this.renderBestTranslation );
 	this.listenTo( this.model, "change:enableSuggestions", this.renderSuggestions );
 	this.listenTo( this.model, "change:enableHover", this.renderHover );
+};
+
+OptionPanelView.prototype.changeVisibility = function() {
+	var visible = this.model.get( "visible" );
+	this.views.container
+		.style( "visibility", visible ? "visible" : "hidden" );
 };
 
 OptionPanelView.prototype.renderBestTranslation = function() {

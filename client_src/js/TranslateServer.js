@@ -14,7 +14,7 @@ TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
 
 TranslateServer.prototype.CONSOLE_LOG = true;
 TranslateServer.prototype.TIMEOUT = 30000;  // milliseconds
-//TranslateServer.prototype.TIMEOUT = 200;  // milliseconds
+//TranslateServer.prototype.TIMEOUT = 2000;  // milliseconds
 
 /**
  * Make a word query.
