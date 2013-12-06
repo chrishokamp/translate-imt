@@ -1,13 +1,105 @@
 var PTM = Backbone.Model.extend({
 	"url" : function() {
 		return this.get( "url" );
+	},
+	"defaults" : {
+		"isLogging" : true,
+		"activities" : []
 	}
 });
+
+PTM.prototype.initialize = function() {
+	this.listenTo( this, "change", this.makeActivityLogger( "ptm", "", this ) );
+	var referenceTime = new Date().getTime();
+	this.set( "referenceTime", referenceTime );
+};
 
 PTM.prototype.load = function( url ) {
 	this.reset();
 	this.set( "url", url );
-	this.fetch({ success : this.loaded.bind(this) });
+	this.fetch({
+		success : this.loaded.bind(this),
+		error: this.loadError.bind(this)
+	});
+};
+
+PTM.prototype.loadError = function( model, response, options ) {
+	console.log( "[PTM.load] fail", this, model, response, options );
+};
+
+/**
+ * Post-process segments received from the MT server.
+ * @private
+ **/
+PTM.prototype.loaded = function( model, response, options ) {
+	console.log( "[PTM.load] success", this, model, response, options );
+	var segments = this.get( "segments" );
+	var segmentIds = _.keys( segments ).sort( function(a,b) { return parseInt(a) - parseInt(b) } );
+	this.set( "segmentIds", segmentIds );
+	this.setup();
+};
+
+PTM.prototype.timestamp = function() {
+	return ( new Date().getTime() - this.get("referenceTime") ) / 1000;
+};
+
+PTM.prototype.playback = function() {
+	var reset = function() {
+		this.set( "isLogging", false );
+		for ( var key in this.sourceBoxes )
+			this.sourceBoxes[key].reset();
+		for ( var key in this.sourceBoxSuggestions )
+			this.sourceBoxSuggestions[key].reset();
+		for ( var key in this.targetBoxes )
+			this.targetBoxes[key].reset();
+		for ( var key in this.targetBoxSuggestions )
+			this.targetBoxSuggestions[key].reset();
+	}.bind(this);
+	var restore = function() {
+		this.set( "isLogging", true );
+	}.bind(this);
+	var replay = function( element, subElement, keyValues ) {
+		return function() {
+			if ( element === "ptm" )
+				this.set( keyValues );
+			else
+				this[ element ][ subElement ].set( keyValues );
+		}.bind(this);
+	}.bind(this);
+	
+	var maxTime = 0;
+	var delay = 1;
+	var activities = this.get( "activities" );
+	setTimeout( reset, delay * 1000 );
+	activities.forEach( function( activity ) {
+		var time = activity.time;
+		var element = activity.element;
+		var subElement = activity.subElement;
+		var keyValues = activity.keyValues;
+		maxTime = Math.max( maxTime, time );
+		setTimeout( replay( element, subElement, keyValues ), (time+delay) * 1000 );
+	});
+	setTimeout( restore, (maxTime+delay) * 1000 );
+};
+
+PTM.prototype.makeActivityLogger = function( elemId, subElemId, elem ) {
+	return function() {
+		if ( this.get("isLogging") === true ) {
+			this.logActivities( elemId, subElemId, elem );
+		}
+	}.bind(this);
+};
+PTM.prototype.logActivities = function( elemId, subElemId, elem ) {
+	var activity = {
+		"time" : this.timestamp(),
+		"element" : elemId,
+		"subElement" : subElemId,
+		"keyValues" : {}
+	};
+	for ( var attribute in elem.changed ) {
+		activity.keyValues[ attribute ] = elem.get( attribute );
+	}
+	this.get("activities").push(activity);
 };
 
 PTM.prototype.reset = function() {
@@ -46,18 +138,6 @@ PTM.prototype.reset = function() {
 };
 
 /**
- * Post-process segments received from the MT server.
- * TODO: Push post-processing onto server?
- * @private
- **/
-PTM.prototype.loaded = function() {
-	var segments = this.get( "segments" );
-	var segmentIds = _.keys( segments ).sort( function(a,b) { return parseInt(a) - parseInt(b) } );
-	this.set( "segmentIds", segmentIds );
-	this.setup();
-};
-
-/**
  * Controller for the Predictive Translate Memory
  **/
 PTM.prototype.setup = function() {
@@ -72,11 +152,12 @@ PTM.prototype.setup = function() {
 		
 		// Generate HTML DOM elements
 		this.documentView.addSegment( segmentId );
-		
+
 		// Create a SourceBox (matching pair of state and view) for each segment
 		var sourceBox = new SourceBoxState({
 			"el" : ".SourceBoxView" + segmentId
 		});
+		sourceBox.on( "change", this.makeActivityLogger( "sourceBoxes", segmentId, sourceBox ), this );
 		sourceBox.set({
 			"segmentId" : segmentId,
 			"tokens" : segments[ segmentId ].tokens
@@ -84,6 +165,7 @@ PTM.prototype.setup = function() {
 		this.sourceBoxes[segmentId] = sourceBox;
 		
 		var sourceSuggestion = new SourceSuggestionState({ "el" : ".SourceSuggestionView" + segmentId });
+		sourceSuggestion.on( "change", this.makeActivityLogger( "sourceSuggestions", segmentId, sourceSuggestion ), this );
 		sourceSuggestion.set({
 			"segmentId" : segmentId
 		});
@@ -91,6 +173,7 @@ PTM.prototype.setup = function() {
 		
 		// Create state and view objects for the typing UI
 		var targetBox = new TargetBoxState({ "segmentId" : segmentId });
+		targetBox.on( "change", this.makeActivityLogger( "targetBoxes", segmentId, targetBox ), this );
 		targetBox.set({
 			"segmentId" : segmentId,
 			"chunkVector" : segments[segmentId].chunkVector,
@@ -99,6 +182,7 @@ PTM.prototype.setup = function() {
 		this.targetBoxes[segmentId] = targetBox;
 		
 		var targetSuggestion = new TargetSuggestionState({ "el" : ".TargetSuggestionView" + segmentId });
+		targetSuggestion.on( "change", this.makeActivityLogger( "targetSuggestions", segmentId, targetSuggestion ), this );
 		targetSuggestion.set({
 			"segmentId" : segmentId
 		});
@@ -247,8 +331,8 @@ PTM.prototype.__updateSourceSuggestions = function( segmentId, tokenIndex ) {
 			"source" : source,
 			"tokenIndex" : tokenIndex,
 			"leftContext" : leftContext,
-			"targets" : [],   // To be filled in asynchronously by loadWordQueries.
-			"scores" : [],    // To be filled in asynchronously by loadWordQueries.
+			"targets" : [],	  // To be filled in asynchronously by loadWordQueries.
+			"scores" : [],	  // To be filled in asynchronously by loadWordQueries.
 			"optionIndex" : null,
 			"xCoord" : xCoord,
 			"yCoord" : yCoord
@@ -341,17 +425,18 @@ PTM.prototype.focusOnSegment = function( focusSegment ) {
 };
 
 PTM.prototype.insertSelectedTargetSuggestion_OR_insertFirstSuggestion = function( segmentId ) {
-  var i = this.targetBoxes[segmentId].get("caretIndex");
-  var userText = this.targetBoxes[segmentId].get("userText");
-  if (i < userText.length) {
-    this.targetBoxes[segmentId].focus();
-  } else {
-  	var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
-	  if ( optionIndex === null )
-		  this.insertFirstSuggestion( segmentId );
-	  else
-		  this.insertSelectedTargetSuggestion( segmentId );
-  }
+	var i = this.targetBoxes[segmentId].get("caretIndex");
+	var userText = this.targetBoxes[segmentId].get("userText");
+	if (i < userText.length) {
+		this.targetBoxes[segmentId].focus();
+	} 
+	else {
+		var optionIndex = this.targetSuggestions[segmentId].get("optionIndex");
+		 if ( optionIndex === null )
+			this.insertFirstSuggestion( segmentId );
+		 else
+			this.insertSelectedTargetSuggestion( segmentId );
+	}
 };
 
 PTM.prototype.insertSelectedTargetSuggestion_OR_focusOnNextSegment = function( segmentId ) {
@@ -432,10 +517,10 @@ PTM.prototype.recycleTranslations = function( segmentId ) {
 		var translationList = targetBox.get( "translationList" );
 		var s2tAlignments = targetBox.get( "s2tAlignments" );
 		var t2sAlignments = targetBox.get( "t2sAlignments" );
-    
+	
 		var recycledTranslationList = [];
 		var recycleds2tAlignments = [];
-    var recycledt2sAlignments = [];
+		var recycledt2sAlignments = [];
 
 		// Recycle any translation that is still valid (i.e., matches the current editingPrefix)
 		var editingPrefixHash = editingPrefix.replace( /[ ]+/g, "" );
@@ -446,22 +531,21 @@ PTM.prototype.recycleTranslations = function( segmentId ) {
 			if ( isValid ) {
 				recycledTranslationList.push( translationList[i] );
 				recycleds2tAlignments.push( s2tAlignments[i] );
-        recycledt2sAlignments.push( t2sAlignments[i] );
+				recycledt2sAlignments.push( t2sAlignments[i] );
 			}
 		}
 		// Retrain at least one translation, even if none is valid
 		if ( recycledTranslationList.length === 0 && translationList.length > 0 ) {
 			recycledTranslationList.push( translationList[0] );
-				recycleds2tAlignments.push( s2tAlignments[0] );
-        recycledt2sAlignments.push( t2sAlignments[0] );
+			recycleds2tAlignments.push( s2tAlignments[0] );
+			recycledt2sAlignments.push( t2sAlignments[0] );
 		}
 		targetBox.set({
 			"prefix" : editingPrefix,
 			"translationList" : recycledTranslationList,
 			"s2tAlignments" : recycleds2tAlignments,
-      "t2sAlignments" : recycledt2sAlignments
+	  		"t2sAlignments" : recycledt2sAlignments
 		});
-		console.log( "Recycled Translations", recycledTranslationList.map( function(d) { return d.join(" ") } ) );
 	}
 };
 
@@ -482,52 +566,48 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	}.bind(this);
 	/**
 	 * Build alignment grids from the raw alignments.
-   *
 	 * @private
 	 **/
 	var amendAlignIndexes = function( response ) {
-    var s2tList = [];
-    var t2sList = [];
+		var s2tList = [];
+		var t2sList = [];
 		if ( response.hasOwnProperty( "result" ) ) {
 			for ( var n = 0; n < response.result.length; n++ ) {
 				var alignList = response.result[n].align;
-        var s2t = {};
-        var t2s = {};
-        for (var i = 0; i < alignList.length; ++i) {
-          var st = alignList[i].split("-");
-          var srcIndex = parseInt(st[0]);
-          var tgtIndex = parseInt(st[1]);
-          if ( s2t.hasOwnProperty( srcIndex )) {
-            s2t[srcIndex].push( tgtIndex );
-          } else {
-            s2t[srcIndex] = [ tgtIndex ];
-          }
-          if ( t2s.hasOwnProperty( tgtIndex )) {
-            t2s[tgtIndex].push(srcIndex);
-          } else {
-            t2s[tgtIndex] = [srcIndex];
-          }
-        }
-        s2tList.push(s2t);
-        t2sList.push(t2s);
+					var s2t = {};
+					var t2s = {};
+					for (var i = 0; i < alignList.length; ++i) {
+						var st = alignList[i].split("-");
+						var srcIndex = parseInt(st[0]);
+						var tgtIndex = parseInt(st[1]);
+						if ( s2t.hasOwnProperty( srcIndex ))
+							s2t[srcIndex].push( tgtIndex );
+						else
+							s2t[srcIndex] = [ tgtIndex ];
+						if ( t2s.hasOwnProperty( tgtIndex ))
+							t2s[tgtIndex].push(srcIndex);
+						else
+							t2s[tgtIndex] = [srcIndex];
+					}
+					s2tList.push(s2t);
+					t2sList.push(t2s);
 			}
 		}
 		response.s2t = s2tList;
-    response.t2s = t2sList;
+		response.t2s = t2sList;
 		return response;
 	}.bind(this);
 	var update = function( response ) {
 		if ( this.targetBoxes[segmentId].get("editingPrefix") === prefix ) {
 			var translationList = response.translationList;
 			var s2t = response.s2t;
-      var t2s = response.t2s;
+			var t2s = response.t2s;
 			this.targetBoxes[ segmentId ].set({
 				"prefix" : prefix,
 				"translationList" : translationList,
 				"s2tAlignments" : s2t,
-        "t2sAlignments" : t2s
+				"t2sAlignments" : t2s
 			});
-			console.log( "Best Translations", translationList.map( function(d) { return d.join(" ") } ) );
 		}
 	}.bind(this);
 	var cacheAndUpdate = function( response, request ) {
@@ -543,7 +623,7 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 			update( this.cache.translations[ segmentId ][ prefix ] );  // Otherwise request has already been sent
 		}
 	} else {
-    // Otherwise, request translations from the service
+	// Otherwise, request translations from the service
 		var segments = this.get( "segments" );
 		var source = segments[ segmentId ].tokens.join( " " );
 		this.cache.translations[ segmentId ][ prefix ] = null;

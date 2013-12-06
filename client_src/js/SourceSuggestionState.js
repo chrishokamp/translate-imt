@@ -1,5 +1,7 @@
-var SourceSuggestionState = Backbone.Model.extend({
-	defaults : {
+var SourceSuggestionState = Backbone.Model.extend();
+
+SourceSuggestionState.prototype.reset = function() {
+	this.set({
 		"segmentId" : null,
 		"tokenIndex" : null,
 		"source" : "",
@@ -10,10 +12,11 @@ var SourceSuggestionState = Backbone.Model.extend({
 		"yCoord" : 0,
 		"optionIndex" : null,
 		"hasFocus" : false
-	}
-});
+	}, { silent : true } );
+};
 
 SourceSuggestionState.prototype.initialize = function( options ) {
+	this.reset();
 	this.view = new SourceSuggestionView({ "model" : this, "el" : options.el });
 };
 

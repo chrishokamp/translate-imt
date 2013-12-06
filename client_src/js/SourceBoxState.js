@@ -1,5 +1,7 @@
-var SourceBoxState = Backbone.Model.extend({
-	defaults : {
+var SourceBoxState = Backbone.Model.extend();
+
+SourceBoxState.prototype.reset = function() {
+	this.set({
 		/** @type {string} A string identify the source text segment. Value is set by PTM on initialization. */
 		"segmentId" : null,
 		
@@ -21,10 +23,11 @@ var SourceBoxState = Backbone.Model.extend({
 		"hoverYCoord" : 0,
 		"boxHeight" : 0,
 		"boxWidth" : 0
-	}
-});
+	}, { silent : true } );
+};
 
 SourceBoxState.prototype.initialize = function( options ) {
+	this.reset();
 	this.view = new SourceBoxView({ "model" : this, "el" : options.el });
 	this.on( "change:boxHeight change:boxWidth", this.updateBoxDims );
 };

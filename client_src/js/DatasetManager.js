@@ -3,7 +3,7 @@ var DatasetManager = Backbone.Model.extend({
 		"datasetURL" : null,
 		"datasets" : []
 	},
-	url : "/static/index_live.json"
+	url : "/static/data/index.json"
 });
 
 DatasetManager.prototype.initialize = function() {

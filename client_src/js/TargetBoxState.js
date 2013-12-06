@@ -1,5 +1,7 @@
-var TargetBoxState = Backbone.Model.extend({
-	defaults : {
+var TargetBoxState = Backbone.Model.extend();
+
+TargetBoxState.prototype.reset = function() {
+	this.set({
 		// Initialized once by PTM
 		"segmentId" : null,
 		"chunkVector" : [],
@@ -8,7 +10,7 @@ var TargetBoxState = Backbone.Model.extend({
 		"prefix" : null,        // @value {string} Prefix used to generate the translations.
 		"translationList" : [], // @value {string[][]} A list of translations. For each translation: a list of tokens represented as a string.
 		"s2tAlignments" : [],
-    "t2sAlignments" : [],
+    	"t2sAlignments" : [],
 
 		// States based on user inputs
 		"caretIndex" : 0,
@@ -43,8 +45,8 @@ var TargetBoxState = Backbone.Model.extend({
 		"boxInnerWidth" : 0,
 		"boxHeight" : 0,
 		"boxWidth" : 0
-	}
-});
+	}, { silent : true } );
+};
 
 TargetBoxState.prototype.WIDTH = 775;
 TargetBoxState.prototype.MIN_HEIGHT = 50;
@@ -57,6 +59,7 @@ TargetBoxState.prototype.WHITESPACE_SEPS = /([ ]+)/g;
 TargetBoxState.prototype.MAX_SUGGESTIONS = 4;
 
 TargetBoxState.prototype.initialize = function( options ) {
+	this.reset();
 	var segmentId = options.segmentId;
 	this.view = new TargetBoxView({ "model" : this, "el" : ".TargetBoxView" + segmentId, "segmentId" : segmentId });
 	this.viewTextarea = new TargetTextareaView({ "model" : this, "el" : ".TargetTextareaView" + segmentId });
@@ -84,18 +87,19 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 	var targetTokenIndex = prefixLength;
 	var translationList = this.get( "translationList" ); // prefix is always updated whenever translationList or alignIndexList
 	var s2tAlignments = this.get( "s2tAlignments" );
-  var t2sAlignments = this.get( "t2sAlignments" );
+	var t2sAlignments = this.get( "t2sAlignments" );
 	var chunkVector = this.get( "chunkVector" );       // chunkVector is never changed after initialization.
 	var suggestionList = {};
-  var suggestionRank = 0;
+	var suggestionRank = 0;
 
-  for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
-    if (suggestionRank === this.MAX_SUGGESTIONS) {
-      break;
-    }
+	for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
+		if (suggestionRank === this.MAX_SUGGESTIONS) {
+	 		break;
+		}
+		
 		var translation = translationList[ translationIndex ];
 		var s2t = s2tAlignments[ translationIndex ];
-    var t2s = t2sAlignments[ translationIndex ];
+    	var t2s = t2sAlignments[ translationIndex ];
 
 		// All source tokens that correspond to the target token containing the caret
 		var sourceTokenIndexes = t2s[ targetTokenIndex ];
