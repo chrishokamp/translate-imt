@@ -43,8 +43,13 @@ PTM.prototype.timestamp = function() {
 	return ( new Date().getTime() - this.get("referenceTime") ) / 1000;
 };
 
-PTM.prototype.playback = function() {
-	var reset = function() {
+/**
+ * Replay a translation session.
+ * @param {Object[]} [activities] A list of UI events.
+ * @param {number} [delay] Delay in seconds before playback begins.
+ **/
+PTM.prototype.playback = function( activities, delay ) {
+	var startReplay = function() {
 		this.set( "isLogging", false );
 		for ( var key in this.sourceBoxes )
 			this.sourceBoxes[key].reset();
@@ -55,31 +60,37 @@ PTM.prototype.playback = function() {
 		for ( var key in this.targetBoxSuggestions )
 			this.targetBoxSuggestions[key].reset();
 	}.bind(this);
-	var restore = function() {
+	var endReplay = function() {
 		this.set( "isLogging", true );
 	}.bind(this);
 	var replay = function( element, subElement, keyValues ) {
 		return function() {
 			if ( element === "ptm" )
 				this.set( keyValues );
+			else if ( subElement === "" )
+				this[ element ].set( keyValues );
 			else
 				this[ element ][ subElement ].set( keyValues );
 		}.bind(this);
 	}.bind(this);
 	
-	var maxTime = 0;
-	var delay = 1;
-	var activities = this.get( "activities" );
-	setTimeout( reset, delay * 1000 );
-	activities.forEach( function( activity ) {
-		var time = activity.time;
-		var element = activity.element;
-		var subElement = activity.subElement;
-		var keyValues = activity.keyValues;
-		maxTime = Math.max( maxTime, time );
-		setTimeout( replay( element, subElement, keyValues ), (time+delay) * 1000 );
-	});
-	setTimeout( restore, (maxTime+delay) * 1000 );
+	if ( activities === undefined )
+		activities = this.get( "activities" );
+	if ( delay === undefined )
+		delay = 1;
+	
+	setTimeout( startReplay, delay * 1000 );
+	var time = Math.max.apply( Math, 
+		activities.map( function( activity ) {
+			var time = activity.time;
+			var element = activity.element;
+			var subElement = activity.subElement;
+			var keyValues = activity.keyValues;
+			setTimeout( replay( element, subElement, keyValues ), (time+delay) * 1000 );
+			return time;
+		})
+	);
+	setTimeout( endReplay, (time+delay) * 1000 );
 };
 
 PTM.prototype.makeActivityLogger = function( elemId, subElemId, elem ) {
@@ -233,7 +244,8 @@ PTM.prototype.setup = function() {
 
 	// Create an options panel
 	this.optionPanel = new OptionPanelState();
-	this.listenTo( this.optionPanel, "change", this.setAssists )
+	optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", optionPanel ), this );
+	this.listenTo( this.optionPanel, "change", this.setAssists );
 	
 	// Focus on the first segment
 	this.focusOnSegment( segmentIds[0] );
