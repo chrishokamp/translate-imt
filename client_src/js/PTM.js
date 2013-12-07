@@ -75,8 +75,30 @@ PTM.prototype.loaded = function( model, response, options ) {
 	this.setup();
 };
 
-PTM.prototype.timestamp = function() {
+PTM.prototype.__timestamp = function() {
 	return ( new Date().getTime() - this.get("referenceTime") ) / 1000;
+};
+
+/**
+ * Return user-entered translations.
+ * @return {string[]} A list of user-entered translations.
+ **/
+PTM.prototype.getUserResponses = function() {
+	var responses = {};
+	for ( var key in this.targetBoxes ) {
+		var targetBox = this.targetBoxes[key];
+		responses[key] = targetBox.get("userText");
+	}
+	return responses;
+};
+
+/**
+ * Return user interaction log.
+ * @return {Object[]} A list of user interaction events.
+ **/
+PTM.prototype.getInteractionLog = function() {
+	var responses = this.get( "activities" );
+	return responses;
 };
 
 /**
@@ -138,7 +160,7 @@ PTM.prototype.makeActivityLogger = function( elemId, subElemId, elem ) {
 };
 PTM.prototype.logActivities = function( elemId, subElemId, elem ) {
 	var activity = {
-		"time" : this.timestamp(),
+		"time" : this.__timestamp(),
 		"element" : elemId,
 		"subElement" : subElemId,
 		"keyValues" : {}
