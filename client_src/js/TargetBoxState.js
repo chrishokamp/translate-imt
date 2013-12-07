@@ -329,10 +329,13 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 				}
 			}
 			console.log( "matchingTokens", matchingTokens );
+			this.set( "matchingTokens", matchingTokens );
+			this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
 		}
 	}
-	this.set( "matchingTokens", matchingTokens );
-	this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
+	// Trigger an update only if the client received a valid server response.
+//	this.set( "matchingTokens", matchingTokens );
+//	this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
 };
 
 TargetBoxState.prototype.replaceEditingToken = function( text ) {
