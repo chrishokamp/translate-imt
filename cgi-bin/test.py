@@ -36,7 +36,10 @@ def redirectRequest( request ):
 		query.append( 'tReq={}'.format( urllib.quote( request['tReq'] ) ) )
 	if 'rqReq' in request and request['rqReq'] is not None:
 		query.append( 'rqReq={}'.format( urllib.quote( request['rqReq'] ) ) )
-	url = 'http://joan.stanford.edu:8017/t?{}'.format( '&'.join( query ) )
+#	url = 'http://joan.stanford.edu:8017/t?{}'.format( '&'.join( query ) )
+	url = 'http://joan.stanford.edu:8017/x?{}'.format( '&'.join( query ) )
+#	url = 'http://ptm.stanford.edu/x?{}'.format( '&'.join( query ) )
+	print url
 	request = urllib2.urlopen( url )
 	content = request.read()
 	return json.loads( content, encoding = 'ISO-8859-1' )
