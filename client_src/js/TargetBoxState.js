@@ -30,6 +30,7 @@ TargetBoxState.prototype.reset = function() {
 		"overlayEditing" : "",
 		"prefixTokens" : [],
 		"suggestionList" : [],
+		"suggestionExpList" : [],
 		"bestTranslation" : [],       // @value {string[]} A list of tokens in the best translation.
 		"suggestions" : [],           // @value {string[]} A list of suggestions matching the current user's input
 		"firstSuggestion" : "",
@@ -59,7 +60,8 @@ TargetBoxState.prototype.IMMEDIATELY = 5;  // milliseconds
 
 TargetBoxState.prototype.WHITESPACE = /[ ]+/g;
 TargetBoxState.prototype.WHITESPACE_SEPS = /([ ]+)/g;
-TargetBoxState.prototype.MAX_SUGGESTIONS = 4;
+TargetBoxState.prototype.MAX_PRECOMPUTED_SUGGESTIONS = 100;
+TargetBoxState.prototype.MAX_VISIBLE_SUGGESTIONS = 4;
 
 TargetBoxState.prototype.initialize = function( options ) {
 	this.reset();
@@ -103,86 +105,136 @@ TargetBoxState.prototype.workarounds = function() {
 	});
 };
 
+TargetBoxState.prototype.__identifyContinugousSuggestion = function( translation, s2t, t2s, baseTargetTokenIndex ) {
+
+	// chunkVector is never changed after initialization.
+	var chunkVector = this.get( "chunkVector" );
+
+	// Identify all source tokens that correspond to the target token containing the caret
+	var sourceTokenIndexes = t2s[ baseTargetTokenIndex ];
+	if ( sourceTokenIndexes && sourceTokenIndexes.length > 0 ) {
+
+		// Identify chunk index belonging to the left-most source token
+  		var leftMostSourceTokenIndex = Math.min.apply( Math, sourceTokenIndexes );
+  		var sourceChunkIndex = chunkVector[ leftMostSourceTokenIndex ];
+
+		// All chunks left of the above index are considered "matched" and not touched.
+		// Reverse look up: Identify corresponding chunk indexes
+		// Reverse look up: Identify all corresponding target tokens
+ 		var targetTokenIndexes = [];
+  		for ( var i = leftMostSourceTokenIndex; i < chunkVector.length; i++ ) {
+    		if ( chunkVector[i] !== sourceChunkIndex ) {
+      			break;
+    		}
+    		if ( s2t.hasOwnProperty(i) ) {
+      			Array.prototype.push.apply( targetTokenIndexes, s2t[i] );
+    		}
+  		}
+
+  		// Chunk in the target language
+		if ( targetTokenIndexes.length > 0 ) {
+			targetTokenIndexes = _.uniq( targetTokenIndexes );
+			var rightMostTargetTokenIndex = -1;
+			
+			// Construction a continuguos suggestion text in the target language
+			var suggestionTokens = [];
+			for ( var i = 0; i < targetTokenIndexes.length; i++ ) {
+				var targetTokenIndex = targetTokenIndexes[i];
+				if ( targetTokenIndex < baseTargetTokenIndex ) {
+					continue;
+				}
+				if ( rightMostTargetTokenIndex >= 0 && targetTokenIndex - rightMostTargetTokenIndex !== 1 ) {
+					break;
+				}
+				rightMostTargetTokenIndex = targetTokenIndex;
+				suggestionTokens.push( translation[targetTokenIndex] );
+			}
+			if (suggestionTokens.length > 0) {
+				var suggestionText = suggestionTokens.join(" ");
+				return suggestionText;
+			}
+		}
+	}
+	return null;
+};
+
 TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 	var prefix = this.get( "prefix" );
 	var prefixTokens = prefix.split( this.WHITESPACE );
 	var prefixLength = ( prefix === "" ) ? 0 : prefixTokens.length;
 
-	var targetTokenIndex = prefixLength;
+	var baseTargetTokenIndex = prefixLength;
 	var translationList = this.get( "translationList" ); // prefix is always updated whenever translationList or alignIndexList
 	var s2tAlignments = this.get( "s2tAlignments" );
 	var t2sAlignments = this.get( "t2sAlignments" );
-	var chunkVector = this.get( "chunkVector" );       // chunkVector is never changed after initialization.
 	var suggestionList = {};
 	var suggestionRank = 0;
+	var suggestionExpList = {};
+	var suggestionExpRank = 0;
 
+	// Determine suggestions starting from the current prefix position...
+	var maxBaseTargetTokenIndex = baseTargetTokenIndex;
 	for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
-		if (suggestionRank === this.MAX_SUGGESTIONS) {
+		
+		// Terminate if we reach the maximum number of suggestions
+		if ( suggestionRank === this.MAX_PRECOMPUTED_SUGGESTIONS ) {
 	 		break;
 		}
 		
+		// Get the next translation, and its source-to-target and target-to-source alignments
 		var translation = translationList[ translationIndex ];
 		var s2t = s2tAlignments[ translationIndex ];
     	var t2s = t2sAlignments[ translationIndex ];
-
-		// All source tokens that correspond to the target token containing the caret
-		var sourceTokenIndexes = t2s[ targetTokenIndex ];
-    if ( sourceTokenIndexes && sourceTokenIndexes.length > 0 ) {
-      var lastSrcIndex = Math.min.apply(Math, sourceTokenIndexes);
-      var sourceChunkIndex = chunkVector[lastSrcIndex];
-      var targetTokenIndexes = [];
-      // Extract the target tokens of the chunk
-      for (var i = lastSrcIndex; i < chunkVector.length; ++i) {
-        if (chunkVector[i] !== sourceChunkIndex) {
-          break;
-        }
-        if (s2t.hasOwnProperty(i)) {
-          Array.prototype.push.apply(targetTokenIndexes, s2t[i]);
-        }
-      }
-      if (targetTokenIndexes.length > 0) {
-        targetTokenIndexes.sort();
-        var lastTgtIndex = -1;
-        var suggestionTokens = [];
-        for (var i = 0; i < targetTokenIndexes.length; ++i) {
-          var tgtIndex = targetTokenIndexes[i];
-          if (tgtIndex < targetTokenIndex) {
-            continue;
-          }
-          if (lastTgtIndex >= 0 && tgtIndex - lastTgtIndex !== 1) {
-            break;
-          }
-          lastTgtIndex = tgtIndex;
-          suggestionTokens.push(translation[tgtIndex]);
-        }
-        if (suggestionTokens.length > 0) {
-          var suggestionText = suggestionTokens.join(" ");
-          if ( ! suggestionList.hasOwnProperty(suggestionText)) {
-            suggestionList[suggestionText] = suggestionRank++;
-          }
-        }
-      }
-    }
-    if (suggestionRank === 0 && translationIndex === 0) {
-      // Insert the next token of the best translation
-      // as a default
-      suggestionList[translationList[0][targetTokenIndex]] = suggestionRank++;
-    }
+		var suggestionText = this.__identifyContinugousSuggestion( translation, s2t, t2s, baseTargetTokenIndex );
+		if ( suggestionText !== null ) {
+			if ( ! suggestionList.hasOwnProperty(suggestionText) ) {
+				suggestionList[suggestionText] = suggestionRank++;
+			}
+		}
+		maxBaseTargetTokenIndex = Math.max( translation.length, maxBaseTargetTokenIndex );
 	}
-  var suggestions = [];
-  for (var i = 0; i < suggestionRank; ++i) {
-    suggestions.push(0);
-  }
-  for (var suggestion in suggestionList) {
-    if (suggestionList.hasOwnProperty(suggestion)) {
-      var rank = suggestionList[suggestion];
-      suggestions[rank] = suggestion;
-    }
-  }
+	// Insert the next token of the best translation, if no suggestions are found at this point
+	if ( suggestionRank === 0 && translationList.length > 0 ) {
+  		suggestionList[ translationList[0][baseTargetTokenIndex] ] = suggestionRank++;
+	}
+	
+	// Determine suggestions starting from further down in the sentence
+	for ( var futureTargetTokenIndex = baseTargetTokenIndex; futureTargetTokenIndex < maxBaseTargetTokenIndex; futureTargetTokenIndex++ ) {
+		for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
+
+			// Terminate if we reach the maximum number of suggestions
+			if ( suggestionExpRank === this.MAX_PRECOMPUTED_SUGGESTIONS ) {
+		 		break;
+			}
+
+			// Get the next translation, and its source-to-target and target-to-source alignments
+			var translation = translationList[ translationIndex ];
+			var s2t = s2tAlignments[ translationIndex ];
+	    	var t2s = t2sAlignments[ translationIndex ];
+			var suggestionText = this.__identifyContinugousSuggestion( translation, s2t, t2s, futureTargetTokenIndex );
+			if ( suggestionText !== null ) {
+				if ( ! suggestionList.hasOwnProperty(suggestionText) && ! suggestionExpList.hasOwnProperty(suggestionText) ) {
+					suggestionExpList[suggestionText] = suggestionExpRank++;
+				}
+			}
+		}
+	}
+
+	var suggestionListFlattened = new Array( suggestionRank );
+	var suggestionExpListFlattened = new Array( suggestionExpRank );
+	for ( var suggestion in suggestionList ) {
+ 		var rank = suggestionList[ suggestion ];
+ 		suggestionListFlattened[ rank ] = suggestion;
+	}
+	for ( var suggestion in suggestionExpList ) {
+		var rank = suggestionExpList[ suggestion ];
+		suggestionExpListFlattened[ rank ] = suggestion;
+	}
 	this.set({
 		"prefixTokens" : prefixTokens,
 		"prefixLength" : prefixLength,
-		"suggestionList" : suggestions
+		"suggestionList" : suggestionListFlattened,
+		"suggestionExpList" : suggestionExpListFlattened
 	});
 };
 
@@ -275,10 +327,26 @@ TargetBoxState.prototype.__updateSuggestions = function() {
 			var userText = this.get( "userText" );
 			var editingText = userText.substr( prefix.length ).trimLeft();
 			var suggestionList = this.get( "suggestionList" );
-			for ( var suggestionIndex = 0; suggestionIndex < suggestionList.length; suggestionIndex++ ) {
-				var suggestion = suggestionList[suggestionIndex];
+			for ( var i = 0; i < suggestionList.length; i++ ) {
+				var suggestion = suggestionList[i];
 				if ( suggestion.substr( 0, editingText.length ) === editingText && suggestion.length > editingText.length ) {
 					suggestions.push( suggestion );
+				}
+				if ( suggestions.length >= this.MAX_VISIBLE_SUGGESTIONS ) {
+					break;
+				}
+			}
+			
+			if ( editingText.length > 0 ) {
+				var suggestionExpList = this.get( "suggestionExpList" );
+				for ( var i = 0; i < suggestionExpList.length; i++ ) {
+					var suggestion = suggestionExpList[i];
+					if ( suggestion.substr( 0, editingText.length ) === editingText && suggestion.length > editingText.length ) {
+						suggestions.push( suggestion );
+					}
+					if ( suggestions.length >= this.MAX_VISIBLE_SUGGESTIONS ) {
+						break;
+					}
 				}
 			}
 		}
