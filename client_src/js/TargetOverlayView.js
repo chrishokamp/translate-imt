@@ -12,7 +12,7 @@ TargetOverlayView.prototype.initialize = function() {
 	this.render = _.debounce( this.__render, 10 );
 	this.resize = _.debounce( this.__resize, 10 );
 	this.listenTo( this.model, "change:userText change:prefixTokens change:hasFocus change:bestTranslation change:enableBestTranslation", this.render.bind(this) );
-	this.listenTo( this.model, "change:boxInnerWidth change:boxInnerHeight", this.resize.bind(this) );
+	this.listenTo( this.model, "change:boxOverlayWidth change:boxOverlayHeight", this.resize.bind(this) );
 };
 
 TargetOverlayView.prototype.__render = function() {
@@ -38,8 +38,8 @@ TargetOverlayView.prototype.__render = function() {
 };
 
 TargetOverlayView.prototype.__resize = function() {
-	var width = this.model.get( "boxInnerWidth" );
-	var height = this.model.get( "boxInnerHeight" );
+	var width = this.model.get( "boxOverlayWidth" );
+	var height = this.model.get( "boxOverlayHeight" );
 	this.views.container
 		.style( "width", width + "px" )
 		.style( "height", height + "px" );
@@ -48,7 +48,7 @@ TargetOverlayView.prototype.__resize = function() {
 TargetOverlayView.prototype.__containerRenderOnce = function( elem ) {
 	elem.style( "display", "inline-block" )
 		.style( "background", "none" )
-		.style( "padding", "12.5px 60px 20px 15px" )  //"13.5px 61px 21px 16px"
+		.style( "padding", "11px 60px 0px 15px" )
 		.style( "opacity", 1 )
 };
 TargetOverlayView.prototype.__containerRenderAlways = function( elem ) {

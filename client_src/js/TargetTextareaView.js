@@ -15,7 +15,10 @@ TargetTextareaView.prototype.KEY = {
 TargetTextareaView.prototype.initialize = function() {
 	this.container = d3.select( this.el ).style( "pointer-events", "none" );
 	this.textarea = this.container.append( "textarea" ).call( this.__textareaRenderOnce.bind(this) );
+	
+	this.resize = _.debounce( this.__resize, 10 );
 	this.listenTo( this.model, "change:userText change:hasFocus", this.render.bind(this) );
+	this.listenTo( this.model, "change:boxTextareaWidth change:boxTextareaHeight", this.resize.bind(this) );
 };
 
 TargetTextareaView.prototype.render = function() {
@@ -24,6 +27,14 @@ TargetTextareaView.prototype.render = function() {
 		this.textarea[0][0].value = userText;
 	}
 	this.textarea.call( this.__textareaRenderAlways.bind(this) );
+};
+
+TargetTextareaView.prototype.__resize = function() {
+	var width = this.model.get( "boxTextareaWidth" );
+	var height = this.model.get( "boxTextareaHeight" );
+	this.textarea
+		.style( "width", width + "px" )
+		.style( "height", height + "px" );
 };
 
 TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
@@ -106,21 +117,10 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 			"caretIndex" : caretIndex
 		});
 	}.bind(this);
-	var onResizeStart = function() {
-	}.bind(this);
-	var onResizeEnd = function() {
-		var height = elem[0][0].offsetHeight;
-		var width = elem[0][0].offsetWidth;
-		this.model.set({
-			"boxInnerHeight" : height - 22.5,
-			"boxInnerWidth" : width - 75,
-			"boxHeight" : height,
-			"boxWidth" : width
-		});
-	}.bind(this);
 	elem.style( "width", (this.model.WIDTH-75) + "px" )
 		.style( "min-height", this.model.MIN_HEIGHT + "px" )
-		.style( "padding", "10px 60px 20px 15px" )  // "2.5px 60px 15px 15px"  WORKAROUND: padding-top should be 12.5px
+		.style( "height", this.model.MIN_HEIGHT + "px" )
+		.style( "padding", "10px 60px 15px 15px" )
 		.style( "border", "none" )
 		.style( "outline", "none" )
 		.style( "background", this.BACKGROUND )
@@ -136,13 +136,21 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 		.on( "keyup", onKeyUp )
 		.on( "copy", onCopy )
 		.on( "paste", onPaste )
-		.on( "click", onMouseDown )
-		.on( "mousedown", onResizeStart )
-		.on( "mouseup", onResizeEnd )
+		.on( "click", onMouseDown );
+/*
+	var height = elem[0][0].offsetHeight;
+	var width = elem[0][0].offsetWidth;
+	this.model.set({
+		"boxOverlayHeight" : height - 24,
+		"boxOverlayWidth" : width - 75,
+		"boxHeight" : height,
+		"boxWidth" : width
+	});
+*/
 };
+
 TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
-	elem.style( "resize", hasFocus ? "vertical" : "none" );
 	
 	if ( hasFocus )
 		elem.transition().duration( this.model.ANIMATION_DURATION + this.model.ANIMATION_DELAY )
@@ -150,13 +158,14 @@ TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 	else
 		elem.transition().duration( this.model.ANIMATION_DURATION )
 			.style( "background", this.BACKGROUND );
-
+/*
 	var height = elem[0][0].offsetHeight;
 	var width = elem[0][0].offsetWidth;
 	this.model.set({
-		"boxInnerHeight" : height - 22.5,
-		"boxInnerWidth" : width - 75,
+		"boxOverlayHeight" : height - 24,
+		"boxOverlayWidth" : width - 75,
 		"boxHeight" : height,
 		"boxWidth" : width
 	});
+*/
 };

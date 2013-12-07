@@ -42,15 +42,17 @@ TargetBoxState.prototype.reset = function() {
 		"editYCoord" : null,
 		"canvasXCoord" : null,
 		"canvasYCoord" : null,
-		"boxInnerHeight" : 0,
-		"boxInnerWidth" : 0,
+		"boxTextareaHeight" : 0,
+		"boxTextareaWidth" : 0,
+		"boxOverlayHeight" : 0,
+		"boxOverlayWidth" : 0,
 		"boxHeight" : 0,
 		"boxWidth" : 0
 	}, { silent : true } );
 };
 
 TargetBoxState.prototype.WIDTH = 775;
-TargetBoxState.prototype.MIN_HEIGHT = 50;
+TargetBoxState.prototype.MIN_HEIGHT = 20;
 TargetBoxState.prototype.ANIMATION_DELAY = 180;
 TargetBoxState.prototype.ANIMATION_DURATION = 120;
 TargetBoxState.prototype.IMMEDIATELY = 5;  // milliseconds
@@ -65,6 +67,10 @@ TargetBoxState.prototype.initialize = function( options ) {
 	this.view = new TargetBoxView({ "model" : this, "el" : ".TargetBoxView" + segmentId, "segmentId" : segmentId });
 	this.viewTextarea = new TargetTextareaView({ "model" : this, "el" : ".TargetTextareaView" + segmentId });
 	this.viewOverlay = new TargetOverlayView({ "model" : this, "el" : ".TargetOverlayView" + segmentId });
+	this.__textarea = this.view.views.textarea.select( "textarea" );
+	this.__overlay = this.view.views.overlay;
+	setInterval( this.workarounds.bind(this), 25 );
+	
 	this.updateSuggestionList = this.__updateSuggestionList; //_.debounce( this.__updateSuggestionList, this.IMMEDIATELY );
 	this.updateBestTranslation = this.__updateBestTranslation; //_.debounce( this.__updateBestTranslation, this.IMMEDIATELY );
 	this.updateSuggestions = this.__updateSuggestions; //_.debounce( this.__updateSuggestions, this.IMMEDIATELY );
@@ -78,6 +84,21 @@ TargetBoxState.prototype.initialize = function( options ) {
 //	this.on( "change:caretIndex", this.triggerUpdateCaretIndex );
 	this.on( "change:editXCoord change:editYCoord", this.updateEditCoords );
 	this.on( "change:boxWidth change:boxHeight", this.updateBoxDims );
+};
+
+TargetBoxState.prototype.workarounds = function() {
+	var textareaHeight = this.__textarea[0][0].scrollHeight - 25;
+	var overlayHeight = this.__overlay[0][0].scrollHeight - 11;
+	var height = Math.max( textareaHeight, overlayHeight );
+	var width = this.__textarea[0][0].offsetWidth - 75;
+	this.set({
+		"boxTextareaHeight" : height,
+		"boxTextareaWidth" : width,
+		"boxOverlayHeight" : height,
+		"boxOverlayWidth" : width,
+		"boxHeight" : height + 30,
+		"boxWidth" : width + 75
+	});
 };
 
 TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
