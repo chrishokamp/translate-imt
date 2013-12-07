@@ -52,7 +52,7 @@ TargetBoxState.prototype.reset = function() {
 };
 
 TargetBoxState.prototype.WIDTH = 775;
-TargetBoxState.prototype.MIN_HEIGHT = 20;
+TargetBoxState.prototype.MIN_HEIGHT = 18;
 TargetBoxState.prototype.ANIMATION_DELAY = 180;
 TargetBoxState.prototype.ANIMATION_DURATION = 120;
 TargetBoxState.prototype.IMMEDIATELY = 5;  // milliseconds
@@ -91,13 +91,15 @@ TargetBoxState.prototype.workarounds = function() {
 	var overlayHeight = this.__overlay[0][0].scrollHeight - 11;
 	var height = Math.max( textareaHeight, overlayHeight );
 	var width = this.__textarea[0][0].offsetWidth - 75;
+	var text = this.__textarea.node().value;
 	this.set({
 		"boxTextareaHeight" : height,
 		"boxTextareaWidth" : width,
 		"boxOverlayHeight" : height,
 		"boxOverlayWidth" : width,
 		"boxHeight" : height + 30,
-		"boxWidth" : width + 75
+		"boxWidth" : width + 75,
+		"userText" : text
 	});
 };
 
