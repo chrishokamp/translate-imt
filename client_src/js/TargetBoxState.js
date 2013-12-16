@@ -200,7 +200,10 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 	
 	// Determine suggestions starting from further down in the sentence
 	for ( var futureTargetTokenIndex = baseTargetTokenIndex; futureTargetTokenIndex < maxBaseTargetTokenIndex; futureTargetTokenIndex++ ) {
-		for ( var translationIndex = 0; translationIndex < translationList.length; translationIndex++ ) {
+
+		// Restrict search to only the best MT
+		// Alternative is to search all MTs with "translationIndex < translationList.length"
+		for ( var translationIndex = 0; translationIndex < 1; translationIndex++ ) {
 
 			// Terminate if we reach the maximum number of suggestions
 			if ( suggestionExpRank === this.MAX_PRECOMPUTED_SUGGESTIONS ) {
