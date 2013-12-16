@@ -376,9 +376,6 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 		if ( s2tAlignments.length > 0 && t2sAlignments.length > 0 ) {
 		    var s2t = s2tAlignments[0];
 			var t2s = t2sAlignments[0];
-			console.log( "userTokens", userTokens )
-			console.log( "s2t", s2t );
-			console.log( "t2s", t2s );
 			if ( userTokens.length > 0 ) {
 				var maxIndex = userTokens.length-1;
 				var rightMostSrcIndex = -1;
@@ -399,7 +396,6 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 					}
 				}
 			}
-			console.log( "matchingTokens", matchingTokens );
 			this.set( "matchingTokens", matchingTokens );
 			this.trigger( "updateMatchingTokens", this.get( "segmentId" ), matchingTokens );
 		}
