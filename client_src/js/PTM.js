@@ -320,21 +320,14 @@ PTM.prototype.setAssists = function() {
 PTM.prototype.cycleAssists = function( segmentId ) {
 	var enableAll = this.optionPanel.get("visible");
 	var enableSuggestions = this.targetBoxes[segmentId].get("enableSuggestions");
-	var enableBestTranslation = this.targetBoxes[segmentId].get("enableBestTranslation");
 	if ( enableAll ) {
 		if ( enableSuggestions ) {
 			enableSuggestions = false;
 			enableBestTranslation = true;
 		}
 		else {
-			if ( enableBestTranslation ) {
-				enableSuggestions = false;
-				enableBestTranslation = false;
-			}
-			else {
-				enableSuggestions = true;
-				enableBestTranslation = true;
-			}
+			enableSuggestions = true;
+			enableBestTranslation = true;
 		}
 	}
 	else {
