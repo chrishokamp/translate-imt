@@ -50,6 +50,7 @@ TargetOverlayView.prototype.__containerRenderOnce = function( elem ) {
 		.style( "background", "none" )
 		.style( "padding", "11px 60px 0px 15px" )
 		.style( "opacity", 1 )
+		.style( "line-height", "20px" )
 };
 TargetOverlayView.prototype.__containerRenderAlways = function( elem ) {
 	var enableBestTranslation = this.model.get( "enableBestTranslation" );
