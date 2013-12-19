@@ -5,6 +5,9 @@ var PTM = Backbone.Model.extend({
 	"defaults" : {
 		"isLogging" : true,
 		"postEditMode" : false,
+		"docURL" : "",
+		"sourceLang" : "de",
+		"targetLang" : "en",
 		"activities" : []
 	}
 });
@@ -22,7 +25,9 @@ PTM.prototype.reset = function() {
 
 	// Define or create a stub for all models and views.
 	/** @param {TranslateServer} **/
-	this.server = new TranslateServer();
+	var sourceLang = this.get( "sourceLang" );
+	var targetLang = this.get( "targetLang" );
+	this.server = new TranslateServer( sourceLang, targetLang );
 	
 	/** @param {DocumentView} **/
 	this.optionPanel = null;
@@ -51,6 +56,9 @@ PTM.prototype.initialize = function() {
 };
 
 PTM.prototype.load = function( url ) {
+	if ( url === undefined ) {
+		url = this.get( "docURL" );
+	}
 	this.reset();
 	this.set( "url", url );
 	this.fetch({

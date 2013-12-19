@@ -1,4 +1,13 @@
-var TranslateServer = function() {};
+var TranslateServer = function( sourceLang, targetLang ) {
+	if ( sourceLang === undefined )
+		this.sourceLang = this.SRC_LANG;
+	else
+		this.sourceLang = sourceLang;
+	if ( targetLang === undefined )
+		this.targetLang = this.TGT_LANG;
+	else
+		this.targetLang = targetLang;
+};
 
 TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
 
@@ -33,8 +42,8 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
 		leftContext = "";
 	}
 	var rqReqData = {
-		"src" : this.SRC_LANG,
-		"tgt" : this.TGT_LANG,
+		"src" : this.sourceLang,
+		"tgt" : this.targetLang,
 		"spanLimit" : this.WORD_QUERY_LIMIT,
 		"text" : word,
 		"leftContext" : leftContext
@@ -99,8 +108,8 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 
 	// Generate tReq data for a HTTP request
 	var tReqData = {
-		"src" : this.SRC_LANG,
-		"tgt" : this.TGT_LANG,
+		"src" : this.sourceLang,
+		"tgt" : this.targetLang,
 		"n" : this.TRANSLATE_LIMIT,
 		"text" : sourceText,
 		"tgtPrefix" : targetPrefix,
