@@ -2,8 +2,8 @@ var SourceBoxView = Backbone.View.extend({
 	el : ".SourceBoxView"
 });
 
-SourceBoxView.prototype.REGULAR_COLOR = "#000";
-SourceBoxView.prototype.UNMATCHED_COLOR = "#000";
+SourceBoxView.prototype.REGULAR_COLOR = "#333";
+SourceBoxView.prototype.UNMATCHED_COLOR = "#333";
 SourceBoxView.prototype.MATCHED_COLOR = "#4292C6";
 SourceBoxView.prototype.HOVER_COLOR = "#ff7f0e";
 
