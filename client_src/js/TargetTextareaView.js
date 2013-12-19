@@ -65,7 +65,10 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 			if ( d3.event.shiftKey ) {
 				this.model.trigger( "keypress:enter+shift", segmentId )
 			}
-			else if ( !d3.event.shiftKey && !d3.event.metaKey && !d3.event.ctrlKey && !d3.event.altKey && !d3.event.altGraphKey ) {
+			else if ( d3.event.metaKey || d3.event.ctrlKey || d3.event.altKey || d3.event.altGraphKey ) {
+				this.model.trigger( "keypress:enter+meta", segmentId )
+			}
+			else {
 				this.model.trigger( "keypress:enter", segmentId );
 			}
 		}
