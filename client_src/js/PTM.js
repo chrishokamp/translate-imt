@@ -521,7 +521,11 @@ PTM.prototype.focusOnPreviousSegment = function( focusSegment ) {
 };
 
 PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
+	var reContainsAlphabets = /\w/g;
 	var filterEmptyResults = function( response ) {
+		if ( source.match( reContainsAlphabets ) === null ) {
+			response.result = [ { 'tgt' : [ source ] } ];
+		}
 		if ( response.hasOwnProperty( "result" ) ) {
 			response.result = _.filter( response.result, function(d) { return d.tgt.length > 0 } );
 		}
