@@ -1,69 +1,73 @@
 @font-face {
-    font-family: 'EmbeddedGeorgia';
-    src: url('../font/georgia_bold_italic-webfont.eot');
-    src: url('../font/georgia_bold_italic-webfont.eot?#iefix') format('embedded-opentype'),
-         url('../font/georgia_bold_italic-webfont.woff') format('woff'),
-         url('../font/georgia_bold_italic-webfont.ttf') format('truetype'),
-         url('../font/georgia_bold_italic-webfont.svg#georgiabold_italic') format('svg');
-    font-weight: bold;
-    font-style: italic;
-
+    font-family: 'PT_Serif';
+    src: url('../font/pt_serif-web-regular-webfont.eot');
+    src: url('../font/pt_serif-web-regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../font/pt_serif-web-regular-webfont.woff') format('woff'),
+         url('../font/pt_serif-web-regular-webfont.ttf') format('truetype'),
+         url('../font/pt_serif-web-regular-webfont.svg#PT_Serif') format('svg');
+    font-weight: normal;
+    font-style: normal;
 }
 @font-face {
-    font-family: 'EmbeddedGeorgia';
-    src: url('../font/georgia_bold-webfont.eot');
-    src: url('../font/georgia_bold-webfont.eot?#iefix') format('embedded-opentype'),
-         url('../font/georgia_bold-webfont.woff') format('woff'),
-         url('../font/georgia_bold-webfont.ttf') format('truetype'),
-         url('../font/georgia_bold-webfont.svg#georgiabold') format('svg');
+    font-family: 'PT_Serif';
+    src: url('../font/pt_serif-web-bold-webfont.eot');
+    src: url('../font/pt_serif-web-bold-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../font/pt_serif-web-bold-webfont.woff') format('woff'),
+         url('../font/pt_serif-web-bold-webfont.ttf') format('truetype'),
+         url('../font/pt_serif-web-bold-webfont.svg#PT_Serif') format('svg');
     font-weight: bold;
     font-style: normal;
 }
 @font-face {
-    font-family: 'EmbeddedGeorgia';
-    src: url('../font/georgia_italic-webfont.eot');
-    src: url('../font/georgia_italic-webfont.eot?#iefix') format('embedded-opentype'),
-         url('../font/georgia_italic-webfont.woff') format('woff'),
-         url('../font/georgia_italic-webfont.ttf') format('truetype'),
-         url('../font/georgia_italic-webfont.svg#georgiaitalic') format('svg');
+    font-family: 'PT_Serif';
+    src: url('../font/pt_serif-web-italic-webfont.eot');
+    src: url('../font/pt_serif-web-italic-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../font/pt_serif-web-italic-webfont.woff') format('woff'),
+         url('../font/pt_serif-web-italic-webfont.ttf') format('truetype'),
+         url('../font/pt_serif-web-italic-webfont.svg#PT_Serif') format('svg');
     font-weight: normal;
     font-style: italic;
-
 }
 @font-face {
-    font-family: 'EmbeddedGeorgia';
-    src: url('../font/georgia-webfont.eot');
-    src: url('../font/georgia-webfont.eot?#iefix') format('embedded-opentype'),
-         url('../font/georgia-webfont.woff') format('woff'),
-         url('../font/georgia-webfont.ttf') format('truetype'),
-         url('../font/georgia-webfont.svg#georgiaregular') format('svg');
-    font-weight: normal;
-    font-style: normal;
-
+    font-family: 'PT_Serif';
+    src: url('../font/pt_serif-web-bolditalic-webfont.eot');
+    src: url('../font/pt_serif-web-bolditalic-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../font/pt_serif-web-bolditalic-webfont.woff') format('woff'),
+         url('../font/pt_serif-web-bolditalic-webfont.ttf') format('truetype'),
+         url('../font/pt_serif-web-bolditalic-webfont.svg#PT_Serif') format('svg');
+    font-weight: bold;
+    font-style: italic;
 }
+@font-face {
+    font-family: 'PT_Mono';
+    src: url('../font/PT_Mono.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
 .UI {
-	font-family: EmbeddedGeorgia, Georgia, serif;
-	font-size: 10pt;
+	font-family: PT_Serif, serif;
+	font-size: 9.5pt;
 	color: #000;
 	word-spacing : 0.1em;
 }
 .SourceLang {
-	font-family: EmbeddedGeorgia, Georgia, serif;
-	font-size: 10.5pt;
+	font-family: PT_Serif, serif;
+	font-size: 10pt;
 	color: #000;
 }
 .TargetLang {
-	font-family: Courier New, monospace;
-	font-size: 10pt;
+	font-family: PT_Mono, monospace;
+	font-size: 11pt;
 	color: #bfbfbf;
 }
 .UserText {
-	font-family: Courier New, monospace;
-	font-size: 10pt;
+	font-family: PT_Mono, monospace;
+	font-size: 11pt;
 	color: #000;
 }
 .OptionPanel {
-	font-family: EmbeddedGeorgia, Georgia, serif;
+	font-family: PT_Serif, serif;
 	font-size: 8pt;
 	color: #444;
 }
