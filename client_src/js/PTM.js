@@ -224,7 +224,8 @@ PTM.prototype.setup = function() {
 		if ( postEditMode ) {
 			targetBox.set({
 				"enableSuggestions" : false,
-				"enableBestTranslation" : false
+				"enableBestTranslation" : false,
+				"postEditMode" : true
 			});
 		}
 		targetBox.on( "change", this.makeActivityLogger( "targetBoxes", segmentId, targetBox ), this );

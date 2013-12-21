@@ -5,6 +5,7 @@ TargetBoxState.prototype.reset = function() {
 		// Initialized once by PTM
 		"segmentId" : null,
 		"chunkVector" : [],
+		"postEditMode" : false,
 		
 		// States based on machine translations
 		"prefix" : "",        // @value {string} Prefix used to generate the translations.
@@ -89,20 +90,37 @@ TargetBoxState.prototype.initialize = function( options ) {
 };
 
 TargetBoxState.prototype.workarounds = function() {
-	var textareaHeight = this.__textarea[0][0].scrollHeight - 25;
-	var overlayHeight = this.__overlay[0][0].scrollHeight - 11;
-	var height = Math.max( textareaHeight, overlayHeight );
-	var width = this.__textarea[0][0].offsetWidth - 75;
-	var text = this.__textarea.node().value;
-	this.set({
-		"boxTextareaHeight" : height,
-		"boxTextareaWidth" : width,
-		"boxOverlayHeight" : height,
-		"boxOverlayWidth" : width,
-		"boxHeight" : height + 30,
-		"boxWidth" : width + 75,
-		"userText" : text
-	});
+	var postEditMode = this.get("postEditMode");
+	if ( postEditMode ) {
+		var textareaHeight = this.__textarea[0][0].scrollHeight - 25;
+		var overlayHeight = this.__overlay[0][0].scrollHeight - 11;
+		var height = Math.max( textareaHeight, overlayHeight );
+		var width = this.__textarea[0][0].offsetWidth - 75;
+		this.set({
+			"boxTextareaHeight" : height,
+			"boxTextareaWidth" : width,
+			"boxOverlayHeight" : height,
+			"boxOverlayWidth" : width,
+			"boxHeight" : height + 30,
+			"boxWidth" : width + 75
+		});
+	}
+	else {
+		var textareaHeight = this.__textarea[0][0].scrollHeight - 25;
+		var overlayHeight = this.__overlay[0][0].scrollHeight - 11;
+		var height = Math.max( textareaHeight, overlayHeight );
+		var width = this.__textarea[0][0].offsetWidth - 75;
+		var text = this.__textarea.node().value;
+		this.set({
+			"boxTextareaHeight" : height,
+			"boxTextareaWidth" : width,
+			"boxOverlayHeight" : height,
+			"boxOverlayWidth" : width,
+			"boxHeight" : height + 30,
+			"boxWidth" : width + 75,
+			"userText" : text
+		});
+	}
 };
 
 TargetBoxState.prototype.__identifyContinugousSuggestion = function( translation, s2t, t2s, baseTargetTokenIndex ) {
@@ -281,9 +299,12 @@ TargetBoxState.prototype.updateUserTokens = function() {
 };
 
 TargetBoxState.prototype.updateTranslations = function() {
-	var segmentId = this.get( "segmentId" );
-	var editingPrefix = this.get( "editingPrefix" );
-	this.trigger( "updateTranslations", segmentId, editingPrefix );
+	var postEditMode = this.get("postEditMode");
+	if ( !postEditMode ) {
+		var segmentId = this.get( "segmentId" );
+		var editingPrefix = this.get( "editingPrefix" );
+		this.trigger( "updateTranslations", segmentId, editingPrefix );
+	}
 };
 
 TargetBoxState.prototype.__updateBestTranslation = function() {

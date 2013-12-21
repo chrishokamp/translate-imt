@@ -41,10 +41,17 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 	var onFocus = function() { this.model.updateFocus() }.bind(this);
 	var onBlur = function() {}.bind(this);
 	var onKeyDown = function() {
+		var postEditMode = this.model.get("postEditMode");
 		var keyCode = d3.event.keyCode;
-		if ( keyCode === this.KEY.ENTER || keyCode === this.KEY.TAB || keyCode === this.KEY.UP_ARROW || keyCode === this.KEY.DOWN_ARROW || keyCode === this.KEY.ESC ) {
+		if ( keyCode === this.KEY.ENTER || keyCode === this.KEY.TAB || keyCode === this.KEY.ESC ) {
 			d3.event.preventDefault();
 			d3.event.cancelBubble = true;
+		}
+		else if ( keyCode === this.KEY.UP_ARROW || keyCode === this.KEY.DOWN_ARROW ) {
+			if ( !postEditMode ) {
+				d3.event.preventDefault();
+				d3.event.cancelBubble = true;
+			}
 		}
 		if ( this.__continuousKeyPress ) {
 			var userText = this.textarea[0][0].value;
@@ -59,6 +66,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 	var onKeyPress = function() {
 	}.bind(this);
 	var onKeyUp = function() {
+		var postEditMode = this.model.get("postEditMode");
 		var keyCode = d3.event.keyCode;
 		if ( keyCode === this.KEY.ENTER ) {
 			var segmentId = this.model.get( "segmentId" );
@@ -77,12 +85,16 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 			this.model.trigger( "keypress:tab", segmentId );
 		}
 		else if ( keyCode === this.KEY.UP_ARROW ) {
-			var segmentId = this.model.get( "segmentId" );
-			this.model.trigger( "keypress:up", segmentId );
+			if ( !postEditMode ) {
+				var segmentId = this.model.get( "segmentId" );
+				this.model.trigger( "keypress:up", segmentId );
+			}
 		}
 		else if ( keyCode === this.KEY.DOWN_ARROW ) {
-			var segmentId = this.model.get( "segmentId" );
-			this.model.trigger( "keypress:down", segmentId );
+			if ( !postEditMode ) {
+				var segmentId = this.model.get( "segmentId" );
+				this.model.trigger( "keypress:down", segmentId );
+			}
 		}
 		else if ( keyCode === this.KEY.ESC ) {
 			var segmentId = this.model.get( "segmentId" );
@@ -154,6 +166,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 
 TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
+	var enableBestTranslation = this.model.get( "enableBestTranslation" );
 	
 	if ( hasFocus )
 		elem.transition().duration( this.model.ANIMATION_DURATION + this.model.ANIMATION_DELAY )
@@ -161,6 +174,11 @@ TargetTextareaView.prototype.__textareaRenderAlways = function( elem ) {
 	else
 		elem.transition().duration( this.model.ANIMATION_DURATION )
 			.style( "background", this.BACKGROUND );
+	
+	if ( enableBestTranslation )
+		elem.style( "cursor", "default" );
+	else
+		elem.style( "cursor", "text" );
 /*
 	var height = elem[0][0].offsetHeight;
 	var width = elem[0][0].offsetWidth;
