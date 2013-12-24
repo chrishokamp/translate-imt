@@ -71,34 +71,34 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 		if ( keyCode === this.KEY.ENTER ) {
 			var segmentId = this.model.get( "segmentId" );
 			if ( d3.event.shiftKey ) {
-				this.model.trigger( "keypress:enter+shift", segmentId )
+				this.model.trigger( "keypress keypress:enter+shift", segmentId )
 			}
 			else if ( d3.event.metaKey || d3.event.ctrlKey || d3.event.altKey || d3.event.altGraphKey ) {
-				this.model.trigger( "keypress:enter+meta", segmentId )
+				this.model.trigger( "keypress keypress:enter+meta", segmentId )
 			}
 			else {
-				this.model.trigger( "keypress:enter", segmentId );
+				this.model.trigger( "keypress keypress:enter", segmentId );
 			}
 		}
 		else if ( keyCode === this.KEY.TAB ) {
 			var segmentId = this.model.get( "segmentId" );
-			this.model.trigger( "keypress:tab", segmentId );
+			this.model.trigger( "keypress keypress:tab", segmentId );
 		}
 		else if ( keyCode === this.KEY.UP_ARROW ) {
 			if ( !postEditMode ) {
 				var segmentId = this.model.get( "segmentId" );
-				this.model.trigger( "keypress:up", segmentId );
+				this.model.trigger( "keypress keypress:up", segmentId );
 			}
 		}
 		else if ( keyCode === this.KEY.DOWN_ARROW ) {
 			if ( !postEditMode ) {
 				var segmentId = this.model.get( "segmentId" );
-				this.model.trigger( "keypress:down", segmentId );
+				this.model.trigger( "keypress keypress:down", segmentId );
 			}
 		}
 		else if ( keyCode === this.KEY.ESC ) {
 			var segmentId = this.model.get( "segmentId" );
-			this.model.trigger( "keypress:esc", segmentId );
+			this.model.trigger( "keypress keypress:esc", segmentId );
 		}
 		else {
 			var userText = this.textarea[0][0].value;
@@ -107,6 +107,7 @@ TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
 				"userText" : userText,
 				"caretIndex" : caretIndex
 			});
+			this.model.trigger( "keypress", segmentId );
 		}
 		this.__continuousKeyPress = false;
 	}.bind(this);

@@ -31,6 +31,7 @@ PTM.prototype.reset = function() {
 	
 	/** @param {DocumentView} **/
 	this.optionPanel = null;
+	this.experimentUI = null;
 	this.documentView = null;
 	this.sourceBoxes = {};
 	this.sourceSuggestions = {};
@@ -190,6 +191,10 @@ PTM.prototype.setup = function() {
 	// Create a visualization for the entire document
 	this.documentView = new DocumentView({ "model" : this });
 	
+	// Create an experimentUI (count-down clock, etc)
+	this.experimentUI = new ExperimentUI();
+	this.experimentUI.on( "change", this.makeActivityLogger( "experimentUI", "", this.experimentUI ), this );
+	
 	// Create source boxes and typing UIs
 	segmentIds.forEach( function(segmentId) {
 		
@@ -251,6 +256,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceBox, "click:token", function(){} );
 		this.listenTo( sourceBox, "updateBoxDims", this.updateTargetSuggestions );
 		this.listenTo( sourceBox, "updateBoxDims", this.resizeDocument );
+		this.listenTo( sourceBox, "click", this.experimentUI.reset.bind(this.experimentUI) );
 		
 		this.listenTo( sourceSuggestion, "mouseover", this.showSourceSuggestionsFromFloatingBox );
 		this.listenTo( sourceSuggestion, "mouseout", this.hideSourceSuggestions );
@@ -258,6 +264,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceSuggestion, "mouseover:option", function(){} );
 		this.listenTo( sourceSuggestion, "mouseout:option", function(){} );
 		this.listenTo( sourceSuggestion, "click:option", this.clickToInsertSourceSuggestion );
+		this.listenTo( sourceSuggestion, "click", this.experimentUI.reset.bind(this.experimentUI) );
 		
 		this.listenTo( targetBox, "keypress:enter", this.insertSelectedTargetSuggestion );
 		this.listenTo( targetBox, "keypress:enter+meta", this.focusOnNextSegment );
@@ -273,6 +280,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( targetBox, "updateFocus", this.focusOnSegment );
 		this.listenTo( targetBox, "updateTranslations", this.loadTranslations );
 		this.listenTo( targetBox, "updateBoxDims", this.resizeDocument );
+		this.listenTo( targetBox, "keypress", this.experimentUI.reset.bind(this.experimentUI) );
 		
 		this.listenTo( targetSuggestion, "mouseover", function(){} );
 		this.listenTo( targetSuggestion, "mouseout", function(){} );
@@ -280,6 +288,7 @@ PTM.prototype.setup = function() {
 		this.listenTo( targetSuggestion, "mouseover:option", function(){} );
 		this.listenTo( targetSuggestion, "mouseout:option", function(){} );
 		this.listenTo( targetSuggestion, "click:option", this.clickToInsertTargetSuggestion );
+		this.listenTo( targetSuggestion, "click", this.experimentUI.reset.bind(this.experimentUI) );
 		
 		this.cache.translations[ segmentId ] = {};
 		this.loadTranslations( segmentId, "" );
@@ -298,7 +307,7 @@ PTM.prototype.setup = function() {
 	}
 	this.optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", this.optionPanel ), this );
 	this.listenTo( this.optionPanel, "change", this.setAssists );
-
+	
 	// Focus on the first segment
 	this.focusOnSegment( segmentIds[0] );
 };
