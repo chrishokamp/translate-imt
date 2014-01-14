@@ -1,6 +1,7 @@
 var ExperimentUI = Backbone.Model.extend({
 	"defaults" : {
-		"timer" : 180
+		"timer" : 180,
+		"terminate" : false
 	}
 });
 
@@ -20,7 +21,10 @@ ExperimentUI.prototype.reset = function() {
 
 ExperimentUI.prototype.__tick = function() {
 	this.set( "timer", this.get("timer") - 1 );
-	this.tick();
+	if ( this.get("timer") <= 0 )
+		this.set( "terminate", true );
+	else
+		this.tick();
 };
 
 var ExperimentVis = Backbone.View.extend({
@@ -32,15 +36,16 @@ ExperimentVis.prototype.MIN_OPACITY = 0.5;
 
 ExperimentVis.prototype.initialize = function() {
 	d3.select(this.el)
-		.style( "text-align", "center" )
 		.style( "vertical-align", "middle" )
-		.style( "background", "#fff" )
-		.style( "border", "4px solid #000" )
+		.style( "background", "#999" )
+		.style( "border-top", "1px solid #333" )
+		.style( "box-shadow", "0 -2px 5px #666" )
 		.style( "opacity", this.MIN_OPACITY )
-		.select( "span" )
+		.select( "span.ExperimentTimeRemaining" )
 			.text( "3:00" );
 
-	this.model.on( "change", this.updateText, this );
+	this.model.on( "change:timer", this.updateText, this );
+	this.model.on( "change:terminate", this.terminateText, this );
 	setInterval( this.updatePosition.bind(this), 25 );
 };
 
@@ -67,15 +72,19 @@ ExperimentVis.prototype.updateText = function() {
 	var seconds1 = Math.round( timer );
 	
 	d3.select(this.el)
-		.style( "opacity", opacity )
-		.style( "color", "rgb("+r+","+g+","+b+")" )
-		.style( "border-color", "rgb("+r+","+g+","+b+")" )
-		.select( "span" )
+//		.style( "opacity", opacity )
+//		.style( "color", "rgb("+r+","+g+","+b+")" )
+		.select( "span.ExperimentTimeRemaining" )
 			.text( minutes + ":" + seconds10 + seconds1 );
+};
+
+ExperimentVis.prototype.terminateText = function() {
+	d3.select(this.el)
+		.text( "Experiment ended due to inactivity." );
 };
 
 ExperimentVis.prototype.updatePosition = function() {
 	var height = window.innerHeight;
 	d3.select(this.el)
-		.style( "top", (height-51) + "px" );
+		.style( "top", (height-42) + "px" );
 };

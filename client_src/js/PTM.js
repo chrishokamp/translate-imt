@@ -5,6 +5,7 @@ var PTM = Backbone.Model.extend({
 	"defaults" : {
 		"isLogging" : true,
 		"postEditMode" : false,
+		"readOnlyMode" : false,
 		"docURL" : "",
 		"sourceLang" : "de",
 		"targetLang" : "en",
@@ -193,7 +194,9 @@ PTM.prototype.setup = function() {
 	
 	// Create an experimentUI (count-down clock, etc)
 	this.experimentUI = new ExperimentUI();
-	this.experimentUI.on( "change", this.makeActivityLogger( "experimentUI", "", this.experimentUI ), this );
+	this.experimentUI.on( "change:tick", this.makeActivityLogger( "experimentUI", "", this.experimentUI ), this );
+	this.experimentUI.on( "change:terminate", this.terminateExperiment, this );
+	this.experimentUI.on( "change:terminate", function() { alert("Time's up!") } );
 	
 	// Create source boxes and typing UIs
 	segmentIds.forEach( function(segmentId) {
@@ -310,6 +313,15 @@ PTM.prototype.setup = function() {
 	
 	// Focus on the first segment
 	this.focusOnSegment( segmentIds[0] );
+};
+
+PTM.prototype.terminateExperiment = function() {
+	d3.selectAll("*")
+		.style( "pointer-events", "none" )
+		.style( "user-select", "none" )
+		.style( "-moz-user-select", "none" )
+		.style( "-webkit-user-select", "none" )
+		.style( "-ms-user-select", "none" );	
 };
 
 PTM.prototype.resizeDocument = function( segmentId ) {

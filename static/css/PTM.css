@@ -78,7 +78,8 @@
 	z-index: 1000;
 	left: 0;
 	top: 0;
-	padding: 10px 30px;
-	font-family: PT_Mono, monospace;
-	font-size: 16pt;
+	width: 100%;
+	font-family: PT_Serif, serif;
+	font-size: 9.5pt;
+	padding: 10px 30px 30px 10px;
 }
