@@ -10,8 +10,8 @@ import cgitb
 def getRequest():
 	form = cgi.FieldStorage()
 	req = {}
-	req['tReq'] = form.getfirst('tReq')
-	req['rqReq'] = form.getfirst('rqReq')
+	req['tReq'] = form.getfirst('tReq').encode( 'ISO-8859-1' ) # .encode( 'utf-8' )
+	req['rqReq'] = form.getfirst('rqReq').encode( 'ISO-8859-1' ) # .encode( 'utf-8' )
 	return req
 	
 def redirectRequest( req ):
