@@ -210,7 +210,15 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 			}
 		}
 		maxBaseTargetTokenIndex = Math.max( translation.length, maxBaseTargetTokenIndex );
+		
+		// EDIT 2014/01/17
+		// Always insert next token of the best translation, so autocomplete (based on word suggestion) is consistent with what's show on the screen (sentence suggestion).
+		if ( translationIndex === 0 && suggestionRank === 0 ) {
+	  		suggestionList[ translationList[0][baseTargetTokenIndex] ] = suggestionRank++;
+		}
 	}
+
+	// The following block is redundant after "EDIT 2014/01/17" above.
 	// Insert the next token of the best translation, if no suggestions are found at this point
 	if ( suggestionRank === 0 && translationList.length > 0 ) {
   		suggestionList[ translationList[0][baseTargetTokenIndex] ] = suggestionRank++;
