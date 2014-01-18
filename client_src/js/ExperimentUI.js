@@ -32,7 +32,7 @@ var ExperimentVis = Backbone.View.extend({
 });
 
 ExperimentVis.prototype.MAX_OPACITY = 1.0;
-ExperimentVis.prototype.MIN_OPACITY = 0.5;
+ExperimentVis.prototype.MIN_OPACITY = 0.925;
 
 ExperimentVis.prototype.initialize = function() {
 	d3.select(this.el)

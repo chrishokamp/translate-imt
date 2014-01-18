@@ -43,7 +43,7 @@ def redirectRequest( request ):
 	request = urllib2.urlopen( url )
 	content = request.read()
 	print 'RESPONSE = {}'.format( content )
-	return json.loads( content, encoding = 'ISO-8859-1' )
+	return json.loads( content, encoding = 'utf-8' )
 	
 parser = argparse.ArgumentParser( description = 'Test script for translate server on joan.stanford.edu' )
 parser.add_argument( '-t', '--translate' , dest = 'translate', action = 'store_true', help = 'Translate (tReq)'  )

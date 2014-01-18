@@ -10,22 +10,22 @@ import cgitb
 def getRequest():
 	form = cgi.FieldStorage()
 	req = {}
-	req['tReq'] = form.getfirst('tReq').encode( 'ISO-8859-1' ) # .encode( 'utf-8' )
-	req['rqReq'] = form.getfirst('rqReq').encode( 'ISO-8859-1' ) # .encode( 'utf-8' )
+	req['tReq'] = form.getfirst('tReq')
+	req['rqReq'] = form.getfirst('rqReq')
 	return req
 	
 def redirectRequest( req ):
 	query = []
 	if req['tReq'] is not None:
-		query.append( 'tReq={}'.format( urllib.quote( req['tReq'] ) ) )
+		query.append( 'tReq={}'.format( urllib.quote( req['tReq'].encode('utf-8') ) ) )
 	if req['rqReq'] is not None:
-		query.append( 'rqReq={}'.format( urllib.quote( req['rqReq'] ) ) )
+		query.append( 'rqReq={}'.format( urllib.quote( req['rqReq'].encode('utf-8') ) ) )
 #	url = 'http://joan.stanford.edu:8017/t?{}'.format( '&'.join( query ) )
 	url = 'http://joan.stanford.edu:8017/x?{}'.format( '&'.join( query ) )
 #	url = 'http://ptm.stanford.edu/x?{}'.format( '&'.join( query ) )
 	request = urllib2.urlopen( url )
 	content = request.read()
-	return json.loads( content, encoding = 'ISO-8859-1' )
+	return json.loads( content, encoding = 'utf-8' )
 
 # Enable debugging
 cgitb.enable()
@@ -38,5 +38,6 @@ response = redirectRequest( request )
 
 # Return the HTTP response
 print "Content-Type: text/plain;charset=utf-8"
+print "Access-Control-Allow-Origin: http://127.0.0.1:8000"
 print
 print json.dumps( response, encoding = 'utf-8' )
