@@ -322,7 +322,7 @@ PTM.prototype.terminateExperiment = function() {
 		.style( "-webkit-user-select", "none" )
 		.style( "-ms-user-select", "none" );
 	alert( "You exceeded the maximum idle time! Your partial translation has been submitted. Click OK to continue to the next sentence." );
-	$( "input[name=is_valid]" ).val( "False" );
+	$( "input[name=valid]" ).val( "False" );
 	$( "input[name=form-tgt-submit]" ).trigger( "click" );
 };
 
