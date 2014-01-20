@@ -10,7 +10,7 @@ T_REQ = {
 	'src' : 'EN',
 	'tgt' : 'DE',
 	"n" : 10,
-	"text" : 'With Europe sputtering and China costly, the "stars are aligning" for Mexico as broad changes in the global economy create new dynamics of migration.',
+	"text" : 'With Europe Österreich sputtering and China costly, the "stars are aligning" for Mexico as broad changes in the global economy create new dynamics of migration.',
 	"tgtPrefix" : ''
 }
 RQ_REQ = {

@@ -10,16 +10,18 @@ import cgitb
 def getRequest():
 	form = cgi.FieldStorage()
 	req = {}
-	req['tReq'] = form.getfirst('tReq')
-	req['rqReq'] = form.getfirst('rqReq')
+	if form.getfirst('tReq') is not None:
+		req['tReq'] = form.getfirst('tReq')
+	if form.getfirst('rqReq') is not None:
+		req['rqReq'] = form.getfirst('rqReq')
 	return req
 	
 def redirectRequest( req ):
 	query = []
-	if req['tReq'] is not None:
-		query.append( 'tReq={}'.format( urllib.quote( req['tReq'].encode('utf-8') ) ) )
-	if req['rqReq'] is not None:
-		query.append( 'rqReq={}'.format( urllib.quote( req['rqReq'].encode('utf-8') ) ) )
+	if 'tReq' in req:
+		query.append( 'tReq={}'.format( urllib.quote( req['tReq'] ) ) )
+	if 'rqReq' in req:
+		query.append( 'rqReq={}'.format( urllib.quote( req['rqReq'] ) ) )
 #	url = 'http://joan.stanford.edu:8017/t?{}'.format( '&'.join( query ) )
 	url = 'http://joan.stanford.edu:8017/x?{}'.format( '&'.join( query ) )
 #	url = 'http://ptm.stanford.edu/x?{}'.format( '&'.join( query ) )
