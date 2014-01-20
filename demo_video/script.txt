@@ -1,0 +1,89 @@
+Interactive Machine Translation Interface
+
+[voice] In the next translation module, you will be using an interactive machine translation interface.
+[fade in and fade out caption: "Interactive machine translation"]
+
+[voice] Sentences belonging to the source document will be displayed in a word processor-like layout. Vertically spaced one after another.
+[highlight: source box]
+
+[voice] Below each source sentence, you will see a suggested translation shown in grey.
+[highlight: target box]
+
+[voice] Click on any sentence to select. And work on it.
+[highlight: select (say) the 3rd sentence]
+[highlight: select the 1st sentence]
+
+[voice] As you start typing, your translation will be shown in black replacing the suggested text.
+[enter some text into the 1st target box]
+
+[fade in and fade out caption: "Three types of suggestions"]
+
+[voice] As you may have noticed, the IMT interface will respond to your input.
+[voice] You will have access to three types of suggestions while working in this interface:
+[voice] First, full sentence suggestions. Shown in grey as you have already seen.
+[highlight: target box]
+
+[voice] Second, suggestions for the current word as you type. Shown in blue just below your cursor.
+[highlight: target suggestions]
+
+[voice] Third, you may also mouse over any word in the source sentence, to see a list of suggested translations.
+[highlight: source suggestions]
+
+[fade in caption: "Suggestions for the current word"]
+[voice] As you start typing a word, the list of suggestions will be updated, to the match your typing. The interface may suggest multi-word phrases, but the suggestions will always match your partially-entered word. If you wish to use a suggested term in your translation, you may click on it using the mouse.
+[mouse movement, mouse click]
+Or, you may select the term using the up/down arrows and then hitting the ENTER key.
+[key up/down, enter]
+Or, you may simply continue typing, and then hit the TAB key to select the first suggestion.
+[enter more text, tab]
+[fade out caption]
+
+[fade in caption: "Full sentence suggestion"]
+[voice] After you finish entering a word --- namely, each time after you hit the whitespace key --- the full sentence suggestion will be updated. Based on your partially-entered response, the interface will make its best effort to complete the sentence for you. If you wish to use the suggested text in your translation, you may hit the TAB key to enter the next chunk of text.
+[fade out caption]
+
+[fade in caption: "Source lookup"]
+[voice] You also have access to source lookup throughout your translation session. Mouse over any word in the source text to see a list of suggested translations.
+[mouse movement]
+To use a suggested term, click to enter the text in your typing area.
+[mouse click]
+[fade out caption]
+
+[fade in caption: "Typing area"]
+[voice] You may interact with text that you've already entered --- namely, any text shown in black --- in the same way you interact with a regular text box. You may select, copy, paste, delete the text, and so on.
+[select, move cursor, copy, paste, delete]
+However, you can only interact with the suggested text --- in grey and blue --- through typing
+[enter some text]
+selecting the first suggestion by hitting the TAB key
+[tab]
+or selecting other suggestions through keyboard or mouse clicks
+[enter, mouse click]
+Remember, this interface is interactive, you can always continue typing to see more relevant suggestions
+[enter more text, tab]
+[fade out caption]
+
+[fade in caption: "Keyboard shortcuts"]
+Below are some keyboard shortcuts that you may find helpful
+To advance to the next sentence, you may enter click on it with your mouse
+[mouse movement, mouse click]
+or simply hit CTRL+ENTER.
+[ctrl+enter]
+To move backward to the previous sentence, you may hit SHIFT+ENTER.
+[shift+enter]
+You may show and hide the current word suggestions by hitting the ESCAPE key.
+[escape, escape]
+If you prefer, you may also turn off all suggestions by unchecking the appropriate checkbox at the top of the screen. To turn suggestions back on, check the corresponding box again.
+[fade out caption]
+
+[fade in caption: "Idle Timer"]
+We ask that you complete this translation session in a single continuous session.
+You will see an idle time at the bottom left corner of the webpage.
+If you pause for more than 3 minutes, your response will be automatically submitted.
+Any additional text entry will reset the timer.
+[enter some text]
+[fade out caption]
+
+When you are done, submit your responses by clicking on the "Submit Translations" button at the bottom of the page.
+
+
+
