@@ -41,7 +41,7 @@ ExperimentVis.prototype.initialize = function() {
 		.style( "box-shadow", "0 -2px 5px #666" )
 		.style( "opacity", this.MIN_OPACITY )
 		.select( "span.ExperimentTimeRemaining" )
-			.text( "3:00" );
+			.text( "-:--" );
 
 	this.model.on( "change:timer", this.updateText, this );
 	this.model.on( "change:terminate", this.terminateText, this );
