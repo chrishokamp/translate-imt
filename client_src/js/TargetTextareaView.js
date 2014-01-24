@@ -38,8 +38,15 @@ TargetTextareaView.prototype.__resize = function() {
 };
 
 TargetTextareaView.prototype.__textareaRenderOnce = function( elem ) {
-	var onFocus = function() { this.model.updateFocus() }.bind(this);
-	var onBlur = function() {}.bind(this);
+	var onFocus = function() {
+		this.model.updateFocus();
+		var segmentId = this.model.get( "segmentId" );
+		this.model.trigger( "textareaOnFocus", segmentId )
+	}.bind(this);
+	var onBlur = function() {
+		var segmentId = this.model.get( "segmentId" );
+		this.model.trigger( "textareaOnBlur", segmentId );
+	}.bind(this);
 	var onKeyDown = function() {
 		var postEditMode = this.model.get("postEditMode");
 		var keyCode = d3.event.keyCode;

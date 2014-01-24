@@ -22,7 +22,8 @@ PTM.prototype.reset = function() {
 		"docId" : null,
 		"segmentIds" : [],
 		"segments" : {},
-		"focusSegment" : null
+		"focusSegment" : null,
+		"hasMasterFocus" : true,
 	});
 
 	// Define or create a stub for all models and views.
@@ -50,6 +51,7 @@ PTM.prototype.reset = function() {
 	// Define debounced methods
 	this.updateSourceSuggestions = _.debounce( this.__updateSourceSuggestions, 10 );
 	this.updateTargetSuggestions = this.__updateTargetSuggestions; //_.debounce( this.__updateTargetSuggestions, 10 );
+	this.textareaFocusOrBlur = _.debounce( this.__textareaFocusOrBlur, 25 );
 };
 
 PTM.prototype.initialize = function() {
@@ -182,6 +184,23 @@ PTM.prototype.logActivities = function( elemId, subElemId, elem ) {
 	this.get("activities").push(activity);
 };
 
+PTM.prototype.textareaOnFocus = function( segmentId ) {
+	this.textareaFocusOrBlur( segmentId );
+};
+PTM.prototype.textareaOnBlur = function( segmentId ) {
+	this.textareaFocusOrBlur( null );
+}
+PTM.prototype.__textareaFocusOrBlur = function( segmentId ) {
+	hasMasterFocus = ( segmentId !== null );
+	this.set( "hasMasterFocus", hasMasterFocus );
+	
+	var segmentIds = this.get( "segmentIds" );
+//	segmentIds.forEach( function(segmentId) {
+//		this.sourceSuggestions[segmentId].set( "hasMasterFocus", hasMasterFocus );
+//		this.targetSuggestions[segmentId].set( "hasMasterFocus", hasMasterFocus );
+//	}.bind(this) );
+};
+
 /**
  * Controller for the Predictive Translate Memory
  **/
@@ -284,6 +303,8 @@ PTM.prototype.setup = function() {
 		this.listenTo( targetBox, "updateTranslations", this.loadTranslations );
 		this.listenTo( targetBox, "updateBoxDims", this.resizeDocument );
 		this.listenTo( targetBox, "keypress", this.experimentUI.reset.bind(this.experimentUI) );
+		this.listenTo( targetBox, "textareaOnFocus", this.textareaOnFocus );
+		this.listenTo( targetBox, "textareaOnBlur", this.textareaOnBlur );
 		
 		this.listenTo( targetSuggestion, "mouseover", function(){} );
 		this.listenTo( targetSuggestion, "mouseout", function(){} );

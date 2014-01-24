@@ -5,9 +5,14 @@ var DocumentView = Backbone.View.extend({
 DocumentView.prototype.WIDTH = 800;
 DocumentView.prototype.PADDING = 20;
 DocumentView.prototype.REGULAR_BACKGROUND = "#fff";
+
 DocumentView.prototype.FOCUS_BACKGROUND = "#DEEBF7";
 DocumentView.prototype.FOCUS_COLOR = "#9ECAE1";
 DocumentView.prototype.FOCUS_SHADOW = "#6baed6";
+DocumentView.prototype.DEFOCUS_BACKGROUND = "#EEE";
+DocumentView.prototype.DEFOCUS_COLOR = "#CCC";
+DocumentView.prototype.DEFOCUS_SHADOW = "#CCC";
+
 DocumentView.prototype.ANIMATION_DURATION = 120;
 DocumentView.prototype.SCROLL_FRACTION = 0.15;
 DocumentView.prototype.SCROLL_TOP_PADDING = 60;
@@ -39,7 +44,7 @@ DocumentView.prototype.initialize = function( options ) {
 	
 	this.resize = _.debounce( this.__resize, 10 );
 	this.animatedScroll = _.debounce( this.__animatedScroll, 10 );
-	this.listenTo( this.model, "change:focusSegment", this.render.bind(this) );
+	this.listenTo( this.model, "change:focusSegment change:hasMasterFocus", this.render.bind(this) );
 };
 
 DocumentView.prototype.render = function( focusSegment ) {
@@ -127,6 +132,23 @@ DocumentView.prototype.__focusRenderOnce = function( elem ) {
 DocumentView.prototype.__focusRenderAlways = function( elem ) {
 	var focusSegment = this.model.get( "focusSegment" );
 	if ( focusSegment !== null ) {
+		if ( this.model.get("hasMasterFocus") ) {
+			elem
+				.style( "border-top", "1px solid " + this.FOCUS_COLOR )
+				.style( "border-bottom", "1px solid " + this.FOCUS_COLOR )
+				.style( "border-left", "25px solid " + this.FOCUS_COLOR )
+				.style( "background", this.FOCUS_BACKGROUND )
+				.style( "box-shadow", "0 0 8px " + this.FOCUS_SHADOW );
+		}
+		else {
+			elem
+				.style( "border-top", "1px solid " + this.DEFOCUS_COLOR )
+				.style( "border-bottom", "1px solid " + this.DEFOCUS_COLOR )
+				.style( "border-left", "25px solid " + this.DEFOCUS_COLOR )
+				.style( "background", this.DEFOCUS_BACKGROUND )
+				.style( "box-shadow", "0 0 8px " + this.DEFOCUS_SHADOW );
+		}
+
 		var focusSourceView = this.views.container.select( ".SourceBoxView" + focusSegment );
 		var focusTargetView = this.views.container.select( ".TargetBoxView" + focusSegment );
 		var top = focusSourceView[0][0].offsetTop;

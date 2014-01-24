@@ -37,7 +37,7 @@ SourceSuggestionView.prototype.__containerRenderOnce = function( elem ) {
 		.style( "visibility", "visible" );
 };
 SourceSuggestionView.prototype.__containerRenderAlways = function( elem ) {
-	var hasFocus = this.model.get( "hasFocus" );
+	var hasFocus = this.model.get( "hasFocus" ) && this.model.get( "hasMasterFocus" );
 	var tokenIndex = this.model.get( "tokenIndex" );
 	var targets = this.model.get( "targets" );
 	var isVisible = ( hasFocus && tokenIndex !== null && targets.length > 0 );

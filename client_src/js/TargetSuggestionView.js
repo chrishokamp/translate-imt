@@ -35,7 +35,7 @@ TargetSuggestionView.prototype.__containerRenderOnce = function( elem ) {
 		.style( "visibility", "visible" );
 };
 TargetSuggestionView.prototype.__containerRenderAlways = function( elem ) {
-	var hasFocus = this.model.get( "hasFocus" );
+	var hasFocus = this.model.get( "hasFocus" ) && this.model.get( "hasMasterFocus" );
 	var candidates = this.model.get( "candidates" );
 	var isVisible = ( hasFocus && candidates.length > 0 );
 	elem.style( "visibility", isVisible ? "visible" : "hidden" )
