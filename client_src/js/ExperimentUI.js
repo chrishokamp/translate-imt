@@ -1,21 +1,20 @@
 var ExperimentUI = Backbone.Model.extend({
 	"defaults" : {
+		"maxIdleTime" : 180,
 		"timer" : 180,
 		"terminate" : false
 	}
 });
 
-ExperimentUI.prototype.MAX_TIME = 180;
-
 ExperimentUI.prototype.initialize = function() {
-	this.set( "timer", this.MAX_TIME );
+	this.set( "timer", this.get( "maxIdleTime" ) );
 	this.vis = new ExperimentVis({ model: this });
 	this.tick = _.debounce( this.__tick.bind(this), 1000, false );
 	this.tick();
 };
 
 ExperimentUI.prototype.reset = function() {
-	this.set( "timer", this.MAX_TIME );
+	this.set( "timer", this.get( "maxIdleTime" ) );
 	this.tick();
 };
 

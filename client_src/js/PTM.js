@@ -5,6 +5,7 @@ var PTM = Backbone.Model.extend({
 	"defaults" : {
 		"isLogging" : true,
 		"postEditMode" : false,
+		"maxIdleTime" : 180,
 		"readOnlyMode" : false,
 		"docURL" : "",
 		"sourceLang" : "de",
@@ -193,7 +194,7 @@ PTM.prototype.setup = function() {
 	this.documentView = new DocumentView({ "model" : this });
 	
 	// Create an experimentUI (count-down clock, etc)
-	this.experimentUI = new ExperimentUI();
+	this.experimentUI = new ExperimentUI({ "maxIdleTime" : this.get("maxIdleTime") });
 	this.experimentUI.on( "change:tick", this.makeActivityLogger( "experimentUI", "", this.experimentUI ), this );
 	this.experimentUI.on( "change:terminate", this.terminateExperiment, this );
 	
