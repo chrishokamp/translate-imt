@@ -50,13 +50,15 @@ SourceBoxView.prototype.__containerRenderAlways = function( elem ) {
 SourceBoxView.prototype.__tokenRenderOnce = function( elem ) {
 	elem.style( "pointer-events", "auto" )
 		.style( "cursor", "default" )
+//		.style( "white-space", "pre-wrap" )
 		.on( "click", this.__mouseClick.bind(this) );
 };
 SourceBoxView.prototype.__tokenRenderAlways = function() {};
 
 SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
+	var layoutSpec = this.model.get( "layoutSpec" );
 	elem.style( "display", "inline-block" )
-		.style( "white-space", "pre-wrap" )
+//		.style( "white-space", "pre-wrap" )
 		.style( "vertical-align", "top" )
 		.text( function(d) { return d } )
 		.style( "pointer-events", "auto" )
@@ -86,10 +88,22 @@ SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 };
 
 SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
+	var layoutSpec = this.model.get( "layoutSpec" );
+	var noSepElem = function(d,i) {
+		if ( i < layoutSpec.length - 1 ) {
+			var spec = layoutSpec[i+1];
+			if ( spec === "cl" ) {
+				return true;
+			}
+		}
+		return false;
+	};
 	elem.style( "display", "inline-block" )
 		.style( "white-space", "pre-wrap" )
 		.style( "vertical-align", "top" )
 		.text( " " )
+		.filter( noSepElem )
+			.remove();
 };
 SourceBoxView.prototype.__tokenSepRenderAlways = function() {};
 

@@ -8,6 +8,9 @@ SourceBoxState.prototype.reset = function() {
 		/** @type {string[]} A list of strings representings tokens in the source text. Value is set by PTM on initialization. */
 		"tokens" : [],
 		
+		/** @type {string[]} A list of strings either "" or "cl"
+		"layoutSpec" : [],
+		
 		/** @type {integer|null} Index of the token currently under mouse hover in the source box. **/
 		"hoverTokenIndex" : null,
 		

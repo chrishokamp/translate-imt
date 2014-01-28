@@ -235,7 +235,8 @@ PTM.prototype.setup = function() {
 		sourceBox.on( "change", this.makeActivityLogger( "sourceBoxes", segmentId, sourceBox ), this );
 		sourceBox.set({
 			"segmentId" : segmentId,
-			"tokens" : segments[ segmentId ].tokens
+			"tokens" : segments[ segmentId ].tokens,
+			"layoutSpec" : segments[ segmentId ].layoutSpec
 		});
 		this.sourceBoxes[segmentId] = sourceBox;
 		
