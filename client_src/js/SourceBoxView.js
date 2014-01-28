@@ -48,17 +48,29 @@ SourceBoxView.prototype.__containerRenderAlways = function( elem ) {
 };
 
 SourceBoxView.prototype.__tokenRenderOnce = function( elem ) {
+	var layoutSpec = this.model.get( "layoutSpec" );
+	var noWrapBeforeOrAfterElem = function( d, i ) {
+		var specBefore = layoutSpec[i];
+		if ( specBefore === "cl" ) {
+			return "nowrap";
+		}
+		if ( i < layoutSpec.length - 1 ) {
+			var specAfter = layoutSpec[i+1];
+			if ( specAfter === "cl" ) {
+				return "nowrap";
+			}
+		}
+		return null;
+	};
 	elem.style( "pointer-events", "auto" )
 		.style( "cursor", "default" )
-//		.style( "white-space", "pre-wrap" )
+		.style( "white-space", noWrapBeforeOrAfterElem )
 		.on( "click", this.__mouseClick.bind(this) );
 };
 SourceBoxView.prototype.__tokenRenderAlways = function() {};
 
 SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
-	var layoutSpec = this.model.get( "layoutSpec" );
 	elem.style( "display", "inline-block" )
-//		.style( "white-space", "pre-wrap" )
 		.style( "vertical-align", "top" )
 		.text( function(d) { return d } )
 		.style( "pointer-events", "auto" )
@@ -89,7 +101,7 @@ SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 
 SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
 	var layoutSpec = this.model.get( "layoutSpec" );
-	var noSepElem = function(d,i) {
+	var selectNoSepElem = function( d, i ) {
 		if ( i < layoutSpec.length - 1 ) {
 			var spec = layoutSpec[i+1];
 			if ( spec === "cl" ) {
@@ -102,7 +114,7 @@ SourceBoxView.prototype.__tokenSepRenderOnce = function( elem ) {
 		.style( "white-space", "pre-wrap" )
 		.style( "vertical-align", "top" )
 		.text( " " )
-		.filter( noSepElem )
+		.filter( selectNoSepElem )
 			.remove();
 };
 SourceBoxView.prototype.__tokenSepRenderAlways = function() {};

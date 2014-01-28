@@ -3,7 +3,7 @@ var SourceSuggestionView = Backbone.View.extend({
 });
 
 SourceSuggestionView.prototype.X_OFFSET = 0;
-SourceSuggestionView.prototype.Y_OFFSET = -( 12 + 7 ) + 12 + 4;
+SourceSuggestionView.prototype.Y_OFFSET = -( 12 + 7 ) + 12 + 2;
 SourceSuggestionView.prototype.CATCHER_PADDING = 4;
 SourceSuggestionView.prototype.MT_COLOR = "#4292C6";
 SourceSuggestionView.prototype.ACTIVE_COLOR = "#ff7f0e";
