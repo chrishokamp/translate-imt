@@ -82,9 +82,9 @@ SourceSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 };
 
 SourceSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
-	var os = d3.scale.linear().domain( [ 0, 0.25 ] ).range( [ 0, 1 ] );
+	var os = d3.scale.linear().domain( [ 0, 0.5 ] ).range( [ 0.3, 1 ] );
 	var opacity = function(d) {
-		return Math.min( 1, Math.max( 0, os( d.score ) ) )
+		return Math.min( 1, Math.max( 0.3, os( d.score ) ) )
 	}.bind(this);
 	var borderTop = function(_,i) {
 		return i===0 ? null : "1px dotted " + this.MT_COLOR
