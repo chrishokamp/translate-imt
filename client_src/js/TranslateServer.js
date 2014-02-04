@@ -12,12 +12,12 @@ var TranslateServer = function( sourceLang, targetLang ) {
 TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
 
 // Debug settings
-TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8000/x";
+//TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8000/x";
 //TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
 //TranslateServer.prototype.SERVER_URL = "http://ptm.stanford.edu/x";
-//TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
-TranslateServer.prototype.SRC_LANG = "EN";
-TranslateServer.prototype.TGT_LANG = "FR";
+TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
+TranslateServer.prototype.SRC_LANG = "FR";
+TranslateServer.prototype.TGT_LANG = "EN";
 
 TranslateServer.prototype.TRANSLATE_LIMIT = 10;
 TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
@@ -35,7 +35,7 @@ TranslateServer.prototype.TIMEOUT = 30000;  // milliseconds
 
 TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
 	if ( word === undefined || word === "" ) {
-		callback( null, null );
+		callback( null, null, false );
 		return;
 	}
 	if ( leftContext === undefined ) {
@@ -64,7 +64,7 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
 		if ( this.CONSOLE_LOG ) {
 			console.log( "[rqReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
-		callback( responseData, requestData );
+		callback( responseData, requestData, true );
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
 		var responseTime = new Date();
@@ -78,7 +78,7 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
 		if ( this.CONSOLE_LOG ) {
 			console.log( "[rqReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
-		callback( responseData, requestData );
+		callback( responseData, requestData, false );
 	}.bind(this);
 	var requestMessage = {
 		"url" : this.SERVER_URL,
@@ -99,7 +99,7 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
  **/
 TranslateServer.prototype.translate = function( sourceText, targetPrefix, callback ) {
 	if ( sourceText === undefined || sourceText === "" ) {
-		callback( null, null );
+		callback( null, null, false );
 		return;
 	}
 	if ( targetPrefix === undefined ) {
@@ -132,7 +132,7 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 		if ( this.CONSOLE_LOG ) {
 			console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
-		callback( responseData, requestData );
+		callback( responseData, requestData, true );
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
 		var responseTime = new Date();
@@ -146,7 +146,7 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 		if ( this.CONSOLE_LOG ) {
 			console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
-		callback( responseData, requestData );
+		callback( responseData, requestData, false );
 	}.bind(this);
 	
 	// Send the request

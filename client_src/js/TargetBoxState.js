@@ -695,10 +695,18 @@ TargetBoxState.prototype.updateBoxDims = function() {
 };
 
 TargetBoxState.prototype.focus = function() {
-	var caretIndex = this.viewTextarea.textarea[0][0].value.length
-	this.viewTextarea.textarea[0][0].selectionStart = caretIndex;
-	this.viewTextarea.textarea[0][0].selectionEnd = caretIndex;
-	this.viewTextarea.textarea[0][0].focus();
+	var postEditMode = this.get("postEditMode");
+	if ( postEditMode ) {
+		this.viewTextarea.textarea[0][0].selectionStart = 0;
+		this.viewTextarea.textarea[0][0].selectionEnd = 0;
+		this.viewTextarea.textarea[0][0].focus();
+	}
+	else {
+		var caretIndex = this.viewTextarea.textarea[0][0].value.length;
+		this.viewTextarea.textarea[0][0].selectionStart = caretIndex;
+		this.viewTextarea.textarea[0][0].selectionEnd = caretIndex;
+		this.viewTextarea.textarea[0][0].focus();
+	}
 	this.set({
 		"hasFocus" : true,
 		"caretIndex" : caretIndex
