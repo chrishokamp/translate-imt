@@ -13,6 +13,7 @@ SourceBoxState.prototype.reset = function() {
 		
 		/** @type {integer|null} Index of the token currently under mouse hover in the source box. **/
 		"hoverTokenIndex" : null,
+		"isEmptySuggestion" : false,
 		
 		/** @type {{integer:true}} Indexes of tokens that have a corresponding term in the typing UI. **/
 		"matchedTokenIndexes" : {},

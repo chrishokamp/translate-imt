@@ -6,6 +6,7 @@ SourceBoxView.prototype.REGULAR_COLOR = "#333";
 SourceBoxView.prototype.UNMATCHED_COLOR = "#333";
 SourceBoxView.prototype.MATCHED_COLOR = "#4292C6";
 SourceBoxView.prototype.HOVER_COLOR = "#ff7f0e";
+SourceBoxView.prototype.EMPTY_SUGGESTIONC_COLOR = "#999";
 
 SourceBoxView.prototype.ANIMATION_DURATION = 120;
 
@@ -81,14 +82,19 @@ SourceBoxView.prototype.__tokenTermRenderOnce = function( elem ) {
 };
 SourceBoxView.prototype.__tokenTermRenderAlways = function( elem ) {
 	var hasFocus = this.model.get( "hasFocus" );
+	var isEmptySuggestion = this.model.get( "isEmptySuggestion" );
 	var color = function( _, tokenIndex ) {
 		var isHovered = ( tokenIndex === this.model.get( "hoverTokenIndex" ) );
 		var isMatched = ( this.model.get( "matchedTokenIndexes" ).hasOwnProperty( tokenIndex ) );
 		if ( hasFocus ) {
-			if ( isHovered ) 
-				return this.HOVER_COLOR;
-			else if ( isMatched ) 
-			 	return this.MATCHED_COLOR;
+			if ( isHovered ) {
+				if ( isEmptySuggestion )
+					return this.EMPTY_SUGGESTIONC_COLOR;
+				else
+					return this.HOVER_COLOR;
+			}
+			else if ( isMatched )
+				return this.MATCHED_COLOR;
 			else
 				return this.UNMATCHED_COLOR;
 		}

@@ -436,7 +436,8 @@ PTM.prototype.__updateSourceSuggestions = function( segmentId, tokenIndex ) {
 		var source = ( tokenIndex === null ) ? "" : segment.tokens[ tokenIndex ];
 		var leftContext = ( source === "" || tokenIndex === 0 ) ? "" : segment.tokens[ tokenIndex-1 ];
 		this.sourceBoxes[segmentId].set({
-			"hoverTokenIndex" : tokenIndex
+			"hoverTokenIndex" : tokenIndex,
+			"isEmptySuggestion" : false,
 		});
 		this.sourceSuggestions[segmentId].set({
 			"source" : source,
@@ -582,7 +583,7 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 			response.result = [ { 'tgt' : [ source ] } ];
 		}
 		if ( response.hasOwnProperty( "result" ) ) {
-			response.result = _.filter( response.result, function(d) { return d.tgt.length > 0 } );
+			response.result = _.filter( response.result, function(d) { return ( d.tgt.length > 0 ) && ( d.tgt[0].match( reContainsAlphabets ) !== null ) } );
 		}
 		return response;
 	}.bind(this);
@@ -604,6 +605,10 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 		if ( source === expectedSource && leftContext === expectedLeftContext ) {
 			var targets = getTargetTerms( response );
 			var scores = getTargetScores( response );
+			var isEmptySuggestion = ( targets.length === 0 );
+			this.sourceBoxes[segmentId].set({
+				"isEmptySuggestion" : isEmptySuggestion
+			})
 			this.sourceSuggestions[segmentId].set({
 				"source" : source,
 				"leftContext" : leftContext,
