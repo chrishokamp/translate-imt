@@ -613,10 +613,12 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 		}
 	}.bind(this);
 	var cacheKey = leftContext + ":" + source;
-	var cacheAndUpdate = function( response, request ) {
-		response = filterEmptyResults( response );
-		this.cache.wordQueries[ cacheKey ] = response;
-		update( response );
+	var cacheAndUpdate = function( response, request, isSuccessful ) {
+		if ( isSuccessful ) {
+			response = filterEmptyResults( response );
+			this.cache.wordQueries[ cacheKey ] = response;
+			update( response );
+		}
 	}.bind(this);
 	if ( this.cache.wordQueries.hasOwnProperty( cacheKey ) ) {
 		update( this.cache.wordQueries[ cacheKey ] );
@@ -734,11 +736,13 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 			}
 		}
 	}.bind(this);
-	var cacheAndUpdate = function( response, request ) {
-		response = amendTranslationTokens( response );
-		response = amendAlignIndexes( response );
-		this.cache.translations[ segmentId ][ prefix ] = response;
-		update( response );
+	var cacheAndUpdate = function( response, request, isSuccessful ) {
+		if ( isSuccessful ) {
+			response = amendTranslationTokens( response );
+			response = amendAlignIndexes( response );
+			this.cache.translations[ segmentId ][ prefix ] = response;
+			update( response );
+		}
 	}.bind(this);
 
   // Check the cache for translations
