@@ -12,12 +12,12 @@ var TranslateServer = function( sourceLang, targetLang ) {
 TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
 
 // Debug settings
-TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8000/x";
+//TranslateServer.prototype.SERVER_URL = "http://127.0.0.1:8000/x";
 //TranslateServer.prototype.SERVER_URL = "http://joan.stanford.edu:8017/t";
 //TranslateServer.prototype.SERVER_URL = "http://ptm.stanford.edu/x";
-//TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
-TranslateServer.prototype.SRC_LANG = "EN";
-TranslateServer.prototype.TGT_LANG = "FR";
+TranslateServer.prototype.SERVER_URL = "http://localhost:8888/cgi-bin/redirect.py";
+TranslateServer.prototype.SRC_LANG = "FR";
+TranslateServer.prototype.TGT_LANG = "EN";
 
 TranslateServer.prototype.TRANSLATE_LIMIT = 10;
 TranslateServer.prototype.WORD_QUERY_LIMIT = 4;
