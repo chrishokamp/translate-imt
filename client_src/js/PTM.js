@@ -628,7 +628,9 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 	if ( this.cache.wordQueries.hasOwnProperty( cacheKey ) ) {
 		update( this.cache.wordQueries[ cacheKey ] );
 	} else {
-		this.server.wordQuery( source, leftContext, cacheAndUpdate );
+    var segments = this.get( "segments" );
+    var inputProperties = segments[ segmentId ].inputProperties;
+		this.server.wordQuery( source, leftContext, inputProperties, cacheAndUpdate );
 	}
 };
 
@@ -759,8 +761,9 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	// Otherwise, request translations from the service
 		var segments = this.get( "segments" );
 		var source = segments[ segmentId ].tokens.join( " " );
+    var inputProperties = segments[ segmentId ].inputProperties;
 		this.cache.translations[ segmentId ][ prefix ] = null;
-		this.server.translate( source, prefix, cacheAndUpdate );  // Asynchronous request
+		this.server.translate( source, prefix, inputProperties, cacheAndUpdate );  // Asynchronous request
 		
 		// Try to recover partial set of translations during the asynchronous request
 		this.recycleTranslations( segmentId );
