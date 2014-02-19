@@ -148,24 +148,25 @@ DocumentView.prototype.__focusRenderAlways = function( elem ) {
 				.style( "background", this.DEFOCUS_BACKGROUND )
 				.style( "box-shadow", "0 0 8px " + this.DEFOCUS_SHADOW );
 		}
-
-		var focusSourceView = this.views.container.select( ".SourceBoxView" + focusSegment );
-		var focusTargetView = this.views.container.select( ".TargetBoxView" + focusSegment );
-		var top = focusSourceView[0][0].offsetTop;
-		var bottom = focusTargetView[0][0].offsetTop + focusTargetView[0][0].offsetHeight;
-		elem.transition().duration( this.ANIMATION_DURATION )
-			.style( "opacity", 1 )
-			.style( "top", (top-1) + "px" )
-			.style( "height", (bottom-top) + "px" )
+		if ( this.model.get("hasMasterFocus") ) {
+			var focusSourceView = this.views.container.select( ".SourceBoxView" + focusSegment );
+			var focusTargetView = this.views.container.select( ".TargetBoxView" + focusSegment );
+			var top = focusSourceView[0][0].offsetTop;
+			var bottom = focusTargetView[0][0].offsetTop + focusTargetView[0][0].offsetHeight;
+			elem.transition().duration( this.ANIMATION_DURATION )
+				.style( "opacity", 1 )
+				.style( "top", (top-1) + "px" )
+				.style( "height", (bottom-top) + "px" )
 			
-		var body = d3.select("body")[0][0];
-		var scrollTop = body.scrollTop;
-		var scrollBottom = scrollTop + window.innerHeight;
-		if ( top < scrollTop + this.SCROLL_TOP_PADDING ) {
-			this.animatedScroll( top - this.SCROLL_TOP_PADDING );
-		}
-		else if ( bottom > scrollBottom - this.SCROLL_BOTTOM_PADDING ) {
-			this.animatedScroll( bottom - window.innerHeight + this.SCROLL_BOTTOM_PADDING );
+			var body = d3.select("body")[0][0];
+			var scrollTop = body.scrollTop;
+			var scrollBottom = scrollTop + window.innerHeight;
+			if ( top < scrollTop + this.SCROLL_TOP_PADDING ) {
+				this.animatedScroll( top - this.SCROLL_TOP_PADDING );
+			}
+			else if ( bottom > scrollBottom - this.SCROLL_BOTTOM_PADDING ) {
+				this.animatedScroll( bottom - window.innerHeight + this.SCROLL_BOTTOM_PADDING );
+			}
 		}
 	}
 	else {
