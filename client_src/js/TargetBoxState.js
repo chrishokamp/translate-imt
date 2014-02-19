@@ -246,7 +246,6 @@ TargetBoxState.prototype.__identifyContiguousSuggestion = function( translation,
 			}
 			if (suggestionTokens.length > 0) {
 				var suggestionText = suggestionTokens.join(" ");
-        console.log(suggestionText);
 				return suggestionText;
 			}
 		}
