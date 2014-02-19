@@ -66,7 +66,7 @@ TargetBoxState.prototype.MIN_HEIGHT = 18;
 TargetBoxState.prototype.ANIMATION_DELAY = 180;
 TargetBoxState.prototype.ANIMATION_DURATION = 120;
 TargetBoxState.prototype.IMMEDIATELY = 5;  // milliseconds
-TargetBoxState.prototype.BEST_TRANSLATION_DELAY = 1000; // milliseconds
+TargetBoxState.prototype.BEST_TRANSLATION_DELAY = 750; // milliseconds
 
 TargetBoxState.prototype.WHITESPACE = /[ ]+/g;
 TargetBoxState.prototype.WHITESPACE_SEPS = /([ ]+)/g;
@@ -198,35 +198,47 @@ TargetBoxState.prototype.__identifyContiguousSuggestion = function( translation,
 	if ( sourceTokenIndexes && sourceTokenIndexes.length > 0 ) {
 
 		// Identify chunk index belonging to the left-most source token
-  		var leftMostSourceTokenIndex = Math.min.apply( Math, sourceTokenIndexes );
-  		var sourceChunkIndex = chunkVector[ leftMostSourceTokenIndex ];
+    var leftMostSourceTokenIndex = translation.length + 1;
+    var sourceChunks = {};
+    for (var i = 0; i < sourceTokenIndexes.length; ++i ) {
+      var sourceIndex = sourceTokenIndexes[ i ];
+      var sourceChunkIndex = chunkVector[ sourceIndex ];
+      sourceChunks[ sourceChunkIndex ] = true;
+      if ( sourceIndex < leftMostSourceTokenIndex ) {
+        leftMostSourceTokenIndex = sourceIndex;
+      }
+    }
 
 		// All chunks left of the above index are considered "matched" and not touched.
 		// Reverse look up: Identify corresponding chunk indexes
 		// Reverse look up: Identify all corresponding target tokens
  		var targetTokenIndexes = [];
-  		for ( var i = leftMostSourceTokenIndex; i < chunkVector.length; i++ ) {
-    		if ( chunkVector[i] !== sourceChunkIndex ) {
-      			break;
-    		}
-    		if ( s2t.hasOwnProperty(i) ) {
-      			Array.prototype.push.apply( targetTokenIndexes, s2t[i] );
-    		}
-  		}
+  	for ( var i = leftMostSourceTokenIndex; i < chunkVector.length; i++ ) {
+    	if ( !(chunkVector[i] in sourceChunks) ) {
+      	break;
+    	}
+    	if ( s2t.hasOwnProperty(i) ) {
+      	Array.prototype.push.apply( targetTokenIndexes, s2t[i] );
+    	}
+  	}
 
-  		// Chunk in the target language
+  	// Chunk in the target language
 		if ( targetTokenIndexes.length > 0 ) {
-			targetTokenIndexes = _.uniq( targetTokenIndexes );
+      // Sort the array first, then uniq with underscore.
+      targetTokenIndexes.sort();
+			targetTokenIndexes = _.uniq( targetTokenIndexes, true );
 			var rightMostTargetTokenIndex = -1;
 			
-			// Construction a continuguos suggestion text in the target language
+			// Construction a contiguous suggestion text in the target language
 			var suggestionTokens = [];
 			for ( var i = 0; i < targetTokenIndexes.length; i++ ) {
 				var targetTokenIndex = targetTokenIndexes[i];
 				if ( targetTokenIndex < baseTargetTokenIndex ) {
+          // Skip alignments into the prefix
 					continue;
 				}
 				if ( rightMostTargetTokenIndex >= 0 && targetTokenIndex - rightMostTargetTokenIndex !== 1 ) {
+          // Stop when a discontinuity is encountered. The source was reordered.
 					break;
 				}
 				rightMostTargetTokenIndex = targetTokenIndex;
@@ -234,6 +246,7 @@ TargetBoxState.prototype.__identifyContiguousSuggestion = function( translation,
 			}
 			if (suggestionTokens.length > 0) {
 				var suggestionText = suggestionTokens.join(" ");
+        console.log(suggestionText);
 				return suggestionText;
 			}
 		}
@@ -267,7 +280,7 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 		// Get the next translation, and its source-to-target and target-to-source alignments
 		var translation = translationList[ translationIndex ];
 		var s2t = s2tAlignments[ translationIndex ];
-    	var t2s = t2sAlignments[ translationIndex ];
+    var t2s = t2sAlignments[ translationIndex ];
 		var suggestionText = this.__identifyContiguousSuggestion( translation, s2t, t2s, baseTargetTokenIndex );
 		if ( suggestionText !== null ) {
 			if ( ! suggestionList.hasOwnProperty(suggestionText) ) {
