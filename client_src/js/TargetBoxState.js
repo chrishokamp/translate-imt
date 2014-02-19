@@ -188,7 +188,7 @@ TargetBoxState.prototype.__flushSuggestionList = function() {
 	console.log( "suggestionExpList -> delayedSuggestionExpList", suggestionExpList )
 };
 
-TargetBoxState.prototype.__identifyContinugousSuggestion = function( translation, s2t, t2s, baseTargetTokenIndex ) {
+TargetBoxState.prototype.__identifyContiguousSuggestion = function( translation, s2t, t2s, baseTargetTokenIndex ) {
 
 	// chunkVector is never changed after initialization.
 	var chunkVector = this.get( "chunkVector" );
@@ -268,7 +268,7 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 		var translation = translationList[ translationIndex ];
 		var s2t = s2tAlignments[ translationIndex ];
     	var t2s = t2sAlignments[ translationIndex ];
-		var suggestionText = this.__identifyContinugousSuggestion( translation, s2t, t2s, baseTargetTokenIndex );
+		var suggestionText = this.__identifyContiguousSuggestion( translation, s2t, t2s, baseTargetTokenIndex );
 		if ( suggestionText !== null ) {
 			if ( ! suggestionList.hasOwnProperty(suggestionText) ) {
 				suggestionList[suggestionText] = suggestionRank++;
@@ -305,7 +305,7 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 			var translation = translationList[ translationIndex ];
 			var s2t = s2tAlignments[ translationIndex ];
 	    	var t2s = t2sAlignments[ translationIndex ];
-			var suggestionText = this.__identifyContinugousSuggestion( translation, s2t, t2s, futureTargetTokenIndex );
+			var suggestionText = this.__identifyContiguousSuggestion( translation, s2t, t2s, futureTargetTokenIndex );
 			if ( suggestionText !== null ) {
 				if ( ! suggestionList.hasOwnProperty(suggestionText) && ! suggestionExpList.hasOwnProperty(suggestionText) ) {
 					suggestionExpList[suggestionText] = suggestionExpRank++;
@@ -360,7 +360,7 @@ TargetBoxState.prototype.updateDelayedSuggestionList = function() {
 		var translation = translationList[ translationIndex ];
 		var s2t = s2tAlignments[ translationIndex ];
     	var t2s = t2sAlignments[ translationIndex ];
-		var suggestionText = this.__identifyContinugousSuggestion( translation, s2t, t2s, baseTargetTokenIndex );
+		var suggestionText = this.__identifyContiguousSuggestion( translation, s2t, t2s, baseTargetTokenIndex );
 		if ( suggestionText !== null ) {
 			if ( ! suggestionList.hasOwnProperty(suggestionText) ) {
 				suggestionList[suggestionText] = suggestionRank++;
@@ -397,7 +397,7 @@ TargetBoxState.prototype.updateDelayedSuggestionList = function() {
 			var translation = translationList[ translationIndex ];
 			var s2t = s2tAlignments[ translationIndex ];
 	    	var t2s = t2sAlignments[ translationIndex ];
-			var suggestionText = this.__identifyContinugousSuggestion( translation, s2t, t2s, futureTargetTokenIndex );
+			var suggestionText = this.__identifyContiguousSuggestion( translation, s2t, t2s, futureTargetTokenIndex );
 			if ( suggestionText !== null ) {
 				if ( ! suggestionList.hasOwnProperty(suggestionText) && ! suggestionExpList.hasOwnProperty(suggestionText) ) {
 					suggestionExpList[suggestionText] = suggestionExpRank++;
@@ -642,12 +642,14 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 		var s2tAlignments = this.get( "s2tAlignments" );
 		var t2sAlignments = this.get( "t2sAlignments" );
 		if ( s2tAlignments.length > 0 && t2sAlignments.length > 0 ) {
-		    var s2t = s2tAlignments[0];
+		  var s2t = s2tAlignments[0];
 			var t2s = t2sAlignments[0];
 			if ( userTokens.length > 0 ) {
-				var maxIndex = userTokens.length-1;
+        var size = userTokens.length;
+        // Account for the pad at the end of the user prefix
+				var maxIndex = userTokens[size-1].length === 0 ? userTokens.length-1 : userTokens.length;
 				var rightMostSrcIndex = -1;
-		        for ( var t = 0; t < maxIndex; t++ ) {
+		    for ( var t = 0; t < maxIndex; t++ ) {
 					if ( t2s.hasOwnProperty(t) ) {
 						var srcIndexList = t2s[ t ];
 						for ( var s = 0; s < srcIndexList.length; s++ ) {
@@ -656,8 +658,8 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 							rightMostSrcIndex = Math.max( rightMostSrcIndex, srcIndex );
 						}
 					}
-		        }
-				// Blank out unaligned source tokens
+		    }
+				// Blank out unaligned source tokens up to the rightmost covered index
 				for ( var s = 0; s < rightMostSrcIndex; s++ ) {
 					if ( ! s2t.hasOwnProperty(s) ) {
 						matchingTokens[ s ] = true;
