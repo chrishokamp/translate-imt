@@ -58,6 +58,9 @@ PTM.prototype.initialize = function() {
 	this.listenTo( this, "change", this.makeActivityLogger( "ptm", "", this ) );
 	var referenceTime = new Date().getTime();
 	this.set( "referenceTime", referenceTime );
+
+  // Uncomment this to enable debug output
+  //console.log = function() {}
 };
 
 PTM.prototype.load = function( url ) {
