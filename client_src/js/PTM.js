@@ -325,14 +325,16 @@ PTM.prototype.setup = function() {
 
 	// Create an options panel
 	this.optionPanel = new OptionPanelState();
-	if ( postEditMode ) {
+  // TODO(spenceg): Jeff said to disable this for the experiment
+  // Nice feature for users, but a significant confound.
+//	if ( postEditMode ) {
 		this.optionPanel.set({
 			"enableHover" : false,
 			"enableSuggestions" : false,
 			"enableMT" : false,
 			"visible" : false
 		});
-	}
+//	}
 	this.optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", this.optionPanel ), this );
 	this.listenTo( this.optionPanel, "change", this.setAssists );
 	
@@ -463,9 +465,11 @@ PTM.prototype.__updateTargetSuggestions = function( segmentId ) {
 	var yOffset = this.sourceBoxes[segmentId].get("boxHeight");
 	var xCoord = this.targetBoxes[segmentId].get("editXCoord");
 	var yCoord = this.targetBoxes[segmentId].get("editYCoord");
+  var isInitial = this.targetBoxes[segmentId].get("userText").length === 0;
 	this.targetSuggestions[segmentId].set({
 		"candidates" : candidates,
 		"optionIndex" : null,
+    "isInitial" : isInitial,
 		"xCoord" : xCoord,
 		"yCoord" : yCoord + yOffset
 	});
@@ -529,6 +533,8 @@ PTM.prototype.focusOnSegment = function( focusSegment ) {
 			this.sourceBoxes[segmentId].set( "hasFocus", true );
 			this.sourceSuggestions[segmentId].set( "hasFocus", true );
 			this.targetBoxes[segmentId].focus();  // Needed to avoid an event loop (focusing on its textarea triggers another focus event)
+      var userText = this.targetBoxes[segmentId].get("userText");
+      this.targetSuggestions[segmentId].set( "isInitial", userText.length === 0 );
 			this.targetSuggestions[segmentId].set( "hasFocus", true );
 		}
 		else {
