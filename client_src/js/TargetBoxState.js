@@ -406,7 +406,9 @@ TargetBoxState.prototype.__updateMatchingTokens = function() {
 		    var s2t = s2tAlignments[0];
 			var t2s = t2sAlignments[0];
 			if ( userTokens.length > 0 ) {
-				var maxIndex = userTokens.length-1;
+        var size = userTokens.length;
+        // Account for the pad at the end of the user prefix
+ 				var maxIndex = userTokens[size-1].length === 0 ? userTokens.length-1 : userTokens.length;
 				var rightMostSrcIndex = -1;
 		        for ( var t = 0; t < maxIndex; t++ ) {
 					if ( t2s.hasOwnProperty(t) ) {
