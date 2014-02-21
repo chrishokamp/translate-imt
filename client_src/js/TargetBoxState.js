@@ -158,10 +158,9 @@ TargetBoxState.prototype.__identifyContinugousSuggestion = function( translation
 
   		// Chunk in the target language
 		if ( targetTokenIndexes.length > 0 ) {
-      targetTokenIndexes.sort();
+      targetTokenIndexes.sort(function (a, b) { return a - b; });
 			targetTokenIndexes = _.uniq( targetTokenIndexes, true );
 			var rightMostTargetTokenIndex = -1;
-			
 			// Construction a continuguos suggestion text in the target language
 			var suggestionTokens = [];
 			for ( var i = 0; i < targetTokenIndexes.length; i++ ) {
@@ -212,7 +211,7 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 		// Get the next translation, and its source-to-target and target-to-source alignments
 		var translation = translationList[ translationIndex ];
 		var s2t = s2tAlignments[ translationIndex ];
-    	var t2s = t2sAlignments[ translationIndex ];
+    var t2s = t2sAlignments[ translationIndex ];
 		var suggestionText = this.__identifyContinugousSuggestion( translation, s2t, t2s, baseTargetTokenIndex );
 		if ( suggestionText !== null ) {
 			if ( ! suggestionList.hasOwnProperty(suggestionText) ) {
@@ -233,9 +232,11 @@ TargetBoxState.prototype.updatePrefixTokensAndSuggestionList = function() {
 	if ( suggestionRank === 0 && translationList.length > 0 ) {
   		suggestionList[ translationList[0][baseTargetTokenIndex] ] = suggestionRank++;
 	}
-	
+
+  // ********
 	// Determine suggestions starting from further down in the sentence
-	for ( var futureTargetTokenIndex = baseTargetTokenIndex; futureTargetTokenIndex < maxBaseTargetTokenIndex; futureTargetTokenIndex++ ) {
+  // ********
+  for ( var futureTargetTokenIndex = baseTargetTokenIndex; futureTargetTokenIndex < maxBaseTargetTokenIndex; futureTargetTokenIndex++ ) {
 
 		// Restrict search to only the best MT
 		// Alternative is to search all MTs with "translationIndex < translationList.length"
@@ -357,7 +358,7 @@ TargetBoxState.prototype.__updateSuggestions = function() {
 	var prefix = this.get( "prefix" );
 	var caretIndex = this.get( "caretIndex" );
 	var bestTranslation = this.get( "bestTranslation" );
-
+  
 	// Only show suggestions if caret is in the first word following the prefix
 	// Lowerbound: Must be longer than prefix
 	if ( caretIndex > prefix.length || prefix.length === 0 ) {
