@@ -495,7 +495,7 @@ PTM.prototype.clickToInsertTargetSuggestion = function( segmentId, optionIndex )
 };
 
 PTM.prototype.insertFirstSuggestion = function( segmentId ) {
-	var firstSuggestion = this.targetBoxes[segmentId].get( "delayedFirstSuggestion" );
+	var firstSuggestion = this.targetBoxes[segmentId].get( "firstSuggestion" );
 	if ( firstSuggestion.length > 0 ) {
 		this.targetBoxes[segmentId].replaceEditingToken( firstSuggestion );
 		this.targetBoxes[segmentId].focus();

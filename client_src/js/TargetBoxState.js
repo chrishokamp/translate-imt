@@ -146,6 +146,7 @@ TargetBoxState.prototype.__identifyContinugousSuggestion = function( translation
 		// All chunks left of the above index are considered "matched" and not touched.
 		// Reverse look up: Identify corresponding chunk indexes
 		// Reverse look up: Identify all corresponding target tokens
+    var targetTokenIndexes = [];
     for ( var i = leftMostSourceTokenIndex; i < chunkVector.length; i++ ) {
      	if ( !(chunkVector[i] in sourceChunks) ) {
        	break;

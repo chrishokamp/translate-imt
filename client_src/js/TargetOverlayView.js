@@ -15,14 +15,14 @@ TargetOverlayView.prototype.initialize = function() {
 
 	this.render = _.debounce( this.__render, 10 );
 	this.resize = _.debounce( this.__resize, 10 );
-	this.listenTo( this.model, "change:userText change:editingPrefix change:hasFocus change:delayedBestTranslation change:enableBestTranslation", this.render.bind(this) );
+	this.listenTo( this.model, "change:userText change:prefixTokens change:hasFocus change:bestTranslation change:enableBestTranslation", this.render.bind(this) );
 	this.listenTo( this.model, "change:boxOverlayWidth change:boxOverlayHeight", this.resize.bind(this) );
 };
 
 TargetOverlayView.prototype.__render = function() {
 	var prefixContent = this.model.get( "overlayPrefix" ) + this.model.get( "overlaySep" );
 	var editingContent = this.model.get( "overlayEditing" );
-	var mtContent = this.model.get( "delayedBestTranslation" ).join( " " );
+	var mtContent = this.model.get( "bestTranslation" ).join( " " );
 	this.views.prefixContent.text( prefixContent );
 	this.views.editingContent.text( editingContent );
 	this.views.mtContent.text( mtContent );
