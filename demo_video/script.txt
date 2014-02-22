@@ -1,72 +1,65 @@
-Interactive Machine Translation Interface
+[voice] Thank you for joining our experiment. We are testing a new interactive CAT tool. In this experiment you will translation several documents using both a standard post-editing interface and the new interactive interface. 
 
-[voice] In the next translation module, you will be using an interactive machine translation interface.
+POST-EDITING
+
+[voice] Let's start with post-editing. When the UI opens, you will see source sentences arranged as they would appear in a document or word processor. The current source sentence is highlighted with a blue border. Below each source sentence is a textbox populated with a suggested translation. You can edit, delete, or submit this translation in full.
+
+[voice] When you finish editing the segment. You can move to the next segment by pressing Control+Enter. This is the same key sequence as SDL Trados, if you're familiar with that tool. You can also move back up by pressing Shift+Enter. These two commands allow you to navigate through the document using only the keyboard.
+
+[voice] The mouse does work. You can click on various segments to navigate the document. However, both the post-editing and interactive interfaces can be operated completely from the keyboard. With a little practice, we expect that you'll be able to translate more quickly if you don't rely on the mouse.
+
+[voice] When you are satisfied with all of your translations, you can press Submit at the bottom of the page.
+
+[voice] Now let's look at the interactive interface.
+
+
+INTERACTIVE MACHINE TRANSLATION INTERFACE
+
+[voice] In the next translation module, you will be using an interactive machine translation interface. The UI includes three types of interactive aids.
 [fade in and fade out caption: "Interactive machine translation"]
 
-[voice] Sentences belonging to the source document will be displayed in a word processor-like layout. Vertically spaced one after another.
-[highlight: source box]
-
-[voice] Below each source sentence, you will see a suggested translation shown in grey.
+[voice] Below each source sentence, you will see a suggested translation shown in grey. *You cannot edit this text*. It is there as a reference. You will also see a drop-down box with one or more suggested "completions." In this interface you will be alternating between typing your own translations and accepting and manipulating machine suggestions.
 [highlight: target box]
 
-[voice] Click on any sentence to select. And work on it.
-[highlight: select (say) the 3rd sentence]
-[highlight: select the 1st sentence]
+[voice] You can select suggestions several ways. Tab or Return always chooses the top completion. When more than one suggestion appears, you can filter the box by typing...using the arrow keys...or clicking.
 
 [voice] As you start typing, your translation will be shown in black replacing the suggested text.
 [enter some text into the 1st target box]
 
 [fade in and fade out caption: "Three types of suggestions"]
 
-[voice] As you may have noticed, the IMT interface will respond to your input.
-[voice] You will have access to three types of suggestions while working in this interface:
-[voice] First, full sentence suggestions. Shown in grey as you have already seen.
-[highlight: target box]
-
-[voice] Second, suggestions for the current word as you type. Shown in blue just below your cursor.
-[highlight: target suggestions]
-
-[voice] Third, you may also mouse over any word in the source sentence, to see a list of suggested translations.
-[highlight: source suggestions]
+[voice] The IMT interface will respond to your input. You will notice that both the grey suggested translation and the drop-down will update based on the translation that you've typed so far.
 
 [fade in caption: "Suggestions for the current word"]
-[voice] As you start typing a word, the list of suggestions will be updated, to the match your typing. The interface may suggest multi-word phrases, but the suggestions will always match your partially-entered word. If you wish to use a suggested term in your translation, you may click on it using the mouse.
-[mouse movement, mouse click]
-Or, you may select the term using the up/down arrows and then hitting the ENTER key.
-[key up/down, enter]
-Or, you may simply continue typing, and then hit the TAB key to select the first suggestion.
-[enter more text, tab]
-[fade out caption]
+[voice] The interface may suggest multi-word phrases, but the suggestions will always match your partially-entered word.
 
-[fade in caption: "Full sentence suggestion"]
-[voice] After you finish entering a word --- namely, each time after you hit the whitespace key --- the full sentence suggestion will be updated. Based on your partially-entered response, the interface will make its best effort to complete the sentence for you. If you wish to use the suggested text in your translation, you may hit the TAB key to enter the next chunk of text.
-[fade out caption]
+[voice] If you want to select large blocks of text, you can tab quickly. The suggestions will not update, so you'll have time to select the visible text.
 
 [fade in caption: "Source lookup"]
 [voice] You also have access to source lookup throughout your translation session. Mouse over any word in the source text to see a list of suggested translations.
 [mouse movement]
 To use a suggested term, click to enter the text in your typing area.
 [mouse click]
+The suggestions are ranked by confidence. The most probable term is at the *bottom* of the list and is colored with the most intense shade. Less likely translations are higher in the list, and are in lighter shades.
+
 [fade out caption]
 
 [fade in caption: "Typing area"]
+[voice] Let's talk a bit more about the typing area.
 [voice] You may interact with text that you've already entered --- namely, any text shown in black --- in the same way you interact with a regular text box. You may select, copy, paste, delete the text, and so on.
 [select, move cursor, copy, paste, delete]
 However, you can only interact with the suggested text --- in grey and blue --- through typing
 [enter some text]
-selecting the first suggestion by hitting the TAB key
-[tab]
-or selecting other suggestions through keyboard or mouse clicks
-[enter, mouse click]
-Remember, this interface is interactive, you can always continue typing to see more relevant suggestions
-[enter more text, tab]
+If you edit part of the prefix, you can quickly move back to the end of the prefix by pressing the Tab key. Suggested completions will then start to appear.
 [fade out caption]
 
-[fade in caption: "Keyboard shortcuts"]
-Below are some keyboard shortcuts that you may find helpful
-To advance to the next sentence, you may enter click on it with your mouse
+[fade in caption: "Reordering"]
+[voice] The interface supports reordering from the keyboard. If you see part of a suggested translation in the grey text that is not adjacent to your prefix, just start typing that word. The interface will match substrings in the gray text and allow you to select them.
+
+[fade in caption: "Navigation"]
+You can navigate the interactive interface just as you did the post-edit interface.
 [mouse movement, mouse click]
-or simply hit CTRL+ENTER.
+To move down, simply hit CTRL+ENTER.
 [ctrl+enter]
 To move backward to the previous sentence, you may hit SHIFT+ENTER.
 [shift+enter]

@@ -33,9 +33,9 @@ TranslateServer.prototype.TIMEOUT = 30000;  // milliseconds
  * @param {function} f Callback function that takes up to 2 arguments: responseData, requestData.
  **/
 
-TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
+TranslateServer.prototype.wordQuery = function( word, leftContext, inputProperties, callback ) {
 	if ( word === undefined || word === "" ) {
-		callback( null, null );
+		callback( null, null, false );
 		return;
 	}
 	if ( leftContext === undefined ) {
@@ -44,6 +44,7 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
 	var rqReqData = {
 		"src" : this.sourceLang,
 		"tgt" : this.targetLang,
+    "inputProperties" : inputProperties,
 		"spanLimit" : this.WORD_QUERY_LIMIT,
 		"text" : word,
 		"leftContext" : leftContext
@@ -64,7 +65,7 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
 		if ( this.CONSOLE_LOG ) {
 			console.log( "[rqReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
-		callback( responseData, requestData );
+		callback( responseData, requestData, true );
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
 		var responseTime = new Date();
@@ -78,7 +79,7 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
 		if ( this.CONSOLE_LOG ) {
 			console.log( "[rqReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
-		callback( responseData, requestData );
+		callback( responseData, requestData, false );
 	}.bind(this);
 	var requestMessage = {
 		"url" : this.SERVER_URL,
@@ -97,9 +98,9 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, callback ) {
  * @param {string} targetPrefix Partially translated sentence in target language.
  * @param {function} f Callback function that takes up to 2 arguments: responseData, requestData.
  **/
-TranslateServer.prototype.translate = function( sourceText, targetPrefix, callback ) {
+TranslateServer.prototype.translate = function( sourceText, targetPrefix, inputProperties, callback ) {
 	if ( sourceText === undefined || sourceText === "" ) {
-		callback( null, null );
+		callback( null, null, false );
 		return;
 	}
 	if ( targetPrefix === undefined ) {
@@ -110,6 +111,7 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 	var tReqData = {
 		"src" : this.sourceLang,
 		"tgt" : this.targetLang,
+    "inputProperties" : inputProperties,
 		"n" : this.TRANSLATE_LIMIT,
 		"text" : sourceText,
 		"tgtPrefix" : targetPrefix,
@@ -132,7 +134,7 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 		if ( this.CONSOLE_LOG ) {
 			console.log( "[tReq] [success] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
-		callback( responseData, requestData );
+		callback( responseData, requestData, true );
 	}.bind(this);
 	var errorHandler = function( responseData, responseObject, responseMessage ) {
 		var responseTime = new Date();
@@ -146,7 +148,7 @@ TranslateServer.prototype.translate = function( sourceText, targetPrefix, callba
 		if ( this.CONSOLE_LOG ) {
 			console.log( "[tReq] [error] [" + duration.toFixed(2) + " seconds]", requestData, responseData, responseObject, responseMessage );
 		}
-		callback( responseData, requestData );
+		callback( responseData, requestData, false );
 	}.bind(this);
 	
 	// Send the request

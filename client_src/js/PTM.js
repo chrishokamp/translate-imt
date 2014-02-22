@@ -58,6 +58,9 @@ PTM.prototype.initialize = function() {
 	this.listenTo( this, "change", this.makeActivityLogger( "ptm", "", this ) );
 	var referenceTime = new Date().getTime();
 	this.set( "referenceTime", referenceTime );
+
+  // Uncomment this to enable debug output
+  //console.log = function() {}
 };
 
 PTM.prototype.load = function( url ) {
@@ -325,14 +328,16 @@ PTM.prototype.setup = function() {
 
 	// Create an options panel
 	this.optionPanel = new OptionPanelState();
-	if ( postEditMode ) {
+  // TODO(spenceg): Jeff said to disable this for the experiment
+  // Nice feature for users, but a significant confound.
+//	if ( postEditMode ) {
 		this.optionPanel.set({
 			"enableHover" : false,
 			"enableSuggestions" : false,
 			"enableMT" : false,
 			"visible" : false
 		});
-	}
+//	}
 	this.optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", this.optionPanel ), this );
 	this.listenTo( this.optionPanel, "change", this.setAssists );
 	
@@ -439,7 +444,8 @@ PTM.prototype.__updateSourceSuggestions = function( segmentId, tokenIndex ) {
 		var source = ( tokenIndex === null ) ? "" : segment.tokens[ tokenIndex ];
 		var leftContext = ( source === "" || tokenIndex === 0 ) ? "" : segment.tokens[ tokenIndex-1 ];
 		this.sourceBoxes[segmentId].set({
-			"hoverTokenIndex" : tokenIndex
+			"hoverTokenIndex" : tokenIndex,
+			"isEmptySuggestion" : false,
 		});
 		this.sourceSuggestions[segmentId].set({
 			"source" : source,
@@ -462,9 +468,11 @@ PTM.prototype.__updateTargetSuggestions = function( segmentId ) {
 	var yOffset = this.sourceBoxes[segmentId].get("boxHeight");
 	var xCoord = this.targetBoxes[segmentId].get("editXCoord");
 	var yCoord = this.targetBoxes[segmentId].get("editYCoord");
+  var isInitial = this.targetBoxes[segmentId].get("userText").length === 0;
 	this.targetSuggestions[segmentId].set({
 		"candidates" : candidates,
 		"optionIndex" : null,
+    "isInitial" : isInitial,
 		"xCoord" : xCoord,
 		"yCoord" : yCoord + yOffset
 	});
@@ -528,6 +536,8 @@ PTM.prototype.focusOnSegment = function( focusSegment ) {
 			this.sourceBoxes[segmentId].set( "hasFocus", true );
 			this.sourceSuggestions[segmentId].set( "hasFocus", true );
 			this.targetBoxes[segmentId].focus();  // Needed to avoid an event loop (focusing on its textarea triggers another focus event)
+      var userText = this.targetBoxes[segmentId].get("userText");
+      this.targetSuggestions[segmentId].set( "isInitial", userText.length === 0 );
 			this.targetSuggestions[segmentId].set( "hasFocus", true );
 		}
 		else {
@@ -585,7 +595,7 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 			response.result = [ { 'tgt' : [ source ] } ];
 		}
 		if ( response.hasOwnProperty( "result" ) ) {
-			response.result = _.filter( response.result, function(d) { return d.tgt.length > 0 } );
+			response.result = _.filter( response.result, function(d) { return ( d.tgt.length > 0 ) && ( d.tgt[0].match( reContainsAlphabets ) !== null ) } );
 		}
 		return response;
 	}.bind(this);
@@ -607,6 +617,10 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 		if ( source === expectedSource && leftContext === expectedLeftContext ) {
 			var targets = getTargetTerms( response );
 			var scores = getTargetScores( response );
+			var isEmptySuggestion = ( targets.length === 0 );
+			this.sourceBoxes[segmentId].set({
+				"isEmptySuggestion" : isEmptySuggestion
+			})
 			this.sourceSuggestions[segmentId].set({
 				"source" : source,
 				"leftContext" : leftContext,
@@ -616,15 +630,19 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 		}
 	}.bind(this);
 	var cacheKey = leftContext + ":" + source;
-	var cacheAndUpdate = function( response, request ) {
-		response = filterEmptyResults( response );
-		this.cache.wordQueries[ cacheKey ] = response;
-		update( response );
+	var cacheAndUpdate = function( response, request, isSuccessful ) {
+		if ( isSuccessful ) {
+			response = filterEmptyResults( response );
+			this.cache.wordQueries[ cacheKey ] = response;
+			update( response );
+		}
 	}.bind(this);
 	if ( this.cache.wordQueries.hasOwnProperty( cacheKey ) ) {
 		update( this.cache.wordQueries[ cacheKey ] );
 	} else {
-		this.server.wordQuery( source, leftContext, cacheAndUpdate );
+    var segments = this.get( "segments" );
+    var inputProperties = segments[ segmentId ].inputProperties;
+		this.server.wordQuery( source, leftContext, inputProperties, cacheAndUpdate );
 	}
 };
 
@@ -737,11 +755,13 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 			}
 		}
 	}.bind(this);
-	var cacheAndUpdate = function( response, request ) {
-		response = amendTranslationTokens( response );
-		response = amendAlignIndexes( response );
-		this.cache.translations[ segmentId ][ prefix ] = response;
-		update( response );
+	var cacheAndUpdate = function( response, request, isSuccessful ) {
+		if ( isSuccessful ) {
+			response = amendTranslationTokens( response );
+			response = amendAlignIndexes( response );
+			this.cache.translations[ segmentId ][ prefix ] = response;
+			update( response );
+		}
 	}.bind(this);
 
   // Check the cache for translations
@@ -753,8 +773,9 @@ PTM.prototype.loadTranslations = function( segmentId, prefix ) {
 	// Otherwise, request translations from the service
 		var segments = this.get( "segments" );
 		var source = segments[ segmentId ].tokens.join( " " );
+    var inputProperties = segments[ segmentId ].inputProperties;
 		this.cache.translations[ segmentId ][ prefix ] = null;
-		this.server.translate( source, prefix, cacheAndUpdate );  // Asynchronous request
+		this.server.translate( source, prefix, inputProperties, cacheAndUpdate );  // Asynchronous request
 		
 		// Try to recover partial set of translations during the asynchronous request
 		this.recycleTranslations( segmentId );

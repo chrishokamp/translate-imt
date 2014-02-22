@@ -8,6 +8,7 @@ TargetSuggestionState.prototype.reset = function() {
 		"yCoord" : 0,
 		"optionIndex" : null,
 		"hasFocus" : false,
+    "isInitial" : true,
 		"hasMasterFocus" : true
 	}, { silent : true } );
 };
