@@ -65,7 +65,7 @@ TargetBoxState.prototype.MAX_PRECOMPUTED_SUGGESTIONS = 100;
 TargetBoxState.prototype.MAX_VISIBLE_SUGGESTIONS = 4;
 
 TargetBoxState.prototype.initialize = function( options ) {
-	this.reset();
+        this.reset();
 	var segmentId = options.segmentId;
 	this.view = new TargetBoxView({ "model" : this, "el" : ".TargetBoxView" + segmentId, "segmentId" : segmentId });
 	this.viewTextarea = new TargetTextareaView({ "model" : this, "el" : ".TargetTextareaView" + segmentId });

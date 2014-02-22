@@ -122,14 +122,17 @@ PTM.prototype.getInteractionLog = function() {
 PTM.prototype.playback = function( activities, delay ) {
 	var startReplay = function() {
 		this.set( "isLogging", false );
+	        this.experimentUI.off( "change:terminate", this.terminateExperiment, this );
+	        this.experimentUI.set({"timer":0});
 		for ( var key in this.sourceBoxes )
 			this.sourceBoxes[key].reset();
 		for ( var key in this.sourceBoxSuggestions )
 			this.sourceBoxSuggestions[key].reset();
 		for ( var key in this.targetBoxes )
-			this.targetBoxes[key].reset();
-		for ( var key in this.targetBoxSuggestions )
-			this.targetBoxSuggestions[key].reset();
+		    this.targetBoxes[key].set({"userText":""});
+		    //this.targetBoxes[key].reset();
+		for ( var key in this.targetSuggestions )
+			this.targetSuggestions[key].reset();
 	}.bind(this);
 	var endReplay = function() {
 		this.set( "isLogging", true );
