@@ -3,7 +3,7 @@ var SourceSuggestionView = Backbone.View.extend({
 });
 
 SourceSuggestionView.prototype.X_OFFSET = 0;
-SourceSuggestionView.prototype.Y_OFFSET = -( 12 + 7 ) + 12 + 2;
+SourceSuggestionView.prototype.Y_OFFSET = -( 12 + 7) + 12 + 2;
 SourceSuggestionView.prototype.CATCHER_PADDING = 4;
 SourceSuggestionView.prototype.MT_COLOR = "#4292C6";
 SourceSuggestionView.prototype.ACTIVE_COLOR = "#ff7f0e";
@@ -57,6 +57,7 @@ SourceSuggestionView.prototype.__catcherRenderOnce = function( elem ) {
 SourceSuggestionView.prototype.__catcherRenderAlways = function( elem ) {
 	var xCoord = this.model.get( "xCoord" );
 	var yCoord = this.model.get( "yCoord" );
+  // Called after the overlay is rendered (see render())
 	var width = this.views.overlay[0][0].offsetWidth + (this.CATCHER_PADDING+2) * 2;
 	var height = this.views.overlay[0][0].offsetHeight + (this.CATCHER_PADDING+2) * 2;
 	elem.style( "left", (xCoord+this.X_OFFSET-this.CATCHER_PADDING-1) + "px" )
@@ -78,7 +79,7 @@ SourceSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 	var xCoord = this.model.get( "xCoord" );
 	var yCoord = this.model.get( "yCoord" );
 	elem.style( "left", (xCoord+this.X_OFFSET) + "px" )
-		.style( "top", (yCoord+this.Y_OFFSET-targets.length*21) + "px" );
+		.style( "top", (yCoord-targets.length*24) + "px" );
 };
 
 SourceSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
