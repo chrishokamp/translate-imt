@@ -33,7 +33,7 @@ PTM.prototype.reset = function() {
 	this.server = new TranslateServer( sourceLang, targetLang );
 	
 	/** @param {DocumentView} **/
-	this.optionPanel = null;
+//	this.optionPanel = null;
 	this.experimentUI = null;
 	this.documentView = null;
 	this.sourceBoxes = {};
@@ -299,7 +299,8 @@ PTM.prototype.setup = function() {
 //		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
 		this.listenTo( targetBox, "keypress:up", this.previousTargetSuggestion );
 		this.listenTo( targetBox, "keypress:down", this.nextTargetSuggestion );
-		this.listenTo( targetBox, "keypress:esc", this.noTargetSuggestion_OR_cycleAssists );
+    // spenceg: Disable the escape key.
+//		this.listenTo( targetBox, "keypress:esc", this.noTargetSuggestion_OR_cycleAssists );
 		this.listenTo( targetBox, "updateMatchingTokens", this.updateMatchingTokens );
 		this.listenTo( targetBox, "updateSuggestions", this.updateTargetSuggestions );
 		this.listenTo( targetBox, "updateEditCoords", this.updateTargetSuggestions );
@@ -324,19 +325,19 @@ PTM.prototype.setup = function() {
 	this.documentView.addSegment( null );
 
 	// Create an options panel
-	this.optionPanel = new OptionPanelState();
+//	this.optionPanel = new OptionPanelState();
   // TODO(spenceg): Jeff said to disable this for the experiment
   // Nice feature for users, but a significant confound.
 //	if ( postEditMode ) {
-		this.optionPanel.set({
-			"enableHover" : false,
-			"enableSuggestions" : false,
-			"enableMT" : false,
-			"visible" : false
-		});
+//		this.optionPanel.set({
+//			"enableHover" : false,
+//			"enableSuggestions" : false,
+//			"enableMT" : false,
+//			"visible" : false
+//		});
 //	}
-	this.optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", this.optionPanel ), this );
-	this.listenTo( this.optionPanel, "change", this.setAssists );
+//	this.optionPanel.on( "change", this.makeActivityLogger( "optionPanel", "", this.optionPanel ), this );
+//	this.listenTo( this.optionPanel, "change", this.setAssists );
 	
 	// Focus on the first segment
 	this.focusOnSegment( segmentIds[0] );
