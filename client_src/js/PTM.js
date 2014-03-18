@@ -177,14 +177,18 @@ PTM.prototype.tickPlayback = function() {
 		var multiplier = this.get("playbackMultiplier");
 		if ( multiplier > 0 ) {
 			var dtime = ( time - this.playbackTime );
-			if ( multiplier === 999 )
-				dtime = Math.pow( dtime, 0.2 ) / 10.0;
-			else
-			 	dtime /= multiplier;
+			dtime /= multiplier;
 			this.playbackTime = time;
 			setTimeout( this.tickPlayback.bind(this), dtime * 1000 );
 		}
-		else {
+		else if ( multiplier < 0 ) {
+			var dtime = ( time - this.playbackTime );
+			dtime = Math.pow( dtime, 0.2 ) / (-multiplier);
+			this.playbackTime = time;
+			setTimeout( this.tickPlayback.bind(this), dtime * 1000 );
+		}
+		else
+		{
 			this.playbackTime = time;
 		}
 	}
