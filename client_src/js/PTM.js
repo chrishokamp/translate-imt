@@ -139,12 +139,16 @@ PTM.prototype.playback = function( activities, delay ) {
 	}.bind(this);
 	var replay = function( element, subElement, keyValues ) {
 		return function() {
+      console.log(element + " " + subElement);
+      console.log(this);
 			if ( element === "ptm" )
 				this.set( keyValues );
 			else if ( subElement === "" )
 				this[ element ].set( keyValues );
-			else
+			else if ( this[element] ) {
+        
 				this[ element ][ subElement ].set( keyValues );
+      }
 		}.bind(this);
 	}.bind(this);
 	
@@ -291,15 +295,20 @@ PTM.prototype.setup = function() {
 		this.listenTo( sourceSuggestion, "mouseout:option", function(){} );
 		this.listenTo( sourceSuggestion, "click:option", this.clickToInsertSourceSuggestion );
 		this.listenTo( sourceSuggestion, "click", this.experimentUI.reset.bind(this.experimentUI) );
-		
 		this.listenTo( targetBox, "keypress:enter", this.insertSelectedTargetSuggestion );
-		this.listenTo( targetBox, "keypress:enter+meta", this.focusOnNextSegment );
-		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
+
+    // spenceg: Remove these two interactions since we can calculate per-segment timing
+    // information by looking at the focus events.
+    // These interactions don't improve the experiment.
+//		this.listenTo( targetBox, "keypress:enter+meta", this.focusOnNextSegment );
+//		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
+    
 		this.listenTo( targetBox, "keypress:tab", this.insertSelectedTargetSuggestion_OR_insertFirstSuggestion );
-//		this.listenTo( targetBox, "keypress:tab", this.insertFirstSuggestion );
+    this.listenTo( targetBox, "keypress:enter+meta", this.insertFullSuggestion);
 		this.listenTo( targetBox, "keypress:up", this.previousTargetSuggestion );
 		this.listenTo( targetBox, "keypress:down", this.nextTargetSuggestion );
-    // spenceg: Disable the escape key.
+    
+    // spenceg: Disable the escape key. This interaction doesn't improve the experiment.
 //		this.listenTo( targetBox, "keypress:esc", this.noTargetSuggestion_OR_cycleAssists );
 		this.listenTo( targetBox, "updateMatchingTokens", this.updateMatchingTokens );
 		this.listenTo( targetBox, "updateSuggestions", this.updateTargetSuggestions );
@@ -506,6 +515,13 @@ PTM.prototype.insertFirstSuggestion = function( segmentId ) {
 		this.targetBoxes[segmentId].focus();
 	}
 };
+
+PTM.prototype.insertFullSuggestion = function( segmentId ) {
+  var bestTranslation = this.targetBoxes[segmentId].get( "bestTranslation" ).join(" ");
+  this.targetBoxes[segmentId].replaceEditingToken( bestTranslation );
+	this.targetBoxes[segmentId].focus();
+};
+
 PTM.prototype.insertSelectedTargetSuggestion = function( segmentId ) {
 	var optionIndex = this.targetSuggestions[segmentId].get( "optionIndex" );
 	if ( optionIndex !== null ) {
