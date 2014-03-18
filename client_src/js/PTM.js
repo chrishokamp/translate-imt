@@ -122,7 +122,7 @@ PTM.prototype.getInteractionLog = function() {
  * @param {Object[]} [activities] A list of UI events.
  * @param {number} [delay] Delay in seconds before playback begins.
  **/
-PTM.prototype.playback = function( activities, delay ) {
+PTM.prototype.playback = function( activities, delay, speed, timerID ) {
 	var startReplay = function() {
 		this.set( "isLogging", false );
 	        this.experimentUI.off( "change:terminate", this.terminateExperiment, this );
@@ -136,11 +136,16 @@ PTM.prototype.playback = function( activities, delay ) {
 		    //this.targetBoxes[key].reset();
 		for ( var key in this.targetSuggestions )
 			this.targetSuggestions[key].reset();
+	        if (timerID != undefined) {
+		    var now = new Date();
+		    this.replayStartTime = now.getTime();
+		    timeElapsed();
+		}
 	}.bind(this);
 	var endReplay = function() {
 		this.set( "isLogging", true );
 	}.bind(this);
-	var replay = function( element, subElement, keyValues ) {
+        var replay = function( element, subElement, keyValues ) {
 		return function() {
 			if ( element === "ptm" )
 				this.set( keyValues );
@@ -150,20 +155,29 @@ PTM.prototype.playback = function( activities, delay ) {
 				this[ element ][ subElement ].set( keyValues );
 		}.bind(this);
 	}.bind(this);
-	
+        var timeElapsed = function() {
+	    var now = new Date();
+	    this.timer.textContent="Time elapsed: " + Math.floor((now.getTime() - this.replayStartTime)*speed/1000);
+	    setTimeout(function(){timeElapsed()},100);
+        }.bind(this);
 	if ( activities === undefined )
 		activities = this.get( "activities" );
 	if ( delay === undefined )
 		delay = 1;
-	
-	setTimeout( startReplay, delay * 1000 );
+        if (speed == undefined)
+   	        speed = 1;
+        if (timerID == undefined)
+	        this.timer = undefined
+        else
+	        this.timer = document.getElementById(timerID);
+        setTimeout( startReplay, delay * 1000 );
 	var time = Math.max.apply( Math, 
 		activities.map( function( activity ) {
 			var time = activity.time;
 			var element = activity.element;
 			var subElement = activity.subElement;
 			var keyValues = activity.keyValues;
-			setTimeout( replay( element, subElement, keyValues ), (time+delay) * 1000 );
+		        setTimeout( replay( element, subElement, keyValues ), (time/speed+delay) * 1000 );
 			return time;
 		})
 	);
