@@ -4,6 +4,7 @@ var PTM = Backbone.Model.extend({
 	},
 	"defaults" : {
 		"isLogging" : true,
+		"playbackMultiplier" : 1.0,
 		"postEditMode" : false,
 		"maxIdleTime" : 180,
 		"readOnlyMode" : false,
@@ -134,41 +135,69 @@ PTM.prototype.playback = function( activities, delay ) {
 		for ( var key in this.targetBoxSuggestions )
 			this.targetBoxSuggestions[key].reset();
 	}.bind(this);
-	var endReplay = function() {
-		this.set( "isLogging", true );
-	}.bind(this);
-	var replay = function( element, subElement, keyValues ) {
-		return function() {
-      console.log(element + " " + subElement);
-      console.log(this);
-			if ( element === "ptm" )
-				this.set( keyValues );
-			else if ( subElement === "" )
-				this[ element ].set( keyValues );
-			else if ( this[element] ) {
-        
-				this[ element ][ subElement ].set( keyValues );
-      }
-		}.bind(this);
-	}.bind(this);
 	
 	if ( activities === undefined )
 		activities = this.get( "activities" );
 	if ( delay === undefined )
 		delay = 1;
+	this.playbackQueue = activities;
+	this.playbackQueue.reverse();
+	this.playbackTime = 0.0;
+	startReplay();
+	setTimeout( this.tickPlayback.bind(this), delay * 1000 );
+};
+
+PTM.prototype.tickPlayback = function() {
+	var endReplay = function() {
+		this.set( "isLogging", true );
+	}.bind(this);
+	var replay = function( element, subElement, keyValues ) {
+//      console.log(element + " " + subElement);
+//      console.log(this);
+		if ( element === "ptm" )
+			this.set( keyValues );
+		else if ( subElement === "" )
+			this[ element ].set( keyValues );
+		else if ( this[element] )
+			this[ element ][ subElement ].set( keyValues );
+	}.bind(this);
 	
-	setTimeout( startReplay, delay * 1000 );
-	var time = Math.max.apply( Math, 
-		activities.map( function( activity ) {
-			var time = activity.time;
-			var element = activity.element;
-			var subElement = activity.subElement;
-			var keyValues = activity.keyValues;
-			setTimeout( replay( element, subElement, keyValues ), (time+delay) * 1000 );
-			return time;
-		})
-	);
-	setTimeout( endReplay, (time+delay) * 1000 );
+	if ( this.playbackQueue.length === 0 ) {
+		endReplay();
+	}
+	else {
+		var activity = this.playbackQueue.pop();
+		var time = activity.time;
+		var element = activity.element;
+		var subElement = activity.subElement;
+		var keyValues = activity.keyValues;
+		replay( element, subElement, keyValues );
+		this.trigger("playback:tick", this.playbackTime);
+
+		var multiplier = this.get("playbackMultiplier");
+		if ( multiplier > 0 ) {
+			var dtime = ( time - this.playbackTime );
+			if ( multiplier === 999 )
+				dtime = Math.pow( dtime, 0.2 ) / 10.0;
+			else
+			 	dtime /= multiplier;
+			this.playbackTime = time;
+			setTimeout( this.tickPlayback.bind(this), dtime * 1000 );
+		}
+		else {
+			this.playbackTime = time;
+		}
+	}
+};
+
+PTM.prototype.setPlaybackSpeed = function( multiplier ) {
+	if ( this.get("playbackMultiplier") === 0 && multiplier > 0 ) {
+		this.set( "playbackMultiplier", multiplier );
+		this.tickPlayback();
+	}
+	else {
+		this.set( "playbackMultiplier", multiplier );
+	}
 };
 
 PTM.prototype.makeActivityLogger = function( elemId, subElemId, elem ) {
