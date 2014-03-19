@@ -83,17 +83,12 @@ SourceSuggestionView.prototype.__overlayRenderAlways = function( elem ) {
 };
 
 SourceSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
-	var os = d3.scale.linear().domain( [ 0, 0.5 ] ).range( [ 0.3, 1 ] );
-	var opacity = function(d) {
-		return Math.min( 1, Math.max( 0.3, os( d.score ) ) )
-	}.bind(this);
 	var borderTop = function(_,i) {
 		return i===0 ? null : "1px dotted " + this.MT_COLOR
 	}.bind(this);
 	elem.style( "position", "static" )
 		.style( "display", "block" )
 		.style( "border-top", borderTop )
-		.style( "opacity", opacity )
 		.style( "padding", "2px" )
 		.classed( "TargetLang", true )
 		.style( "white-space", "nowrap" )
@@ -102,8 +97,23 @@ SourceSuggestionView.prototype.__tokenRenderOnce = function( elem ) {
 		.on( "mouseover", this.__onMouseOverOption.bind(this) )
 		.on( "mouseout", this.__onMouseOutOption.bind(this) )
 		.on( "mouseup", this.__onMouseClickOption.bind(this) );
+	elem.append( "span" ).attr( "class", "TokenLeft" )
+		.style( "display", "inline-block" )
+		.style( "height", "8px" )
+		.style( "width", "8px" )
+		.style( "margin-left", "1px" )
+		.style( "background-color", "#fff" )
+	elem.append( "span" ).attr( "class", "TokenMid" )
+		.style( "display", "inline-block" )
+		.style( "height", "8px" )
+		.style( "width", "16px" )
+		.style( "margin-right", "5px" )
+		.style( "background-color", "#fff" )
+	elem.append( "span" ).attr( "class", "TokenRight" );
 };
 SourceSuggestionView.prototype.__tokenRenderAlways = function( elem ) {
+	var barLength = d3.scale.linear().domain( [ 0, 1 ] ).range( [ 0, 1 ] );
+	var threeBarLengths = function(score) { return Math.min( 1, Math.max( 0, Math.ceil( score * 3 ) / 3 ) ); };
 	var optionIndex = this.model.get( "optionIndex" );
 	var color = function(d) {
 		if ( optionIndex === d.index )
@@ -111,9 +121,20 @@ SourceSuggestionView.prototype.__tokenRenderAlways = function( elem ) {
 		else
 			return this.MT_COLOR;
 	}.bind(this);
-	elem.text( function(d) { return d.text } )
-		.style( "color", color )
-	
+	var leftWidth = function(d) {
+		return 24 * ( 1 - threeBarLengths(d.score) ) + "px";
+	}.bind(this);
+	var midWidth = function(d) {
+		return 24 * threeBarLengths(d.score) + "px";
+	}.bind(this);
+	elem.select( ".TokenLeft" )
+		.style( "width", leftWidth )
+	elem.select( ".TokenMid" )
+		.style( "background-color", color )
+		.style( "width", midWidth )
+	elem.select( ".TokenRight" )
+		.text( function(d) { return d.text } )
+		.style( "color", color );	
 };
 
 SourceSuggestionView.prototype.__onMouseOver = function() {
