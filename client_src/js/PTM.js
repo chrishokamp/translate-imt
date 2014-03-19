@@ -104,8 +104,13 @@ PTM.prototype.getUserResponses = function() {
 	var responses = {};
 	for ( var key in this.targetBoxes ) {
 		var targetBox = this.targetBoxes[key];
-		responses[key] = targetBox.get("userText");
+		var userText = targetBox.get("userText");
+		if ( userText.length === 0 ) {
+			userText = targetBox.get("bestTranslation").join(" ");
+		}
+		responses[key] = userText;
 	}
+	console.log("responses",responses);
 	return responses;
 };
 
