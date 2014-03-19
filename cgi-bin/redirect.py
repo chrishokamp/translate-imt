@@ -23,7 +23,7 @@ def redirectRequest( req ):
 	if 'rqReq' in req:
 		query.append( 'rqReq={}'.format( urllib.quote( req['rqReq'] ) ) )
 #	url = 'http://joan.stanford.edu:8017/t?{}'.format( '&'.join( query ) )
-	url = 'http://joan.stanford.edu:8017/x?{}'.format( '&'.join( query ) )
+	url = 'http://jonah.stanford.edu:8017/x?{}'.format( '&'.join( query ) )
 #	url = 'http://ptm.stanford.edu/x?{}'.format( '&'.join( query ) )
 	request = urllib2.urlopen( url )
 	content = request.read()

@@ -19,6 +19,19 @@ RQ_REQ = {
 	'spanLimit' : 10,
 	'text' : 'Great Britain'
 }
+T_REQ = {
+	'src' : 'FR',
+	'tgt' : 'EN',
+	"n" : 10,
+	"text" : 'Où est aux états-unis?',
+	"tgtPrefix" : ''
+}
+RQ_REQ = {
+	'src' : 'FR',
+	'tgt' : 'EN',
+	'spanLimit' : 10,
+	'text' : 'états-unis'
+}
 
 def getTranslateRequest():
 	request = {}
@@ -37,7 +50,7 @@ def redirectRequest( request ):
 	if 'rqReq' in request and request['rqReq'] is not None:
 		query.append( 'rqReq={}'.format( urllib.quote( request['rqReq'] ) ) )
 #	url = 'http://joan.stanford.edu:8017/t?{}'.format( '&'.join( query ) )
-	url = 'http://joan.stanford.edu:8017/x?{}'.format( '&'.join( query ) )
+	url = 'http://jonah.stanford.edu:8017/x?{}'.format( '&'.join( query ) )
 #	url = 'http://ptm.stanford.edu/x?{}'.format( '&'.join( query ) )
 	print 'URL = {}'.format( url )
 	request = urllib2.urlopen( url )
