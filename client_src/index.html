@@ -37,10 +37,7 @@
 				"targetLang" : "EN",
 				"maxIdleTime" : 9000
 			});
-			dm = new DatasetManager();
-			dm.on( "change:datasetURL", function() {
-				ptm.load( dm.get( "datasetURL" ) );
-			});
+			ptm.load();
 		});
 		var prepareSubmission = function() {
 			var userResponses = ptm.getUserResponses();
