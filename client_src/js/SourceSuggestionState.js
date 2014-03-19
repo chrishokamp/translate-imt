@@ -12,7 +12,8 @@ SourceSuggestionState.prototype.reset = function() {
 		"yCoord" : 0,
 		"optionIndex" : null,
 		"hasFocus" : false,
-		"hasMasterFocus" : true
+		"hasMasterFocus" : true,
+		"isLoaded" : false
 	}, { silent : true } );
 };
 

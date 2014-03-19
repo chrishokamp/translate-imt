@@ -495,7 +495,8 @@ PTM.prototype.__updateSourceSuggestions = function( segmentId, tokenIndex ) {
 			"scores" : [],	  // To be filled in asynchronously by loadWordQueries.
 			"optionIndex" : null,
 			"xCoord" : xCoord,
-			"yCoord" : yCoord
+			"yCoord" : yCoord,
+			"isLoaded" : false
 		});
 		if ( tokenIndex !== null ) {
 			this.loadWordQueries( segmentId, source , leftContext );
@@ -672,7 +673,8 @@ PTM.prototype.loadWordQueries = function( segmentId, source, leftContext ) {
 				"source" : source,
 				"leftContext" : leftContext,
 				"targets" : targets,
-				"scores" : scores
+				"scores" : scores,
+				"isLoaded" : true
 			});
 		}
 	}.bind(this);
