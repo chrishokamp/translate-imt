@@ -4,6 +4,7 @@ var PTM = Backbone.Model.extend({
 	},
 	"defaults" : {
 		"isLogging" : true,
+    "playbackMode" : false,
 		"playbackMultiplier" : 1.0,
 		"postEditMode" : false,
 		"maxIdleTime" : 180,
@@ -31,7 +32,8 @@ PTM.prototype.reset = function() {
 	/** @param {TranslateServer} **/
 	var sourceLang = this.get( "sourceLang" );
 	var targetLang = this.get( "targetLang" );
-	this.server = new TranslateServer( sourceLang, targetLang );
+  var playbackMode = this.get( "playbackMode" );
+	this.server = new TranslateServer( sourceLang, targetLang, playbackMode );
 	
 	/** @param {DocumentView} **/
 //	this.optionPanel = null;

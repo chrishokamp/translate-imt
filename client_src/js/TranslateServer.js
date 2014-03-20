@@ -1,4 +1,4 @@
-var TranslateServer = function( sourceLang, targetLang ) {
+var TranslateServer = function( sourceLang, targetLang, playbackMode ) {
 	if ( sourceLang === undefined )
 		this.sourceLang = this.SRC_LANG;
 	else
@@ -7,6 +7,11 @@ var TranslateServer = function( sourceLang, targetLang ) {
 		this.targetLang = this.TGT_LANG;
 	else
 		this.targetLang = targetLang;
+  if (playbackMode === undefined) {
+    this.playbackMode = false;
+  } else {
+    this.playbackMode = playbackMode;
+  }
 };
 
 TranslateServer.prototype.formatter = d3.time.format( "%Y-%m-%d %H:%M:%S.%L" );
@@ -34,7 +39,7 @@ TranslateServer.prototype.TIMEOUT = 30000;  // milliseconds
  **/
 
 TranslateServer.prototype.wordQuery = function( word, leftContext, inputProperties, callback ) {
-	if ( word === undefined || word === "" ) {
+	if ( word === undefined || word === "" || this.playbackMode ) {
 		callback( null, null, false );
 		return;
 	}
@@ -99,7 +104,7 @@ TranslateServer.prototype.wordQuery = function( word, leftContext, inputProperti
  * @param {function} f Callback function that takes up to 2 arguments: responseData, requestData.
  **/
 TranslateServer.prototype.translate = function( sourceText, targetPrefix, inputProperties, callback ) {
-	if ( sourceText === undefined || sourceText === "" ) {
+	if ( sourceText === undefined || sourceText === "" || this.playbackMode ) {
 		callback( null, null, false );
 		return;
 	}
