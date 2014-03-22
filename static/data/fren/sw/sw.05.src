@@ -1,0 +1,5 @@
+Cela entraîne une "ciselure de talus" entre les deux segments, sans ligne d'intersection mathématique entre les deux carreaux, à l'exception de l'intersection dégénérée au niveau du coin.
+Si la ligne caractéristique du terrain sélectionnée possède une altitude constante, l'option Altitude permet de définir la valeur de l'altitude pour tous les sommets.
+TerrePleinCentralEnCuvette: terre-plein central en cuvette entre un point d'association et un point marqué, présentant différents paramètres permettant de contrôler la géométrie du fossé.
+Le profil type nul sert d'espace réservé et permet la création de l'objet d'intersection lorsqu'un profil type est introuvable.
+Pour de plus amples informations sur le changement de définition de la clothoïde par défaut, consultez Spécification des paramètres de courbe et de clothoïde.

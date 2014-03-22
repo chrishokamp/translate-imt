@@ -1,0 +1,5 @@
+Vous pouvez désélectionner l'option Effacer les entités existantes si vous souhaitez enregistrer l'objet polyligne d'origine afin de créer l'élément de profil type (facultatif).
+Les réseaux de canalisations importés depuis l'extension Storm Sewers peuvent contenir des informations sur les propriétés hydrauliques, notamment des lignes de charge et des lignes d'énergie.
+Une fois la conception de l'axe terminée, vous pouvez déplacer les axes dans le site des parcelles et utiliser les interactions entre les deux types d'objets.
+Dans la boîte de dialogue de création du dévers, la page Type de route contient des options permettant d'appliquer un dévers à différents types de route.
+Vous pouvez éditer un axe à l'aide des poignées, modifier des valeurs géométriques ou ajouter des entités de ligne, de courbe et de clothoïde basées sur des contraintes.

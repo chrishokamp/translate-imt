@@ -1,0 +1,5 @@
+The left pane of the Traverse Editor displays the following properties for the selected setup within the current chainage point:
+For example, set up a label style for a plot line to display the quadrant bearing and distance of that line, which are two of its basic components.
+The final step is to calculate the A matrix, which relates the changes in coordinates to each observation determined through the use of distance observation equations and angle or whole circle bearing/quadrant bearing observation equations.
+A compound curve is a curve consisting of two or more arcs of different radii curving in the same direction and having a common straight or transition curve at their point of junction.
+Using this command, you can edit the levels of one feature line and then update the levels of another related feature line that exists alongside the first.

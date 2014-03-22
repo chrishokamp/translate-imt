@@ -1,0 +1,5 @@
+For example, when you select the "Primary Road Full Section" corridor region on a junction editing dialog box, the following conceptual graphic is displayed, indicating the location of this region along the corridor.
+Use this tab to change a site plot's label style, to view its area or perimeter, or to change the display order of plots that it contains, including the site plot itself.
+To display pipe networks in a profile view, you must have valid chainage offset data (from the profile view alignment) for the pipe networks.
+You can use the Alignment Layout Parameters dialog box to display and edit the many attributes for a single alignment sub-element.
+In the drawing, the chainage value and crossfall at each critical superelevation chainage is indicated by symbols and green labels.

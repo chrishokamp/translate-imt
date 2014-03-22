@@ -1,0 +1,5 @@
+Par exemple, lorsque vous sélectionnez la zone de projet 3D "Primary Road Full Section" dans une boîte de dialogue de modification d'intersection, le graphique conceptuel suivant s'affiche pour indiquer l'emplacement de cette zone le long du projet 3D.
+Cet onglet vous permet de modifier le style d'étiquette de la parcelle du site et visualiser son aire ou son périmètre, ou bien pour modifier l'ordre d'affichage of parcelles qu'il contient, y compris la parcelle du site même.
+Pour afficher des réseaux de canalisations dans un dessin de profil en long, vous devez disposer de données de décalage de l'abscisse curviligne valides (provenant de l'axe du dessin de profil en long) pour les réseaux de canalisations.
+La boîte de dialogue Paramètres de présentation de l'axe vous permet d'afficher et de modifier les nombreux attributs d'une sous-entité d'axe unique.
+Dans le dessin, la valeur d'abscisse curviligne et la pente transversale à chaque abscisse curviligne critique du dévers sont indiquées par des symboles et des étiquettes vertes.

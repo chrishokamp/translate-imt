@@ -1,0 +1,5 @@
+L'expression peut s'appeler SUBGRADE et sa composition peut ressembler à ce qui suit: {Altitude de la surface}-2, où Altitude de la surface est un composant ou une propriété nommée de la surface.
+TerrePleinCentralAffleurantAvecSéparateur: crée un terre-plein central affleurant les voies adjacentes et pouvant inclure un séparateur Jersey facultatif.
+Les points COGO sont créés à partir des valeurs d'altitudes et de descriptions brutes contenues dans chaque référence de bloc de points Softdesk.
+Si aucune norme de conception n'est appliquée à l'axe, la valeur par défaut spécifiée dans les paramètres de courbe et de clothoïde s'affiche.
+Vous allez ensuite créer une entité d'axe respectant les normes de conception définies dans le fichier de normes de conception.
