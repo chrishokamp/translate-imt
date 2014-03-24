@@ -1,0 +1,4 @@
+Use the Properties palette Label Style drop down menu to access a list of available plot styles including the general line and curve label styles which can be used to annotate plots.
+The following table lists the types of elements you can use to create pipe networks:
+The value parameter indicates the straight distance of the curve.
+Corridor region chainage for that corner radius fillet area (in quadrant 2) will be updated as 0+50 to 3+50.

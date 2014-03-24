@@ -1,0 +1,5 @@
+Récapitulatif de la distance d'altitude entre deux points
+Ajout d'un motif de talus à un projet 3D
+Crée des points sur l'axe au niveau des points de géométrie du dessin de profil en long, à partir des données d'altitude de la ligne de profil en long.
+Affiche le type de source de données d'où sont extraites les données de la ligne de profil en travers.
+Figure 40: Pentes de la retenue d'eau nivelées d'après la distance et l'altitude

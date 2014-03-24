@@ -1,0 +1,5 @@
+floating curves with transitions, adding to alignments
+Use your mouse to click one of the four quadrant bearing quadrants as indicated by the temporary graphics, or enter the quadrant number at the command line.
+Specifies that the corner radius is always geometry locked.
+You must specify this type when you create the junction, on the General page of the Create Junction wizard.
+On the Alignment Layout Tools toolbar, click Curve And Transition Settings.

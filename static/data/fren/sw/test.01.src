@@ -1,0 +1,5 @@
+courbe flottante avec clothoïdes, ajout à un axe
+Utilisez la souris pour cliquer sur l'un des quatre quadrants de l'angle de relèvement, comme indiqué par les graphiques temporaires, ou entrez le nombre de quadrants sur la ligne de commande.
+Indique que la géométrie de la bordure de rive est toujours verrouillée.
+Vous devez indiquer ce type lorsque vous créez l'intersection, dans la page Général de l'Assistant Créer une intersection.
+Dans la barre des outils de création de l'axe, cliquez sur Paramètres de la courbe et de la clothoïde.

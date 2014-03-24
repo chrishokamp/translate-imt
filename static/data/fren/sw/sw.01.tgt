@@ -1,5 +1,0 @@
-Optionally, you may clear Erase Existing Elements if you want to save the original polyline object selected to create the subassembly.
-Pipe networks imported from the Storm Sewers Extension can contain hydraulic property information, such as hydraulic gradient lines (HGL) and energy gradient lines (EGL) and more.
-After the alignment design is finished, you can move the alignments into the plots" site and work with the interactions between both object types.
-In the Create Superelevation dialog box, the Carriageway Type page contains options for how to apply superelevation to various types of carriageways.
-You can grip edit an alignment, modify geometric values, or add constraint-based line, curve, and transition elements.

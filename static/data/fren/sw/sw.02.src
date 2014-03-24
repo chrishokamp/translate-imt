@@ -1,5 +1,0 @@
-Le volet gauche de l'éditeur de polygonales affiche les propriétés suivantes pour la configuration sélectionnée au sein du point de l'abscisse curviligne courant:
-Par exemple, configurez un style d'étiquette pour un contour de parcelle de manière à afficher l'angle de relèvement et la distance de ce contour, qui constituent deux composants de base.
-La dernière étape consiste à calculer la matrice A portant sur les changements de coordonnées pour chaque observation déterminée à l'aide d'équations d'observation des distances et des angles ou des azimuts/angles de relèvement.
-Une courbe composée est une courbe formée de deux arcs ou plus, de rayons différents courbés dans la même direction, avec une tangente commune ou une courbe de transition à leur point de jonction.
-À l'aide de cette commande, vous pouvez modifier les altitudes d'une ligne caractéristique du terrain, puis mettre à jour les altitudes d'une autre ligne caractéristique du terrain associée se trouvant à côté de la première.

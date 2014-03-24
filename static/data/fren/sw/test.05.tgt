@@ -1,0 +1,5 @@
+To define the wall breakline by object vertex, specify Individual at the prompt and enter the level or delta for each vertex.
+If you xref a plot that includes a label, you should place the area label on a layer that will not plot or on a layer that you can freeze.
+The transition type you specify in the Curve and Transition Settings dialog box is used in all transition commands on the Alignment Layout Tools toolbar.
+An X displays to indicate the location of the calculated slope/gradient intersection.
+The Parameter Constraint property of every row in the Alignment Elements Vista is locked.

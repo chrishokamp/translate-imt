@@ -1,0 +1,5 @@
+Pour définir la ligne de rupture verticale par sommet, choisissez Individuel à l'invite et entrez l'altitude ou le delta de chaque sommet.
+Si vous insérez une Xréf dans une parcelle contenant une étiquette, placez l'étiquette d'aire sur un calque sans tracé ou pouvant être gelé.
+Le type de clothoïde spécifié dans la boîte de dialogue Paramètres de la courbe et de la clothoïde est utilisé dans toutes les commandes de clothoïde de la barre des outils de création de l'axe.
+Un X s'affiche pour indiquer l'emplacement de l'intersection pente/talus calculée.
+La propriété Contrainte de paramètre de chaque rangée de la fenêtre Entités d'axe est verrouillée.

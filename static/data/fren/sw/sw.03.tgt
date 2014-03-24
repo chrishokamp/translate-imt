@@ -1,5 +1,0 @@
-The properties also display the source files and the external point cloud database that constitute the point cloud, enable you to configure level range color schemes, and view the point cloud object statistics.
-Specifies the default corridor style used to display corridor components, such as region boundaries and assembly insertion chainages.
-If the value of a text object is a real number, the text object is moved to the level corresponding to the numeric text value.
-In the Superelevation Curve Manager dialog box, the Design Speed value did not change because the chainage at which you changed the design speed is located after Curve.3.
-Specify straight start and end points (1 through 4), and curves are created at the intersection points (2, 3) based on the values you enter in the Curve Settings dialog box.

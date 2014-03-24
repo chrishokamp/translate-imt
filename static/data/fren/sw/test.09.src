@@ -1,0 +1,5 @@
+Désactivez cette option afin d'utiliser un (calcul d') arrondi pour le positionnement de lignes d'intersection basé sur des abscisses curvilignes dérivées.
+Pour mettre en surbrillance les objets associés à des coûts
+Nous pouvons alors utiliser l'Editeur d'altitudes pour définir l'altitude des lignes caractéristiques du terrain.
+Utilisez cette boîte de dialogue pour ajouter ou supprimer des sommets le long d'un objet linéaire, comme une ligne caractéristique du terrain ou une entité AutoCAD, lorsque vous créez un axe par ajustement optimal.
+Indiquez la distance le long de la pente/talus en effectuant l'une des opérations suivantes:

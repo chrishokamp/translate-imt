@@ -1,5 +1,0 @@
-In this case, chainage value for the last critical chainage of Curve.2 is greater than the chainage value for the first critical chainage of Curve.3.
-Under View/Edit Options, edit the values in the Front Clip and Back Clip fields, to display 3D objects, such as pipe network parts located at the specified chainage.
-After the pressure network is laid out in plan view, you can also assign and edit level information for parts in the Pressure Pipe Properties, Fitting Properties, and Ancillaries Properties dialog boxes.
-Use the Chainage Control tab in the Alignment Properties dialog box to change the starting chainage after you create an alignment.
-A rate item file contains the rate item codes, descriptions, and units of measure for the master rate item list.

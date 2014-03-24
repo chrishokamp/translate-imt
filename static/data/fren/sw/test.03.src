@@ -1,0 +1,5 @@
+Ajout d'une courbe verticale fixe à l'aide de deux points et d'un talus à l'extrémité
+Ajout d'une courbe verticale fixe à partir d'une entité avec un point de passage
+Dans la barre des outils de création de l'axe, cliquez sur Droite flottante (depuis l'extrémité de la courbe, longueur).
+Une fois que ces composants sont présents dans le dessin, vous pouvez poursuivre à l'aide de l'Assistant Créer une intersection.
+Cliquez sur le menu Talus Modifier les altitudes de la figure Augmenter/Réduire par référence

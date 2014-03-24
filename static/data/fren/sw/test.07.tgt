@@ -1,0 +1,5 @@
+If you edit the line or the element it is attached to, tangency is not maintained.
+The following illustration describes the Right Side pivot method for a single crowned carriageway.
+To minimize the possibility of changing the surface during this operation, set a smaller value for the maximum allowed level change.
+Click OK and the plots are created.
+Interpolates a point along a control line or element that is perpendicular to a specified point.

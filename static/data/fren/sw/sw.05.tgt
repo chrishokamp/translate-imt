@@ -1,5 +1,0 @@
-This results in a "chasing gradient" situation between the two segments, without a mathematical intersection line between the two patches, except for the degenerate intersection at the corner point.
-If the selected feature line has a constant level, a Lebvel option is available to set the level value for all vertices.
-CentralReserveDepressed: Depressed central reserve between an attachment point and marked point with various parameters to control ditch geometry.
-The null assembly serves as a placeholder object so that the junction object can still be created even though an assembly cannot be found.
-For more information about changing the default transition definition, see Specifying Curve and Transition Settings.

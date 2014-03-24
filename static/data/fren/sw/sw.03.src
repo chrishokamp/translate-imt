@@ -1,5 +1,0 @@
-Les propriétés affichent également les fichiers source et la base de données de nuages de points externe qui constituent le nuage de points, elles vous permettent de configurer l'intervalle d'altitudes des schémas de couleurs et d'afficher les statistiques relatives à l'objet de nuage de points.
-Spécifie le style de projet 3D par défaut utilisé pour afficher les composants du projet 3D, notamment les limites de contour de la zone et les abscisses curvilignes d'insertion du profil type.
-Si la valeur d'un objet texte est un nombre réel, l'objet est déplacé vers l'altitude correspondant à la valeur numérique.
-Dans la boîte de dialogue Gestionnaire des courbes du dévers, la valeur de modélisation en fonction de la vitesse n'est pas modifiée, car l'abscisse curviligne au niveau de laquelle vous avez modifié la modélisation en fonction de la vitesse se trouve après Curve.3.
-Spécifiez le point de départ et l'extrémité de la tangente (de 1 à 4). Les courbes sont ainsi créées au niveau des points d'intersection (2, 3) en fonction des valeurs que vous entrez dans la boîte de dialogue Paramètres de la courbe.

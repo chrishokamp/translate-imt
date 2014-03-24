@@ -1,0 +1,5 @@
+Si vous modifiez la droite ou l'entité à laquelle elle est associée, la tangence n'est pas conservée.
+L'illustration suivante décrit la méthode de rotation Bord droit employée pour une route en toit non divisée.
+Pour limiter les risques de modification de la surface au cours de cette opération, définissez une valeur plus faible pour la modification d'altitude autorisée maximale.
+Cliquez sur OK et les parcelles sont créées.
+Interpole un point le long d'une ligne de contrôle ou d'une entité perpendiculaire à un point donné.
