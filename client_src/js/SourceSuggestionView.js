@@ -125,7 +125,7 @@ SourceSuggestionView.prototype.__tokenRenderAlways = function( elem ) {
 	var targets = this.model.get( "targets" );
 	var hideBar = ( targets.length === 0 );
 	var barLength = d3.scale.linear().domain( [ 0, 1 ] ).range( [ 0, 1 ] );
-	var threeBarLengths = function(score) { return Math.min( 1, Math.max( 0, Math.ceil( score * 3 ) / 3 ) ); };
+	var threeBarLengths = function(score) { return Math.min( 1, Math.max( 1.0 / 3, Math.ceil( score * 3 ) / 3 ) ); };
 	var optionIndex = this.model.get( "optionIndex" );
 	var color = function(d) {
 		if ( ! d.isValid )
