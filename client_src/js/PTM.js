@@ -558,9 +558,12 @@ PTM.prototype.insertFirstSuggestion = function( segmentId ) {
 };
 
 PTM.prototype.insertFullSuggestion = function( segmentId ) {
-  var bestTranslation = this.targetBoxes[segmentId].get( "bestTranslation" ).join(" ");
-  this.targetBoxes[segmentId].replaceEditingToken( bestTranslation );
-	this.targetBoxes[segmentId].focus();
+	var postEditMode = this.get( "postEditMode" );
+	if ( !postEditMode ) {
+		var bestTranslation = this.targetBoxes[segmentId].get( "bestTranslation" ).join(" ");
+		this.targetBoxes[segmentId].replaceEditingToken( bestTranslation );
+		this.targetBoxes[segmentId].focus();
+	}
 };
 
 PTM.prototype.insertSelectedTargetSuggestion = function( segmentId ) {
