@@ -1,0 +1,1 @@
+{"docId":"test.14.src","segments":{"0":{"tokens":["As","Details","to","display","thumbnails","with","additional","text","information","."],"pos":["O","N","O","V","N","O","A","N","N","O"],"ner":["O","O","O","O","O","O","O","O","O","O"],"layoutSpec":["","","","","","","","","","cl"],"chunkVector":[0,1,2,2,3,4,5,5,5,6],"inputProperties":"Domain\u003dsw"}}}

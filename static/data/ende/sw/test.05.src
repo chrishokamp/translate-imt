@@ -1,0 +1,5 @@
+Automatically Export Caches To Folders When Possible
+When this option is selected, Adobe Bridge creates cache files for the selected folder and its subfolders.
+When you change names of labels in preferences, any files with the older label appear with white labels in the Content panel.
+Depending on the file, the document into which you want to place the file may need to be opened first.
+Scripts listed vary depending on the Creative Suite 4 components you've installed.
