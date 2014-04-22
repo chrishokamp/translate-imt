@@ -340,11 +340,11 @@ PTM.prototype.setup = function() {
     // spenceg: Remove these two interactions since we can calculate per-segment timing
     // information by looking at the focus events.
     // These interactions don't improve the experiment.
-//		this.listenTo( targetBox, "keypress:enter+meta", this.focusOnNextSegment );
-//		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
+		this.listenTo( targetBox, "keypress:enter+meta", this.focusOnNextSegment );
+		this.listenTo( targetBox, "keypress:enter+shift", this.focusOnPreviousSegment );
     
 		this.listenTo( targetBox, "keypress:tab", this.insertSelectedTargetSuggestion_OR_insertFirstSuggestion );
-    this.listenTo( targetBox, "keypress:enter+meta", this.insertFullSuggestion);
+    this.listenTo( targetBox, "keypress:esc", this.insertFullSuggestion);
 		this.listenTo( targetBox, "keypress:up", this.previousTargetSuggestion );
 		this.listenTo( targetBox, "keypress:down", this.nextTargetSuggestion );
     
@@ -558,6 +558,7 @@ PTM.prototype.insertFirstSuggestion = function( segmentId ) {
 };
 
 PTM.prototype.insertFullSuggestion = function( segmentId ) {
+  console.log('here');
 	var postEditMode = this.get( "postEditMode" );
 	if ( !postEditMode ) {
 		var bestTranslation = this.targetBoxes[segmentId].get( "bestTranslation" ).join(" ");
